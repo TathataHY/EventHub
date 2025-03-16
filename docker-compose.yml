@@ -12,7 +12,7 @@ services:
       - DB_PORT=3306
       - DB_USERNAME=eventhub
       - DB_PASSWORD=eventhubpass
-      - DB_DATABASE=eventhub
+      - DB_NAME=eventhub
       - DB_SYNCHRONIZE=true
       - NODE_ENV=development
       - JWT_SECRET=secretKey

@@ -57,7 +57,7 @@ import { TestController } from './infrastructure/controllers/test.controller';
         port: configService.get('DB_PORT', 3306),
         username: configService.get('DB_USERNAME', 'root'),
         password: configService.get('DB_PASSWORD', 'root'),
-        database: configService.get('DB_DATABASE', 'eventhub'),
+        database: configService.get('DB_NAME', 'eventhub'),
         entities: [__dirname + '/../**/*.entity{.ts,.js}'],
         autoLoadEntities: true,
         synchronize: configService.get('DB_SYNC', 'false') === 'true',
