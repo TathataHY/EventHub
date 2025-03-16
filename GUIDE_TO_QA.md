@@ -16,7 +16,7 @@ Esta guía contiene instrucciones detalladas para el equipo de QA sobre cómo pr
    ```
 
 3. Configura la base de datos:
-   - Asegúrate de tener PostgreSQL corriendo
+   - Asegúrate de tener MySQL corriendo
    - Crea una base de datos llamada `eventhub_test`
    - Usa el archivo `.env.test` para la configuración
 

@@ -7,9 +7,9 @@ import { z } from 'zod';
 export const envSchema = z.object({
   // Database
   DB_HOST: z.string().default('localhost'),
-  DB_PORT: z.string().transform(val => parseInt(val, 10)).default('5432'),
-  DB_USERNAME: z.string().default('postgres'),
-  DB_PASSWORD: z.string().default('postgres'),
+  DB_PORT: z.string().transform(val => parseInt(val, 10)).default('3306'),
+  DB_USERNAME: z.string().default('root'),
+  DB_PASSWORD: z.string().default('password'),
   DB_NAME: z.string().default('eventhub'),
   
   // JWT
