@@ -1,0 +1,17 @@
+{
+  "name": "eventhub-infrastructure",
+  "version": "0.1.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "dependencies": {
+    "eventhub-domain": "0.1.0",
+    "eventhub-application": "0.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+} 

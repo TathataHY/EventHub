@@ -1,0 +1,43 @@
+services:
+  api:
+    build:
+      context: ./packages/eventhub-api
+    container_name: eventhub-api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USERNAME=eventhub
+      - DB_PASSWORD=eventhubpass
+      - DB_DATABASE=eventhub
+      - DB_SYNCHRONIZE=true
+      - NODE_ENV=development
+      - JWT_SECRET=secretKey
+      - JWT_EXPIRES_IN=1d
+      - PORT=3000
+      - FRONTEND_URL=http://localhost:4200
+    volumes:
+      - ./packages/eventhub-api:/usr/src/app
+      - /usr/src/app/node_modules
+    command: node -r ts-node/register src/main.ts
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: eventhub-mysql
+    environment:
+      - MYSQL_DATABASE=eventhub
+      - MYSQL_USER=eventhub
+      - MYSQL_PASSWORD=eventhubpass
+      - MYSQL_ROOT_PASSWORD=rootpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  mysql-data: 

@@ -1,0 +1,25 @@
+{
+  "name": "eventhub",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "domain:build": "yarn workspace eventhub-domain build",
+    "domain:watch": "yarn workspace eventhub-domain watch",
+    "application:build": "yarn workspace eventhub-application build",
+    "application:watch": "yarn workspace eventhub-application watch",
+    "infrastructure:build": "yarn workspace eventhub-infrastructure build",
+    "infrastructure:watch": "yarn workspace eventhub-infrastructure watch",
+    "shared:build": "yarn workspace eventhub-shared build",
+    "api:dev": "yarn workspace eventhub-api start:dev",
+    "mobile:dev": "yarn workspace eventhub-mobile start",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:build": "docker-compose build",
+    "docker:restart": "docker-compose restart",
+    "check:api": "node check-api.js",
+    "build:all": "yarn domain:build && yarn application:build && yarn infrastructure:build && yarn shared:build"
+  }
+} 

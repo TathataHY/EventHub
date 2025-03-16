@@ -1,0 +1,202 @@
+image: node:18
+
+definitions:
+  caches:
+    npm: ~/.npm
+    expo-cli: ~/.config/expo
+    yarn: ~/.yarn
+
+  steps:
+    - step: &shared-build
+        name: "Shared - Compilar tipos"
+        caches:
+          - yarn
+        script:
+          - yarn install
+          - yarn shared:build
+        artifacts:
+          - packages/eventhub-shared/dist/**
+
+    - step: &backend-lint-test
+        name: "Backend - Lint y Pruebas"
+        caches:
+          - yarn
+        script:
+          - yarn install
+          - cd packages/eventhub-api
+          - yarn lint
+          - yarn test
+        artifacts:
+          - packages/eventhub-api/coverage/**
+
+    - step: &backend-build
+        name: "Backend - Construcción"
+        caches:
+          - yarn
+        script:
+          - yarn install
+          - cd packages/eventhub-api
+          - yarn build
+        artifacts:
+          - packages/eventhub-api/dist/**
+
+    - step: &frontend-lint-test
+        name: "Frontend - Lint y Pruebas"
+        caches:
+          - yarn
+          - expo-cli
+        script:
+          - yarn install
+          - cd packages/eventhub-mobile
+          - yarn lint
+          - yarn test
+        artifacts:
+          - packages/eventhub-mobile/coverage/**
+
+    - step: &frontend-build
+        name: "Frontend - Construcción"
+        caches:
+          - yarn
+          - expo-cli
+        script:
+          - yarn install
+          - cd packages/eventhub-mobile
+          - yarn build
+
+    - step: &backend-deploy-staging
+        name: "Backend - Despliegue a Staging"
+        deployment: staging
+        script:
+          - yarn install
+          - yarn shared:build
+          - cd packages/eventhub-api
+          - yarn build
+          - pipe: atlassian/aws-elasticbeanstalk-deploy:1.0.2
+            variables:
+              AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+              AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+              AWS_DEFAULT_REGION: 'us-east-1'
+              APPLICATION_NAME: 'eventhub-api'
+              ENVIRONMENT_NAME: 'eventhub-api-staging'
+              S3_BUCKET: 'elasticbeanstalk-us-east-1-eventhub-staging'
+              VERSION_LABEL: 'eventhub-api-${BITBUCKET_COMMIT}'
+              WAIT: 'true'
+              DEBUG: 'true'
+
+    - step: &backend-deploy-production
+        name: "Backend - Despliegue a Producción"
+        deployment: production
+        trigger: manual
+        script:
+          - yarn install
+          - yarn shared:build
+          - cd packages/eventhub-api
+          - yarn build
+          - pipe: atlassian/aws-elasticbeanstalk-deploy:1.0.2
+            variables:
+              AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+              AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+              AWS_DEFAULT_REGION: 'us-east-1'
+              APPLICATION_NAME: 'eventhub-api'
+              ENVIRONMENT_NAME: 'eventhub-api-production'
+              S3_BUCKET: 'elasticbeanstalk-us-east-1-eventhub-production'
+              VERSION_LABEL: 'eventhub-api-${BITBUCKET_COMMIT}'
+              WAIT: 'true'
+              DEBUG: 'true'
+
+    - step: &frontend-deploy-expo-staging
+        name: "Frontend - Despliegue a Expo Staging"
+        deployment: staging
+        script:
+          - yarn install
+          - yarn shared:build
+          - cd packages/eventhub-mobile
+          - yarn global add expo-cli
+          - npx expo login -u $EXPO_USERNAME -p $EXPO_PASSWORD
+          - npx expo build:configure
+          - npx eas update --branch staging --message "Build $BITBUCKET_COMMIT"
+
+    - step: &frontend-deploy-expo-production
+        name: "Frontend - Despliegue a Expo Production"
+        deployment: production
+        trigger: manual
+        script:
+          - yarn install
+          - yarn shared:build
+          - cd packages/eventhub-mobile
+          - yarn global add expo-cli
+          - npx expo login -u $EXPO_USERNAME -p $EXPO_PASSWORD
+          - npx expo build:configure
+          - npx eas update --branch production --message "Build $BITBUCKET_COMMIT"
+
+pipelines:
+  default:
+    - step: *shared-build
+    - parallel:
+      - step: *backend-lint-test
+      - step: *frontend-lint-test
+
+  branches:
+    develop:
+      - step: *shared-build
+      - parallel:
+        - step: *backend-lint-test
+        - step: *frontend-lint-test
+      - parallel:
+        - step: *backend-build
+        - step: *frontend-build
+      - parallel:
+        - step: *backend-deploy-staging
+        - step: *frontend-deploy-expo-staging
+
+    main:
+      - step: *shared-build
+      - parallel:
+        - step: *backend-lint-test
+        - step: *frontend-lint-test
+      - parallel:
+        - step: *backend-build
+        - step: *frontend-build
+      - parallel:
+        - step: *backend-deploy-staging
+        - step: *frontend-deploy-expo-staging
+      - parallel:
+        - step: *backend-deploy-production
+        - step: *frontend-deploy-expo-production
+
+  pull-requests:
+    '**':
+      - step: *shared-build
+      - parallel:
+        - step: *backend-lint-test
+        - step: *frontend-lint-test
+
+  custom:
+    deploy-backend-staging:
+      - step: *shared-build
+      - step: *backend-deploy-staging
+    
+    deploy-backend-production:
+      - step: *shared-build
+      - step: *backend-deploy-production
+    
+    deploy-frontend-staging:
+      - step: *shared-build
+      - step: *frontend-deploy-expo-staging
+    
+    deploy-frontend-production:
+      - step: *shared-build
+      - step: *frontend-deploy-expo-production
+    
+    build-apps:
+      - step: *shared-build
+      - step:
+          name: "Construir apps para tiendas"
+          deployment: production
+          script:
+            - yarn install
+            - yarn shared:build
+            - cd packages/eventhub-mobile
+            - yarn global add expo-cli
+            - npx expo login -u $EXPO_USERNAME -p $EXPO_PASSWORD
+            - npx eas build --platform all --profile production --non-interactive 
