@@ -1,0 +1,278 @@
+---
+interface Props {
+	title?: string;
+	description?: string;
+}
+
+const { title = "EventHub", description = "Plataforma para gestión de eventos empresariales y networking profesional" } = Astro.props;
+
+// Obtener la base del config (será "/EventHub" en GitHub Pages)
+const { base = '' } = import.meta.env.BASE_URL ? { base: import.meta.env.BASE_URL } : {};
+---
+
+<!doctype html>
+<html lang="es">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="description" content={description} />
+		<link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+		<title>{title}</title>
+	</head>
+	<body>
+		<header class="bg-white shadow-sm py-4">
+			<div class="container mx-auto px-4 flex justify-between items-center">
+				<a href={`${base}/`} class="text-xl font-bold text-blue-500">EventHub</a>
+				<nav class="hidden md:flex gap-6">
+					<a href={`${base}/`} class="font-medium hover:text-blue-500 transition-colors">Inicio</a>
+					<a href={`${base}/funcionalidades`} class="font-medium hover:text-blue-500 transition-colors">Funcionalidades</a>
+					<a href={`${base}/sobre-nosotros`} class="font-medium hover:text-blue-500 transition-colors">Sobre Nosotros</a>
+					<a href={`${base}/contacto`} class="font-medium hover:text-blue-500 transition-colors">Contacto</a>
+				</nav>
+				<div class="md:hidden">
+					<button id="menu-toggle" class="p-2">
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+						</svg>
+					</button>
+				</div>
+			</div>
+		</header>
+		
+		<main>
+			<slot />
+		</main>
+
+		<footer class="bg-gray-800 text-white py-8 mt-auto">
+			<div class="container mx-auto px-4">
+				<div class="flex flex-col md:flex-row justify-between gap-8">
+					<div class="max-w-xs">
+						<h3 class="text-xl font-bold mb-4">EventHub</h3>
+						<p class="text-gray-300">Tu plataforma completa para la gestión y promoción de eventos profesionales.</p>
+					</div>
+					<div>
+						<h4 class="font-semibold mb-3 text-lg">Enlaces</h4>
+						<ul class="space-y-2">
+							<li><a href={`${base}/`} class="text-gray-300 hover:text-white transition-colors">Inicio</a></li>
+							<li><a href={`${base}/funcionalidades`} class="text-gray-300 hover:text-white transition-colors">Funcionalidades</a></li>
+							<li><a href={`${base}/sobre-nosotros`} class="text-gray-300 hover:text-white transition-colors">Sobre Nosotros</a></li>
+							<li><a href={`${base}/contacto`} class="text-gray-300 hover:text-white transition-colors">Contacto</a></li>
+						</ul>
+					</div>
+					<div>
+						<h4 class="font-semibold mb-3 text-lg">Contacto</h4>
+						<ul class="space-y-2 text-gray-300">
+							<li>info@eventhub.cl</li>
+							<li>+56 9 1234 5678</li>
+							<li>Santiago, Chile</li>
+						</ul>
+					</div>
+				</div>
+				<div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
+					<p>&copy; {new Date().getFullYear()} EventHub. Todos los derechos reservados.</p>
+				</div>
+			</div>
+		</footer>
+
+		<script define:vars={{ base }}>
+			// Menú móvil simple
+			const menuToggle = document.getElementById('menu-toggle');
+			if (menuToggle) {
+				menuToggle.addEventListener('click', () => {
+					const nav = document.querySelector('nav');
+					nav?.classList.toggle('hidden');
+					nav?.classList.toggle('flex');
+					nav?.classList.toggle('flex-col');
+					nav?.classList.toggle('absolute');
+					nav?.classList.toggle('top-16');
+					nav?.classList.toggle('right-4');
+					nav?.classList.toggle('bg-white');
+					nav?.classList.toggle('p-4');
+					nav?.classList.toggle('shadow-lg');
+					nav?.classList.toggle('rounded');
+					nav?.classList.toggle('z-50');
+				});
+			}
+		</script>
+	</body>
+</html>
+
+<style is:global>
+	/* Estilos básicos */
+	html, body {
+		font-family: 'Inter', sans-serif;
+		margin: 0;
+		padding: 0;
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+	}
+
+	main {
+		flex: 1;
+	}
+
+	a {
+		text-decoration: none;
+	}
+
+	/* Utilidades básicas */
+	.container {
+		width: 100%;
+		max-width: 1200px;
+		margin: 0 auto;
+	}
+
+	.text-center {
+		text-align: center;
+	}
+
+	/* Colores básicos */
+	.bg-blue-500 {
+		background-color: #3B82F6;
+	}
+
+	.text-blue-500 {
+		color: #3B82F6;
+	}
+
+	.bg-gray-800 {
+		background-color: #1F2937;
+	}
+
+	/* Flexbox */
+	.flex {
+		display: flex;
+	}
+
+	.flex-col {
+		flex-direction: column;
+	}
+
+	.items-center {
+		align-items: center;
+	}
+
+	.justify-between {
+		justify-content: space-between;
+	}
+
+	/* Utilities */
+	.gap-6 {
+		gap: 1.5rem;
+	}
+
+	.gap-8 {
+		gap: 2rem;
+	}
+
+	.space-y-2 > * + * {
+		margin-top: 0.5rem;
+	}
+
+	.py-4 {
+		padding-top: 1rem;
+		padding-bottom: 1rem;
+	}
+
+	.py-8 {
+		padding-top: 2rem;
+		padding-bottom: 2rem;
+	}
+
+	.px-4 {
+		padding-left: 1rem;
+		padding-right: 1rem;
+	}
+
+	.mt-8 {
+		margin-top: 2rem;
+	}
+
+	.pt-6 {
+		padding-top: 1.5rem;
+	}
+
+	.mb-4 {
+		margin-bottom: 1rem;
+	}
+
+	.mb-3 {
+		margin-bottom: 0.75rem;
+	}
+
+	.mt-auto {
+		margin-top: auto;
+	}
+
+	/* Typography */
+	.text-xl {
+		font-size: 1.25rem;
+	}
+
+	.text-lg {
+		font-size: 1.125rem;
+	}
+
+	.font-bold {
+		font-weight: 700;
+	}
+
+	.font-semibold {
+		font-weight: 600;
+	}
+
+	.font-medium {
+		font-weight: 500;
+	}
+
+	/* Colors */
+	.text-white {
+		color: white;
+	}
+
+	.text-gray-300 {
+		color: #D1D5DB;
+	}
+
+	.text-gray-400 {
+		color: #9CA3AF;
+	}
+
+	/* Responsive */
+	@media (min-width: 768px) {
+		.md\:flex {
+			display: flex;
+		}
+
+		.md\:flex-row {
+			flex-direction: row;
+		}
+
+		.md\:hidden {
+			display: none;
+		}
+
+		.md\:w-1\/2 {
+			width: 50%;
+		}
+	}
+
+	.hidden {
+		display: none;
+	}
+
+	/* Effects */
+	.shadow-sm {
+		box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+	}
+
+	.transition-colors {
+		transition-property: color, background-color, border-color, fill, stroke;
+		transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+		transition-duration: 150ms;
+	}
+</style>
