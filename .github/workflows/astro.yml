@@ -18,13 +18,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Install and Build
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: 'npm'
+          cache-dependency-path: packages/eventhub-showcase/package-lock.json
+
+      - name: Install dependencies and build
+        working-directory: packages/eventhub-showcase
         run: |
-          cd packages/eventhub-showcase
-          npm -v
-          node -v
+          echo "Instalando solo en directorio showcase"
+          cp package.json package.json.backup
+          sed -i 's/"name": "eventhub-showcase"/"name": "showcase"/g' package.json
           rm -f package-lock.json
-          npm install
+          npm install --no-package-lock --legacy-peer-deps
           npm run build
 
       - name: Deploy
