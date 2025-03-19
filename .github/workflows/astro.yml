@@ -26,9 +26,9 @@ jobs:
       - name: Install dependencies and build
         working-directory: packages/eventhub-showcase
         run: |
-          echo "Eliminando dependencias internas del monorepo"
+          echo "Eliminando dependencias internas del monorepo y configuración de workspaces"
           cp package.json package.json.backup
-          # Modificar package.json para eliminar dependencias internas
+          # Modificar package.json para eliminar dependencias internas y configuración de workspaces
           node -e "
             const fs = require('fs');
             const pkg = JSON.parse(fs.readFileSync('package.json'));
@@ -41,10 +41,12 @@ jobs:
                 }
               });
             }
+            // Eliminar configuración de workspaces
+            delete pkg.workspaces;
             fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
           "
           cat package.json
-          npm install
+          npm install --no-workspaces
           npm run build
 
       - name: Deploy
