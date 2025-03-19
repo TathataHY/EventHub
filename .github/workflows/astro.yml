@@ -27,13 +27,12 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          cd packages/eventhub-showcase
-          npm install
+          npm install -g yarn
+          yarn install
 
       - name: Build
         run: |
-          cd packages/eventhub-showcase
-          npm run build
+          yarn showcase:build
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@4.1.4
