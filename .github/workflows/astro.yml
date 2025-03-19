@@ -1,57 +1,38 @@
-name: Deploy Astro site to Pages
+name: Deploy to GitHub Pages
 
 on:
+  # Trigger the workflow every time you push to the `main` branch
   push:
-    branches: ["main"]
+    branches: [ main ]
+  # Allows you to run this workflow manually from the Actions tab on GitHub.
   workflow_dispatch:
 
+# Allow this job to clone the repo and create a page deployment
 permissions:
   contents: read
   pages: write
   id-token: write
 
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-
 jobs:
   build:
-    name: Build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Checkout your repository using git
+        uses: actions/checkout@v3
+      - name: Install, build, and upload your site
+        uses: withastro/action@v1
         with:
-          node-version: "18"
-          cache: npm
-          cache-dependency-path: packages/eventhub-showcase/package-lock.json
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v4
-      - name: Install dependencies
-        working-directory: packages/eventhub-showcase
-        run: npm ci
-      - name: Build with Astro
-        working-directory: packages/eventhub-showcase
-        run: npm run build
-      - name: Create .nojekyll file
-        working-directory: packages/eventhub-showcase
-        run: touch dist/.nojekyll
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: packages/eventhub-showcase/dist
+          path: packages/eventhub-showcase # La ubicación del proyecto Astro dentro del repositorio
+          node-version: 18 # Versión específica de Node
+          package-manager: npm # Gestor de paquetes
 
   deploy:
+    needs: build
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    needs: build
-    runs-on: ubuntu-latest
-    name: Deploy
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4 
+        uses: actions/deploy-pages@v1 
