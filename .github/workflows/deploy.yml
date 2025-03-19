@@ -33,6 +33,8 @@ jobs:
         uses: actions/configure-pages@v4
       - name: Install dependencies
         run: yarn install
+      - name: Build dependencies
+        run: yarn build:all
       - name: Build showcase
         run: yarn showcase:build
       - name: Upload artifact
