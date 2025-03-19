@@ -4,7 +4,7 @@ import tailwind from '@astrojs/tailwind';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://tu-usuario.github.io',
+  site: 'https://tatathahy.github.io',
   base: '/EventHub',
   integrations: [tailwind()]
 });
