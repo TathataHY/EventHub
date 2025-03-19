@@ -6,5 +6,10 @@ import tailwind from '@astrojs/tailwind';
 export default defineConfig({
   site: 'https://tatathahy.github.io',
   base: '/EventHub',
-  integrations: [tailwind()]
+  integrations: [tailwind()],
+  // Asegurar que tenemos la configuración correcta para GitHub Pages
+  outDir: './dist',
+  build: {
+    assets: 'assets'
+  }
 });
