@@ -21,28 +21,38 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/eventhub-showcase
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-          cache: 'npm'
-          cache-dependency-path: 'packages/eventhub-showcase/package-lock.json'
+          
       - name: Setup Pages
         uses: actions/configure-pages@v4
+        
+      - name: Copy showcase files to temp directory
+        run: |
+          mkdir -p /tmp/showcase
+          cp -r packages/eventhub-showcase/* /tmp/showcase/
+          cd /tmp/showcase
+          
       - name: Install dependencies
-        run: npm install --ignore-workspace-root-check
+        run: |
+          cd /tmp/showcase
+          npm install
+          
       - name: Build showcase
-        run: npm run build
+        run: |
+          cd /tmp/showcase
+          npm run build
+          
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: /tmp/showcase/dist
 
   deploy:
     environment:
