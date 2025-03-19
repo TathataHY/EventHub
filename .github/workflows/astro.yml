@@ -28,9 +28,13 @@ jobs:
       - name: Install Dependencies
         run: |
           npm install -g yarn
-          yarn install
+          yarn install --frozen-lockfile --network-timeout 300000
 
-      - name: Build
+      - name: Build Dependencies
+        run: |
+          yarn build:all
+
+      - name: Build Showcase
         run: |
           yarn showcase:build
 
