@@ -1,0 +1,233 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+// Obtener la base del config
+const { base = '' } = import.meta.env.BASE_URL ? { base: import.meta.env.BASE_URL } : {};
+---
+
+<Layout title="Sobre Nosotros - EventHub">
+	<!-- Header Section -->
+	<section class="bg-purple-50 py-16">
+		<div class="container mx-auto px-4 text-center">
+			<h1 class="text-4xl font-bold mb-4 text-gray-800">Sobre Nosotros</h1>
+			<p class="text-xl max-w-3xl mx-auto text-gray-600">
+				Conoce el equipo detrás de EventHub y nuestra misión de transformar la industria de eventos profesionales.
+			</p>
+		</div>
+	</section>
+
+	<!-- Story Section -->
+	<section class="py-16">
+		<div class="container mx-auto px-4">
+			<div class="flex flex-col md:flex-row items-center gap-12">
+				<div class="md:w-1/2">
+					<div class="relative">
+						<img 
+							src="https://images.unsplash.com/photo-1556761175-b413da4baf72?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80" 
+							alt="Equipo de EventHub en una reunión" 
+							class="rounded-lg shadow-xl"
+						/>
+						<div class="absolute -bottom-6 -right-6 bg-blue-500 text-white py-4 px-6 rounded-lg shadow-lg">
+							<p class="font-bold text-xl">Desde 2018</p>
+						</div>
+					</div>
+				</div>
+				<div class="md:w-1/2 mt-12 md:mt-0">
+					<h2 class="text-3xl font-bold mb-6 text-gray-800">Nuestra Historia</h2>
+					<p class="text-gray-600 mb-4">
+						EventHub nació en 2018 de la pasión de un grupo de profesionales que vieron la necesidad de modernizar y simplificar la gestión de eventos corporativos y profesionales.
+					</p>
+					<p class="text-gray-600 mb-4">
+						Lo que comenzó como una pequeña startup en Santiago, ahora se ha convertido en la plataforma líder en gestión de eventos en Latinoamérica, con presencia en 6 países y más de 2,000 eventos gestionados cada año.
+					</p>
+					<p class="text-gray-600">
+						Nuestra constante innovación y enfoque en crear experiencias excepcionales nos ha permitido crecer rápidamente y mantener relaciones de largo plazo con nuestros clientes.
+					</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Mission & Values Section -->
+	<section class="py-16 bg-gray-50">
+		<div class="container mx-auto px-4">
+			<h2 class="text-3xl font-bold mb-12 text-center text-gray-800">Nuestra Misión y Valores</h2>
+			
+			<div class="grid md:grid-cols-2 gap-8 mb-16">
+				<div class="bg-white p-8 rounded-lg shadow-md">
+					<h3 class="text-2xl font-bold mb-4 text-blue-600">Misión</h3>
+					<p class="text-gray-600">
+						Transformar la manera en que se organizan y experimentan los eventos profesionales, proporcionando tecnología innovadora que conecta personas, simplifica procesos y maximiza el impacto de cada evento.
+					</p>
+				</div>
+				<div class="bg-white p-8 rounded-lg shadow-md">
+					<h3 class="text-2xl font-bold mb-4 text-blue-600">Visión</h3>
+					<p class="text-gray-600">
+						Ser la plataforma de referencia global para la gestión de eventos profesionales, creando un ecosistema que potencie las conexiones humanas y el intercambio de conocimiento a través de experiencias memorables.
+					</p>
+				</div>
+			</div>
+			
+			<h3 class="text-2xl font-bold mb-8 text-center text-gray-800">Nuestros Valores</h3>
+			<div class="grid md:grid-cols-3 gap-6">
+				<div class="bg-white p-6 rounded-lg shadow-md text-center">
+					<div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-blue-500">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+						</svg>
+					</div>
+					<h4 class="text-xl font-semibold mb-2">Innovación</h4>
+					<p class="text-gray-600">
+						Nos comprometemos a estar a la vanguardia tecnológica para ofrecer soluciones que superan expectativas.
+					</p>
+				</div>
+				<div class="bg-white p-6 rounded-lg shadow-md text-center">
+					<div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-green-500">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+						</svg>
+					</div>
+					<h4 class="text-xl font-semibold mb-2">Confiabilidad</h4>
+					<p class="text-gray-600">
+						Construimos relaciones sólidas basadas en la transparencia, la seguridad y el cumplimiento de nuestras promesas.
+					</p>
+				</div>
+				<div class="bg-white p-6 rounded-lg shadow-md text-center">
+					<div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+						<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-purple-500">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+						</svg>
+					</div>
+					<h4 class="text-xl font-semibold mb-2">Colaboración</h4>
+					<p class="text-gray-600">
+						Creemos en el poder de conectar personas y fomentar relaciones significativas, tanto en nuestro equipo como para nuestros usuarios.
+					</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Team Section -->
+	<section class="py-16">
+		<div class="container mx-auto px-4">
+			<h2 class="text-3xl font-bold mb-12 text-center text-gray-800">Nuestro Equipo</h2>
+			
+			<div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+				<!-- Team Member 1 -->
+				<div class="text-center">
+					<div class="mb-4 relative mx-auto w-48 h-48 overflow-hidden rounded-full">
+						<img 
+							src="https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=774&q=80" 
+							alt="Carlos Mendoza" 
+							class="w-full h-full object-cover"
+						/>
+					</div>
+					<h3 class="text-xl font-semibold">Carlos Mendoza</h3>
+					<p class="text-blue-600 mb-2">CEO & Co-Fundador</p>
+					<p class="text-gray-600 text-sm">
+						Con más de 15 años en la industria de eventos y tecnología, Carlos lidera la visión estratégica de EventHub.
+					</p>
+				</div>
+				
+				<!-- Team Member 2 -->
+				<div class="text-center">
+					<div class="mb-4 relative mx-auto w-48 h-48 overflow-hidden rounded-full">
+						<img 
+							src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=776&q=80" 
+							alt="Laura Suárez" 
+							class="w-full h-full object-cover"
+						/>
+					</div>
+					<h3 class="text-xl font-semibold">Laura Suárez</h3>
+					<p class="text-blue-600 mb-2">CTO & Co-Fundadora</p>
+					<p class="text-gray-600 text-sm">
+						Ingeniera de software con experiencia en startups tecnológicas, Laura lidera el desarrollo de nuestra plataforma.
+					</p>
+				</div>
+				
+				<!-- Team Member 3 -->
+				<div class="text-center">
+					<div class="mb-4 relative mx-auto w-48 h-48 overflow-hidden rounded-full">
+						<img 
+							src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=774&q=80" 
+							alt="Martín Rodríguez" 
+							class="w-full h-full object-cover"
+						/>
+					</div>
+					<h3 class="text-xl font-semibold">Martín Rodríguez</h3>
+					<p class="text-blue-600 mb-2">Director de Operaciones</p>
+					<p class="text-gray-600 text-sm">
+						Con experiencia en empresas de eventos internacionales, Martín asegura la excelencia operativa en cada proyecto.
+					</p>
+				</div>
+				
+				<!-- Team Member 4 -->
+				<div class="text-center">
+					<div class="mb-4 relative mx-auto w-48 h-48 overflow-hidden rounded-full">
+						<img 
+							src="https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=761&q=80" 
+							alt="Ana Moreno" 
+							class="w-full h-full object-cover"
+						/>
+					</div>
+					<h3 class="text-xl font-semibold">Ana Moreno</h3>
+					<p class="text-blue-600 mb-2">Directora de Marketing</p>
+					<p class="text-gray-600 text-sm">
+						Especialista en marketing digital y experiencia de usuario, Ana lidera las estrategias de crecimiento y comunicación.
+					</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- CTA Section -->
+	<section class="py-16 bg-blue-500 text-white">
+		<div class="container mx-auto px-4 text-center">
+			<h2 class="text-3xl font-bold mb-6">¿Quieres formar parte de nuestro equipo?</h2>
+			<p class="text-xl mb-8 max-w-2xl mx-auto">
+				Siempre estamos buscando talento apasionado por la tecnología y los eventos. Conoce nuestras oportunidades de carrera.
+			</p>
+			<div class="flex flex-wrap justify-center gap-4">
+				<a href={`${base}/contacto`} class="px-8 py-3 bg-white text-blue-500 font-medium rounded-lg hover:bg-gray-100 transition-colors">
+					Contáctanos
+				</a>
+			</div>
+		</div>
+	</section>
+</Layout>
+
+<style>
+	.bg-purple-50 {
+		background-color: #faf5ff;
+	}
+	.text-blue-600 {
+		color: #2563eb;
+	}
+	.bg-blue-100 {
+		background-color: #dbeafe;
+	}
+	.bg-green-100 {
+		background-color: #d1fae5;
+	}
+	.text-green-500 {
+		color: #10b981;
+	}
+	.bg-purple-100 {
+		background-color: #ede9fe;
+	}
+	.text-purple-500 {
+		color: #8b5cf6;
+	}
+	.bg-gray-50 {
+		background-color: #f9fafb;
+	}
+	.shadow-md {
+		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+	}
+	.shadow-lg {
+		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+	}
+	.shadow-xl {
+		box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+	}
+</style> 
