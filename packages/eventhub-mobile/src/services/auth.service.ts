@@ -10,6 +10,14 @@ export interface User {
   createdAt: string;
 }
 
+// Interfaz para el perfil extendido del usuario
+export interface UserProfile extends User {
+  avatarUrl?: string;
+  nombre?: string;
+  eventosCreados?: any[];
+  eventosAsistidos?: any[];
+}
+
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -67,6 +75,41 @@ class AuthService {
   // Obtener el usuario actual
   async getCurrentUser(): Promise<User | null> {
     return await apiService.getCurrentUser();
+  }
+  
+  // Obtener el perfil completo del usuario
+  async getUserProfile(): Promise<UserProfile> {
+    try {
+      const user = await this.getCurrentUser();
+      
+      if (!user) {
+        throw new Error('No se encontró información del usuario');
+      }
+      
+      // Obtenemos datos adicionales del perfil del usuario
+      const profileData = await apiService.get(`/users/${user.id}/profile`);
+      
+      // Combinamos la información básica del usuario con los datos adicionales del perfil
+      return {
+        ...user,
+        nombre: user.name,
+        avatarUrl: user.profilePicture,
+        eventosCreados: profileData.eventsCreated || [],
+        eventosAsistidos: profileData.eventsAttending || []
+      };
+    } catch (error) {
+      console.error('Error al obtener perfil de usuario:', error);
+      
+      // Si hay un error en la API, devolvemos los datos básicos que tengamos
+      const user = await this.getCurrentUser();
+      return {
+        ...user,
+        nombre: user?.name,
+        avatarUrl: user?.profilePicture,
+        eventosCreados: [],
+        eventosAsistidos: []
+      };
+    }
   }
 
   // Actualizar perfil de usuario
