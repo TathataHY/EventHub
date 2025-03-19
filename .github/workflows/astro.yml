@@ -1,4 +1,4 @@
-name: Deploy Showcase to GitHub Pages
+name: Deploy Showcase
 
 on:
   # Trigger the workflow every time you push to the `main` branch
@@ -23,7 +23,6 @@ jobs:
           cd packages/eventhub-showcase
           npm -v
           node -v
-          npm cache clean --force
           rm -f package-lock.json
           npm install
           npm run build
