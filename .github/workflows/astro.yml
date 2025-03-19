@@ -22,17 +22,29 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 16
-          cache: 'npm'
-          cache-dependency-path: packages/eventhub-showcase/package-lock.json
 
       - name: Install dependencies and build
         working-directory: packages/eventhub-showcase
         run: |
-          echo "Instalando solo en directorio showcase"
+          echo "Eliminando dependencias internas del monorepo"
           cp package.json package.json.backup
-          sed -i 's/"name": "eventhub-showcase"/"name": "showcase"/g' package.json
-          rm -f package-lock.json
-          npm install --no-package-lock --legacy-peer-deps
+          # Modificar package.json para eliminar dependencias internas
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json'));
+            pkg.name = 'showcase';
+            // Eliminar dependencias internas
+            if (pkg.dependencies) {
+              Object.keys(pkg.dependencies).forEach(dep => {
+                if (dep.startsWith('eventhub-')) {
+                  delete pkg.dependencies[dep];
+                }
+              });
+            }
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+          "
+          cat package.json
+          npm install
           npm run build
 
       - name: Deploy
