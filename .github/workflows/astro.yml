@@ -18,13 +18,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout your repository using git
-        uses: actions/checkout@v3
-      - name: Install, build, and upload your site
-        uses: withastro/action@v1
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          path: packages/eventhub-showcase # La ubicación del proyecto Astro dentro del repositorio
-          node-version: 18 # Versión específica de Node
-          package-manager: npm # Gestor de paquetes
+          node-version: 18
+          cache: 'npm'
+      - name: Install dependencies
+        run: |
+          cd packages/eventhub-showcase
+          npm ci
+      - name: Build Astro
+        run: |
+          cd packages/eventhub-showcase
+          npm run build
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          path: packages/eventhub-showcase/dist
 
   deploy:
     needs: build
@@ -35,4 +46,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1 
+        uses: actions/deploy-pages@v2 
