@@ -21,6 +21,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/eventhub-showcase
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,19 +31,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-          cache: 'yarn'
+          cache: 'npm'
+          cache-dependency-path: 'packages/eventhub-showcase/package-lock.json'
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Install dependencies
-        run: yarn install
-      - name: Build dependencies
-        run: yarn build:all
+        run: npm install
       - name: Build showcase
-        run: yarn showcase:build
+        run: npm run build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: packages/eventhub-showcase/dist
+          path: dist
 
   deploy:
     environment:
