@@ -49,6 +49,11 @@ jobs:
           cd /tmp/showcase
           npm run build
           
+      - name: Create .nojekyll file
+        run: |
+          cd /tmp/showcase/dist
+          touch .nojekyll
+          
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
