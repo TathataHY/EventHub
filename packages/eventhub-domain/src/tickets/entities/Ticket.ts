@@ -1,11 +1,12 @@
-import { Entity } from '../../shared/entities/Entity';
-import { TicketStatus } from '../value-objects/TicketStatus';
+import { Entity } from '../../core/interfaces/Entity';
+import { TicketStatus, TicketStatusEnum } from '../value-objects/TicketStatus';
 import { TicketType } from '../value-objects/TicketType';
 import { TicketCreateException } from '../exceptions/TicketCreateException';
 import { TicketUpdateException } from '../exceptions/TicketUpdateException';
 import { Event } from '../../events/entities/Event';
 import { User } from '../../users/entities/User';
-import { Money } from '../../shared/value-objects/Money';
+import { Money } from '../../core/value-objects/Money';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Propiedades completas de un ticket
@@ -161,34 +162,48 @@ export class Ticket implements Entity<string> {
    * @throws {TicketCreateException} Si los datos son inválidos o violan reglas de negocio
    */
   public static create(props: TicketCreateProps): Ticket {
+    // Validación de nombre
     if (!props.name || props.name.trim().length === 0) {
-      throw new TicketCreateException('El nombre del ticket es requerido');
+      throw new TicketCreateException('El nombre del ticket es obligatorio');
     }
 
+    // Validación de descripción
     if (!props.description || props.description.trim().length === 0) {
-      throw new TicketCreateException('La descripción del ticket es requerida');
+      throw new TicketCreateException('La descripción del ticket es obligatoria');
     }
 
-    if (!props.price || props.price.value <= 0) {
-      throw new TicketCreateException('El precio del ticket debe ser mayor a 0');
+    // Validación de precio
+    if (!props.price) {
+      throw new TicketCreateException('El precio del ticket es obligatorio');
     }
 
-    if (!props.quantity || props.quantity <= 0) {
-      throw new TicketCreateException('La cantidad de tickets debe ser mayor a 0');
+    // El precio debe ser mayor que cero
+    if (props.price.value() <= 0) {
+      throw new TicketCreateException('El precio del ticket debe ser mayor a cero');
     }
 
+    // Validación de cantidad
+    if (props.quantity <= 0) {
+      throw new TicketCreateException('La cantidad de tickets debe ser mayor a cero');
+    }
+
+    // Validación de tipo de ticket
     if (!props.type) {
-      throw new TicketCreateException('El tipo de ticket es requerido');
+      throw new TicketCreateException('El tipo de ticket es obligatorio');
     }
 
+    // Validación de evento
     if (!props.event) {
-      throw new TicketCreateException('El evento es requerido');
+      throw new TicketCreateException('El evento es obligatorio');
     }
+
+    // Fecha actual para creación y actualización
+    const now = new Date();
 
     return new Ticket({
-      id: crypto.randomUUID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      id: props.id || uuidv4(), // Generar ID si no se proporciona
+      createdAt: now,
+      updatedAt: now,
       isActive: true,
       name: props.name.trim(),
       description: props.description.trim(),
@@ -196,8 +211,8 @@ export class Ticket implements Entity<string> {
       quantity: props.quantity,
       availableQuantity: props.quantity,
       type: props.type,
-      status: TicketStatus.AVAILABLE,
-      event: props.event,
+      status: TicketStatus.create(TicketStatusEnum.AVAILABLE), // Estado inicial siempre es AVAILABLE
+      event: props.event
     });
   }
 
@@ -229,45 +244,89 @@ export class Ticket implements Entity<string> {
    * @throws {TicketUpdateException} Si los datos son inválidos o violan reglas de negocio
    */
   update(props: TicketUpdateProps): Ticket {
+    if (this.isPurchased()) {
+      throw new TicketUpdateException(
+        'No se puede actualizar un ticket que ya ha sido comprado'
+      );
+    }
+
+    let updated = false;
+    let newProps: Partial<TicketProps> = {};
+ 
+    // Actualizar nombre si se proporciona
     if (props.name !== undefined) {
       if (props.name.trim().length === 0) {
         throw new TicketUpdateException('El nombre del ticket no puede estar vacío');
       }
-      this.name = props.name.trim();
+      if (props.name.trim() !== this.name) {
+        newProps.name = props.name.trim();
+        updated = true;
+      }
     }
 
+    // Actualizar descripción si se proporciona
     if (props.description !== undefined) {
       if (props.description.trim().length === 0) {
         throw new TicketUpdateException('La descripción del ticket no puede estar vacía');
       }
-      this.description = props.description.trim();
-    }
-
-    if (props.price !== undefined) {
-      if (props.price.value <= 0) {
-        throw new TicketUpdateException('El precio del ticket debe ser mayor a 0');
+      if (props.description.trim() !== this.description) {
+        newProps.description = props.description.trim();
+        updated = true;
       }
-      this.price = props.price;
     }
 
+    // Actualizar precio si se proporciona
+    if (props.price) {
+      if (props.price.value() <= 0) {
+        throw new TicketUpdateException('El precio debe ser mayor a cero');
+      }
+      if (!this.price.equals(props.price)) {
+        newProps.price = props.price;
+        updated = true;
+      }
+    }
+
+    // Actualizar cantidad si se proporciona
     if (props.quantity !== undefined) {
       if (props.quantity <= 0) {
-        throw new TicketUpdateException('La cantidad de tickets debe ser mayor a 0');
+        throw new TicketUpdateException('La cantidad de tickets debe ser mayor a cero');
       }
-      if (props.quantity < this.availableQuantity) {
-        throw new TicketUpdateException('No se puede reducir la cantidad por debajo de los tickets ya vendidos');
+      
+      // Calcular cuántos tickets se han vendido
+      const soldTickets = this.quantity - this.availableQuantity;
+      
+      // Verificar que la nueva cantidad no sea menor que los tickets vendidos
+      if (props.quantity < soldTickets) {
+        throw new TicketUpdateException(
+          'No se puede reducir la cantidad por debajo de los tickets ya vendidos'
+        );
       }
-      const difference = props.quantity - this.quantity;
-      this.quantity = props.quantity;
-      this.availableQuantity += difference;
+      
+      if (props.quantity !== this.quantity) {
+        // Calcular la diferencia para ajustar la cantidad disponible
+        const difference = props.quantity - this.quantity;
+        newProps.quantity = props.quantity;
+        newProps.availableQuantity = this.availableQuantity + difference;
+        updated = true;
+      }
     }
 
-    if (props.type !== undefined) {
-      this.type = props.type;
+    // Actualizar tipo si se proporciona
+    if (props.type && !this.type.equals(props.type)) {
+      newProps.type = props.type;
+      updated = true;
     }
 
-    this.updatedAt = new Date();
-    return this;
+    // Si no se actualizó nada, devolver la misma instancia
+    if (!updated) {
+      return this;
+    }
+
+    // Actualizar fecha de modificación
+    newProps.updatedAt = new Date();
+
+    // Crear una nueva instancia con las propiedades actualizadas
+    return this.copyWith(newProps);
   }
 
   /**
@@ -278,24 +337,29 @@ export class Ticket implements Entity<string> {
    * @throws {TicketUpdateException} Si el ticket no está disponible o hay otro problema
    */
   purchase(user: User): Ticket {
+    if (!user) {
+      throw new TicketUpdateException('Se requiere un usuario para comprar un ticket');
+    }
+
     if (!this.isActive) {
       throw new TicketUpdateException('No se puede comprar un ticket inactivo');
     }
 
-    if (this.availableQuantity <= 0) {
-      throw new TicketUpdateException('No hay tickets disponibles');
-    }
-
-    if (this.status !== TicketStatus.AVAILABLE) {
+    if (this.status.value() !== TicketStatusEnum.AVAILABLE) {
       throw new TicketUpdateException('El ticket no está disponible para compra');
     }
 
-    this.availableQuantity--;
-    this.purchasedBy = user;
-    this.purchasedAt = new Date();
-    this.status = TicketStatus.SOLD;
-    this.updatedAt = new Date();
-    return this;
+    if (this.availableQuantity <= 0) {
+      throw new TicketUpdateException('No hay tickets disponibles para compra');
+    }
+
+    return this.copyWith({
+      availableQuantity: this.availableQuantity - 1,
+      purchasedBy: user,
+      purchasedAt: new Date(),
+      status: TicketStatus.create(TicketStatusEnum.SOLD),
+      updatedAt: new Date()
+    });
   }
 
   /**
@@ -305,20 +369,17 @@ export class Ticket implements Entity<string> {
    * @throws {TicketUpdateException} Si el ticket no está en estado comprado
    */
   cancelPurchase(): Ticket {
-    if (!this.isActive) {
-      throw new TicketUpdateException('No se puede cancelar un ticket inactivo');
+    if (this.status.value() !== TicketStatusEnum.SOLD) {
+      throw new TicketUpdateException('El ticket no está vendido, no se puede cancelar');
     }
 
-    if (this.status !== TicketStatus.SOLD) {
-      throw new TicketUpdateException('Solo se pueden cancelar tickets vendidos');
-    }
-
-    this.availableQuantity++;
-    this.purchasedBy = undefined;
-    this.purchasedAt = undefined;
-    this.status = TicketStatus.AVAILABLE;
-    this.updatedAt = new Date();
-    return this;
+    return this.copyWith({
+      availableQuantity: this.availableQuantity + 1,
+      purchasedBy: undefined,
+      purchasedAt: undefined,
+      status: TicketStatus.create(TicketStatusEnum.AVAILABLE),
+      updatedAt: new Date()
+    });
   }
 
   /**
@@ -327,7 +388,7 @@ export class Ticket implements Entity<string> {
    * @returns true si el ticket está disponible
    */
   isAvailable(): boolean {
-    return this.status === TicketStatus.AVAILABLE;
+    return this.status.value() === TicketStatusEnum.AVAILABLE;
   }
 
   /**
@@ -336,7 +397,7 @@ export class Ticket implements Entity<string> {
    * @returns true si el ticket ha sido comprado
    */
   isPurchased(): boolean {
-    return this.status === TicketStatus.SOLD;
+    return this.status.value() === TicketStatusEnum.SOLD;
   }
 
   /**
@@ -345,7 +406,7 @@ export class Ticket implements Entity<string> {
    * @returns true si el ticket ha sido cancelado
    */
   isCancelled(): boolean {
-    return this.status === TicketStatus.CANCELLED;
+    return this.status.value() === TicketStatusEnum.CANCELLED;
   }
 
   /**
@@ -400,5 +461,47 @@ export class Ticket implements Entity<string> {
       purchasedBy: this.purchasedBy,
       purchasedAt: this.purchasedAt,
     };
+  }
+
+  /**
+   * Activa el ticket permitiendo que pueda ser vendido
+   * 
+   * @returns Nueva instancia con el ticket activado
+   */
+  activate(): Ticket {
+    if (this.isActive) {
+      return this;
+    }
+
+    return this.copyWith({
+      isActive: true,
+      updatedAt: new Date()
+    });
+  }
+
+  /**
+   * Desactiva el ticket impidiendo su venta
+   * 
+   * @returns Nueva instancia con el ticket desactivado
+   */
+  deactivate(): Ticket {
+    if (!this.isActive) {
+      return this;
+    }
+
+    return this.copyWith({
+      isActive: false,
+      updatedAt: new Date()
+    });
+  }
+
+  /**
+   * Cancela la compra del ticket, devolviéndolo al inventario disponible
+   * 
+   * @returns Nueva instancia con el ticket cancelado y disponible nuevamente
+   * @throws {TicketUpdateException} Si el ticket no está en estado comprado
+   */
+  cancel(): Ticket {
+    return this.cancelPurchase();
   }
 } 

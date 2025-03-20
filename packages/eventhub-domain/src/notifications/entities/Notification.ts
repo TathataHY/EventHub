@@ -46,6 +46,8 @@ export class Notification implements Entity<string> {
   readonly createdAt: Date;
   /** Fecha de última actualización */
   readonly updatedAt: Date;
+  /** Indica si la notificación está activa */
+  readonly isActive: boolean;
 
   /**
    * Constructor privado (patrón Factory)
@@ -69,6 +71,7 @@ export class Notification implements Entity<string> {
     this.data = props.data;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
+    this.isActive = props.isActive !== undefined ? props.isActive : true;
   }
 
   /**
@@ -119,7 +122,8 @@ export class Notification implements Entity<string> {
       relatedEntityType: props.relatedEntityType,
       data: props.data,
       createdAt: props.createdAt || new Date(),
-      updatedAt: props.updatedAt || new Date()
+      updatedAt: props.updatedAt || new Date(),
+      isActive: props.isActive !== undefined ? props.isActive : true
     });
   }
 
@@ -284,7 +288,8 @@ export class Notification implements Entity<string> {
       relatedEntityType: this.relatedEntityType,
       data: this.data,
       createdAt: this.createdAt,
-      updatedAt: this.updatedAt
+      updatedAt: this.updatedAt,
+      isActive: this.isActive
     };
   }
 }
@@ -327,6 +332,8 @@ export interface NotificationProps {
   createdAt: Date;
   /** Fecha de actualización */
   updatedAt: Date;
+  /** Indica si la notificación está activa */
+  isActive: boolean;
 }
 
 /**
@@ -367,4 +374,6 @@ export interface NotificationCreateProps {
   createdAt?: Date;
   /** Fecha de actualización (por defecto ahora) */
   updatedAt?: Date;
+  /** Indica si la notificación está activa */
+  isActive?: boolean;
 } 

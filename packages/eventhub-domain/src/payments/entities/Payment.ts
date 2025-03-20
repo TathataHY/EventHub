@@ -4,6 +4,8 @@ import { PaymentStatus, PaymentStatusEnum } from '../value-objects/PaymentStatus
 import { PaymentProvider, PaymentProviderEnum } from '../value-objects/PaymentProvider';
 import { PaymentCreateException } from '../exceptions/PaymentCreateException';
 import { PaymentUpdateException } from '../exceptions/PaymentUpdateException';
+import { Currency } from '../value-objects/Currency';
+import { PaymentMethod } from '../value-objects/PaymentMethod';
 
 /**
  * Entidad que representa un pago en el sistema
@@ -22,7 +24,7 @@ export class Payment implements Entity<string> {
   /** Monto del pago en la moneda especificada */
   readonly amount: number;
   /** Código de la moneda (USD, EUR, MXN, etc.) */
-  readonly currency: string;
+  readonly currency: Currency;
   /** Estado actual del pago (pendiente, completado, etc.) */
   readonly status: PaymentStatus;
   /** Proveedor de servicios de pago utilizado */
@@ -32,11 +34,17 @@ export class Payment implements Entity<string> {
   /** Descripción o concepto del pago */
   readonly description: string | null;
   /** Datos adicionales asociados al pago */
-  readonly metadata: Record<string, any> | null;
+  readonly metadata: Record<string, any>;
   /** Fecha de creación del pago */
   readonly createdAt: Date;
   /** Fecha de última actualización */
   readonly updatedAt: Date;
+  /** Indica si el pago está activo */
+  readonly isActive: boolean;
+  /** Fecha de pago */
+  readonly paymentDate: Date | null;
+  /** Método de pago utilizado */
+  readonly paymentMethod: PaymentMethod;
 
   /**
    * Constructor privado (patrón Factory)
@@ -52,9 +60,12 @@ export class Payment implements Entity<string> {
     this.provider = props.provider;
     this.providerPaymentId = props.providerPaymentId;
     this.description = props.description;
-    this.metadata = props.metadata;
+    this.metadata = props.metadata || {};
+    this.isActive = props.isActive !== undefined ? props.isActive : true;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
+    this.paymentDate = props.paymentDate;
+    this.paymentMethod = props.paymentMethod;
   }
 
   /**
@@ -134,7 +145,10 @@ export class Payment implements Entity<string> {
       description: props.description || null,
       metadata: props.metadata || null,
       createdAt: props.createdAt || now,
-      updatedAt: props.updatedAt || now
+      updatedAt: props.updatedAt || now,
+      paymentDate: props.paymentDate || null,
+      paymentMethod: props.paymentMethod || PaymentMethod.unknown(),
+      isActive: props.isActive !== undefined ? props.isActive : true
     });
   }
 
@@ -297,7 +311,10 @@ export class Payment implements Entity<string> {
       description: this.description,
       metadata: this.metadata,
       createdAt: this.createdAt,
-      updatedAt: this.updatedAt
+      updatedAt: this.updatedAt,
+      paymentDate: this.paymentDate,
+      paymentMethod: this.paymentMethod,
+      isActive: this.isActive
     };
   }
 }
@@ -315,7 +332,7 @@ export interface PaymentProps {
   /** Monto del pago */
   amount: number;
   /** Código de moneda */
-  currency: string;
+  currency: Currency;
   /** Estado del pago */
   status: PaymentStatus;
   /** Proveedor de pago */
@@ -325,11 +342,17 @@ export interface PaymentProps {
   /** Descripción o concepto */
   description: string | null;
   /** Datos adicionales */
-  metadata: Record<string, any> | null;
+  metadata: Record<string, any>;
   /** Fecha de creación */
   createdAt: Date;
   /** Fecha de última actualización */
   updatedAt: Date;
+  /** Fecha de pago */
+  paymentDate: Date | null;
+  /** Método de pago */
+  paymentMethod: PaymentMethod;
+  /** Indica si el pago está activo */
+  isActive: boolean;
 }
 
 /**
@@ -345,7 +368,7 @@ export interface PaymentCreateProps {
   /** Monto del pago */
   amount: number;
   /** Código de moneda */
-  currency: string;
+  currency: Currency;
   /** Estado inicial del pago (opcional) */
   status?: PaymentStatus | PaymentStatusEnum | string;
   /** Proveedor de servicios de pago */
@@ -360,4 +383,10 @@ export interface PaymentCreateProps {
   createdAt?: Date;
   /** Fecha de última actualización (opcional) */
   updatedAt?: Date;
+  /** Fecha de pago (opcional) */
+  paymentDate?: Date;
+  /** Método de pago (opcional) */
+  paymentMethod?: PaymentMethod;
+  /** Indica si el pago está activo (opcional) */
+  isActive?: boolean;
 } 

@@ -176,4 +176,17 @@ export class Location implements Entity<string> {
       updatedAt: this._updatedAt
     };
   }
+
+  /**
+   * Compara si dos entidades Location son iguales por su identidad
+   * @param entity Entidad a comparar
+   * @returns true si las entidades tienen el mismo ID
+   */
+  equals(entity: Entity<string>): boolean {
+    if (!(entity instanceof Location)) {
+      return false;
+    }
+    
+    return this.id === entity.id;
+  }
 } 

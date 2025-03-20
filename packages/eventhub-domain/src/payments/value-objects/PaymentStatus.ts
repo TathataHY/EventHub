@@ -70,6 +70,20 @@ export class PaymentStatus implements ValueObject<PaymentStatusEnum> {
   }
 
   /**
+   * Crea un nuevo estado de pago a partir de un valor de enum
+   * 
+   * @param status Valor del enum PaymentStatusEnum
+   * @returns Instancia validada de PaymentStatus
+   */
+  public static fromValue(status: PaymentStatusEnum | string): PaymentStatus {
+    if (typeof status === 'string') {
+      return this.create(status);
+    }
+    
+    return new PaymentStatus(status);
+  }
+
+  /**
    * Crea un estado de pago PENDING (pendiente)
    * 
    * Utilizado para indicar que un pago se ha iniciado pero aún

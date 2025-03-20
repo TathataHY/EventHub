@@ -11,15 +11,17 @@ import { NotificationPreferenceException } from '../exceptions/NotificationPrefe
 export class NotificationPreference implements Entity<string> {
   readonly id: string;
   readonly userId: string;
+  readonly channels: NotificationChannel[];
+  readonly preferences: Record<NotificationType, boolean>;
+  readonly isActive: boolean;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
   
   // Canales de notificación habilitados
   private readonly _channelPreferences: Map<NotificationChannel, ChannelPreference>;
   
   // Preferencias por tipo de notificación
   private readonly _typePreferences: Map<NotificationType, TypePreference>;
-
-  readonly createdAt: Date;
-  readonly updatedAt: Date;
 
   /**
    * Constructor privado de NotificationPreference
@@ -28,6 +30,9 @@ export class NotificationPreference implements Entity<string> {
   private constructor(props: NotificationPreferenceProps) {
     this.id = props.id;
     this.userId = props.userId;
+    this.channels = [...props.channels];
+    this.preferences = { ...props.preferences };
+    this.isActive = props.isActive !== undefined ? props.isActive : true;
     this._channelPreferences = props.channelPreferences;
     this._typePreferences = props.typePreferences;
     this.createdAt = props.createdAt;
@@ -95,11 +100,26 @@ export class NotificationPreference implements Entity<string> {
       typePreferences.set(type as NotificationType, preference);
     });
     
+    // Preparar los canales habilitados como arreglo
+    const enabledChannels = Object.entries(combinedChannels)
+      .filter(([_, pref]) => pref.enabled)
+      .map(([channel, _]) => channel as NotificationChannel);
+    
+    // Preparar las preferencias como registro
+    const preferences: Record<NotificationType, boolean> = {} as Record<NotificationType, boolean>;
+    typeEntries.forEach(type => {
+      const pref = combinedTypes[type];
+      preferences[type] = pref ? pref.enabled : true;
+    });
+    
     return new NotificationPreference({
       id,
       userId: props.userId,
       channelPreferences,
       typePreferences,
+      channels: enabledChannels,
+      preferences,
+      isActive: props.isActive !== undefined ? props.isActive : true,
       createdAt: props.createdAt || new Date(),
       updatedAt: props.updatedAt || new Date()
     });
@@ -300,6 +320,9 @@ export class NotificationPreference implements Entity<string> {
     return {
       id: this.id,
       userId: this.userId,
+      channels: this.channels,
+      preferences: this.preferences,
+      isActive: this.isActive,
       channelPreferences: this._channelPreferences,
       typePreferences: this._typePreferences,
       createdAt: this.createdAt,
@@ -330,6 +353,9 @@ export interface TypePreference {
 export interface NotificationPreferenceProps {
   id: string;
   userId: string;
+  channels: NotificationChannel[];
+  preferences: Record<NotificationType, boolean>;
+  isActive: boolean;
   channelPreferences: Map<NotificationChannel, ChannelPreference>;
   typePreferences: Map<NotificationType, TypePreference>;
   createdAt: Date;
@@ -342,8 +368,11 @@ export interface NotificationPreferenceProps {
 export interface NotificationPreferenceCreateProps {
   id?: string;
   userId: string;
+  channels?: NotificationChannel[];
+  preferences?: Record<NotificationType, boolean>;
   channelPreferences?: Record<string, ChannelPreference>;
   typePreferences?: Record<string, TypePreference>;
   createdAt?: Date;
   updatedAt?: Date;
+  isActive?: boolean;
 } 

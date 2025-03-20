@@ -14,9 +14,11 @@ export interface Repository<T, ID> {
 
   /**
    * Encuentra todas las entidades
-   * @returns Lista de entidades
+   * @param filters Filtros opcionales
+   * @param pagination Opciones de paginación opcional
+   * @returns Lista de entidades o resultado paginado
    */
-  findAll(): Promise<T[]>;
+  findAll(filters?: any, pagination?: any): Promise<T[] | any>;
 
   /**
    * Guarda una entidad (nueva o existente)

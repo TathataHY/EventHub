@@ -1,4 +1,5 @@
-import { Entity } from './Entity';
+import { Entity } from '../../core/interfaces/Entity';
+import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Enum para el rol de un miembro en un grupo
@@ -22,7 +23,7 @@ export enum GroupMemberStatus {
  * Interfaz para las propiedades del miembro de un grupo
  */
 export interface GroupMemberProps {
-  id?: string;
+  id: string;
   groupId: string;
   userId: string;
   role: GroupMemberRole;
@@ -30,22 +31,56 @@ export interface GroupMemberProps {
   invitedById?: string;
   joinedAt?: Date;
   metadata?: Record<string, any>;
-  createdAt?: Date;
-  updatedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  isActive: boolean;
 }
 
 /**
  * Entidad de miembro de grupo
  */
-export class GroupMember extends Entity<GroupMemberProps> {
+export class GroupMember implements Entity<string> {
+  /** Identificador único */
+  readonly id: string;
+  /** ID del grupo */
+  readonly groupId: string;
+  /** ID del usuario */
+  readonly userId: string;
+  /** Rol en el grupo */
+  private _role: GroupMemberRole;
+  /** Estado en el grupo */
+  private _status: GroupMemberStatus;
+  /** ID de quien envió la invitación */
+  readonly invitedById?: string;
+  /** Fecha de unión al grupo */
+  private _joinedAt?: Date;
+  /** Metadatos adicionales */
+  private _metadata?: Record<string, any>;
+  /** Fecha de creación */
+  readonly createdAt: Date;
+  /** Fecha de última actualización */
+  private _updatedAt: Date;
+  /** Indica si está activo */
+  readonly isActive: boolean;
+
   private constructor(props: GroupMemberProps) {
-    super(props);
+    this.id = props.id;
+    this.groupId = props.groupId;
+    this.userId = props.userId;
+    this._role = props.role;
+    this._status = props.status;
+    this.invitedById = props.invitedById;
+    this._joinedAt = props.joinedAt;
+    this._metadata = props.metadata;
+    this.createdAt = props.createdAt;
+    this._updatedAt = props.updatedAt;
+    this.isActive = props.status !== GroupMemberStatus.INACTIVE;
   }
 
   /**
    * Crea una nueva instancia de miembro de grupo
    */
-  public static create(props: GroupMemberProps): GroupMember {
+  public static create(props: Omit<GroupMemberProps, 'id' | 'createdAt' | 'updatedAt' | 'isActive'>): GroupMember {
     if (!props.groupId) {
       throw new Error('El miembro debe estar asociado a un grupo');
     }
@@ -54,124 +89,122 @@ export class GroupMember extends Entity<GroupMemberProps> {
       throw new Error('El miembro debe ser un usuario');
     }
 
+    const now = new Date();
+    
     return new GroupMember({
-      ...props,
+      id: uuidv4(),
+      groupId: props.groupId,
+      userId: props.userId,
       role: props.role || GroupMemberRole.MEMBER,
       status: props.status || GroupMemberStatus.ACTIVE,
-      joinedAt: props.status === GroupMemberStatus.ACTIVE ? (props.joinedAt || new Date()) : undefined,
-      createdAt: props.createdAt || new Date(),
-      updatedAt: props.updatedAt || new Date(),
+      invitedById: props.invitedById,
+      joinedAt: props.status === GroupMemberStatus.ACTIVE ? (props.joinedAt || now) : undefined,
+      metadata: props.metadata,
+      createdAt: now,
+      updatedAt: now,
+      isActive: props.status !== GroupMemberStatus.INACTIVE,
     });
   }
 
   // Getters
-  get id(): string | undefined {
-    return this.props.id;
-  }
-
-  get groupId(): string {
-    return this.props.groupId;
-  }
-
-  get userId(): string {
-    return this.props.userId;
-  }
-
   get role(): GroupMemberRole {
-    return this.props.role;
+    return this._role;
   }
 
   get status(): GroupMemberStatus {
-    return this.props.status;
-  }
-
-  get invitedById(): string | undefined {
-    return this.props.invitedById;
+    return this._status;
   }
 
   get joinedAt(): Date | undefined {
-    return this.props.joinedAt;
+    return this._joinedAt;
   }
 
   get metadata(): Record<string, any> | undefined {
-    return this.props.metadata;
-  }
-
-  get createdAt(): Date {
-    return this.props.createdAt as Date;
+    return this._metadata;
   }
 
   get updatedAt(): Date {
-    return this.props.updatedAt as Date;
+    return this._updatedAt;
   }
-
-  // Métodos de negocio
 
   /**
    * Cambia el rol del miembro
    */
   changeRole(newRole: GroupMemberRole): void {
-    this.props.role = newRole;
-    this.props.updatedAt = new Date();
+    this._role = newRole;
+    this._updatedAt = new Date();
   }
 
   /**
    * Acepta una invitación pendiente
    */
   acceptInvitation(): void {
-    if (this.props.status !== GroupMemberStatus.PENDING) {
+    if (this._status !== GroupMemberStatus.PENDING) {
       throw new Error('Solo se pueden aceptar invitaciones pendientes');
     }
 
-    this.props.status = GroupMemberStatus.ACTIVE;
-    this.props.joinedAt = new Date();
-    this.props.updatedAt = new Date();
+    this._status = GroupMemberStatus.ACTIVE;
+    this._joinedAt = new Date();
+    this._updatedAt = new Date();
   }
 
   /**
    * Rechaza una invitación pendiente
    */
   rejectInvitation(): void {
-    if (this.props.status !== GroupMemberStatus.PENDING) {
+    if (this._status !== GroupMemberStatus.PENDING) {
       throw new Error('Solo se pueden rechazar invitaciones pendientes');
     }
 
-    this.props.status = GroupMemberStatus.REJECTED;
-    this.props.updatedAt = new Date();
+    this._status = GroupMemberStatus.REJECTED;
+    this._updatedAt = new Date();
   }
 
   /**
    * Desactiva al miembro
    */
   deactivate(): void {
-    if (this.props.status !== GroupMemberStatus.ACTIVE) {
+    if (this._status !== GroupMemberStatus.ACTIVE) {
       throw new Error('Solo se pueden desactivar miembros activos');
     }
 
-    this.props.status = GroupMemberStatus.INACTIVE;
-    this.props.updatedAt = new Date();
+    this._status = GroupMemberStatus.INACTIVE;
+    this._updatedAt = new Date();
   }
 
   /**
    * Reactiva al miembro
    */
   reactivate(): void {
-    if (this.props.status !== GroupMemberStatus.INACTIVE) {
+    if (this._status !== GroupMemberStatus.INACTIVE) {
       throw new Error('Solo se pueden reactivar miembros inactivos');
     }
 
-    this.props.status = GroupMemberStatus.ACTIVE;
-    this.props.updatedAt = new Date();
+    this._status = GroupMemberStatus.ACTIVE;
+    this._updatedAt = new Date();
   }
 
   /**
    * Actualiza los metadatos del miembro
    */
   updateMetadata(metadata: Record<string, any>): void {
-    this.props.metadata = {
-      ...this.props.metadata,
+    this._metadata = {
+      ...this._metadata,
       ...metadata
     };
-    this.props.updatedAt = new Date();
+    this._updatedAt = new Date();
+  }
+  
+  /**
+   * Compara si dos entidades GroupMember son iguales por su identidad
+   * @param entity Entidad a comparar
+   * @returns true si las entidades tienen el mismo ID
+   */
+  equals(entity: Entity<string>): boolean {
+    if (!(entity instanceof GroupMember)) {
+      return false;
+    }
+    
+    return this.id === entity.id;
   }
 } 

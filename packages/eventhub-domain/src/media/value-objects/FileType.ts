@@ -8,11 +8,61 @@ export enum FileTypeEnum {
   OTHER = 'other'
 }
 
+/**
+ * Representa el tipo de archivo
+ */
 export class FileType implements ValueObject<FileTypeEnum> {
   private readonly _value: FileTypeEnum;
 
   private constructor(value: FileTypeEnum) {
     this._value = value;
+  }
+
+  /**
+   * Crea un tipo de archivo a partir del nombre de archivo
+   */
+  public static fromFilename(filename: string): FileType {
+    const extension = filename.split('.').pop()?.toLowerCase();
+    
+    if (!extension) {
+      return FileType.unknown();
+    }
+    
+    if (FileType.isImageExtension(extension)) {
+      return new FileType(FileTypeEnum.IMAGE);
+    }
+    
+    if (FileType.isVideoExtension(extension)) {
+      return new FileType(FileTypeEnum.VIDEO);
+    }
+    
+    if (FileType.isAudioExtension(extension)) {
+      return new FileType(FileTypeEnum.AUDIO);
+    }
+    
+    if (FileType.isDocumentExtension(extension)) {
+      return new FileType(FileTypeEnum.DOCUMENT);
+    }
+    
+    return FileType.unknown();
+  }
+
+  /**
+   * Devuelve el valor del tipo de archivo
+   */
+  public value(): FileTypeEnum {
+    return this._value;
+  }
+
+  /**
+   * Compara con otro ValueObject
+   */
+  public equals(vo: ValueObject<FileTypeEnum>): boolean {
+    if (vo === null || vo === undefined) {
+      return false;
+    }
+    
+    return this.value() === vo.value();
   }
 
   public static create(value: string): FileType {
@@ -56,10 +106,6 @@ export class FileType implements ValueObject<FileTypeEnum> {
     return new FileType(FileTypeEnum.OTHER);
   }
 
-  get value(): FileTypeEnum {
-    return this._value;
-  }
-
   public isImage(): boolean {
     return this._value === FileTypeEnum.IMAGE;
   }
@@ -80,15 +126,31 @@ export class FileType implements ValueObject<FileTypeEnum> {
     return this._value === FileTypeEnum.OTHER;
   }
 
-  public equals(valueObject: FileType): boolean {
-    if (!(valueObject instanceof FileType)) {
-      return false;
-    }
-    
-    return this._value === valueObject._value;
-  }
-
   public getValue(): FileTypeEnum {
     return this._value;
+  }
+
+  private static isImageExtension(extension: string): boolean {
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff'];
+    return imageExtensions.includes(extension);
+  }
+
+  private static isVideoExtension(extension: string): boolean {
+    const videoExtensions = ['mp4', 'avi', 'mkv', 'mov', 'wmv'];
+    return videoExtensions.includes(extension);
+  }
+
+  private static isAudioExtension(extension: string): boolean {
+    const audioExtensions = ['mp3', 'wav', 'ogg', 'flac'];
+    return audioExtensions.includes(extension);
+  }
+
+  private static isDocumentExtension(extension: string): boolean {
+    const documentExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'];
+    return documentExtensions.includes(extension);
+  }
+
+  private static unknown(): FileType {
+    return new FileType(FileTypeEnum.OTHER);
   }
 } 

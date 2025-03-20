@@ -115,4 +115,3 @@ export class Role implements ValueObject<RoleEnum> {
     return this._value;
   }
 } 
-} 

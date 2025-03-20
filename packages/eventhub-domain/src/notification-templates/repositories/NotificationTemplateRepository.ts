@@ -1,7 +1,7 @@
 import { Repository } from '../../core/interfaces/Repository';
 import { NotificationTemplate } from '../value-objects/NotificationTemplate';
 import { NotificationChannel } from '../value-objects/NotificationChannel';
-import { NotificationType } from '../../../notifications/value-objects/NotificationType';
+import { NotificationType } from '../../notifications/value-objects/NotificationType';
 
 /**
  * Opciones para filtrar plantillas de notificación

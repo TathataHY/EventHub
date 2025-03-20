@@ -1,4 +1,4 @@
-import { Repository } from '../../core/repositories/Repository';
+import { Repository } from '../../core/interfaces/Repository';
 import { Review } from '../entities/Review';
 
 /**

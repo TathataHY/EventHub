@@ -47,6 +47,8 @@ export interface EventProps {
  * Contiene solo las propiedades necesarias para crear un evento nuevo
  */
 export interface EventCreateProps {
+  /** Identificador único opcional para el evento (se genera automáticamente si no se proporciona) */
+  id?: string;
   /** Título o nombre del evento */
   title: string;
   /** Descripción detallada del evento */
@@ -61,8 +63,18 @@ export interface EventCreateProps {
   organizerId: string;
   /** Capacidad máxima de asistentes (opcional) */
   capacity?: number;
+  /** Lista de asistentes al evento (opcional) */
+  attendees?: string[];
+  /** Estado del evento (opcional) */
+  status?: EventStatus | EventStatusEnum;
   /** Etiquetas para categorizar el evento (opcional) */
   tags?: string[] | EventTags;
+  /** Indica si el evento está activo (opcional) */
+  isActive?: boolean;
+  /** Fecha de creación (opcional) */
+  createdAt?: Date;
+  /** Fecha de última actualización (opcional) */
+  updatedAt?: Date;
 }
 
 /**

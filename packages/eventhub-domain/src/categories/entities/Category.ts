@@ -281,4 +281,17 @@ export class Category implements Entity<string> {
       updatedAt: this._updatedAt
     };
   }
+
+  /**
+   * Compara si dos entidades Category son iguales por su identidad
+   * @param entity Entidad a comparar
+   * @returns true si las entidades tienen el mismo ID
+   */
+  equals(entity: Entity<string>): boolean {
+    if (!(entity instanceof Category)) {
+      return false;
+    }
+    
+    return this.id === entity.id;
+  }
 } 
