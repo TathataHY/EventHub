@@ -68,15 +68,72 @@ export interface PaymentRepository extends Repository<Payment, string> {
 
   /**
    * Obtiene la suma total de pagos completados en un período
-   * @param startDate Fecha de inicio
-   * @param endDate Fecha de fin
+   * @param startDate Fecha de inicio (opcional)
+   * @param endDate Fecha de fin (opcional)
    * @returns Suma total
    */
-  getTotalRevenue(startDate: Date, endDate: Date): Promise<number>;
+  getTotalRevenue(startDate?: Date, endDate?: Date): Promise<number>;
 
   /**
    * Obtiene un resumen de pagos agrupados por estado
    * @returns Mapa con conteo por estado
    */
   getPaymentsSummaryByStatus(): Promise<Record<string, number>>;
+
+  /**
+   * Obtiene los ingresos por evento
+   * @param eventId ID del evento
+   * @returns Total de ingresos del evento
+   */
+  getRevenueByEventId(eventId: string): Promise<number>;
+  
+  /**
+   * Obtiene los ingresos por organizador
+   * @param organizerId ID del organizador
+   * @param since Fecha desde la que contar (opcional)
+   * @returns Total de ingresos del organizador
+   */
+  getRevenueByOrganizerId(organizerId: string, since?: Date): Promise<number>;
+  
+  /**
+   * Obtiene los ingresos por día
+   * @param since Fecha desde la que contar (opcional)
+   * @returns Ingresos por día
+   */
+  getRevenuePerDay(since?: Date): Promise<{ date: string; amount: number }[]>;
+  
+  /**
+   * Obtiene los ingresos por período
+   * @param organizerId ID del organizador
+   * @param groupBy Agrupación por día, semana o mes
+   * @param since Fecha desde la que contar (opcional)
+   * @returns Ingresos por período
+   */
+  getRevenueByPeriod(
+    organizerId: string,
+    groupBy: 'day' | 'week' | 'month',
+    since?: Date
+  ): Promise<{ period: string; amount: number }[]>;
+  
+  /**
+   * Obtiene los mejores organizadores por ingresos
+   * @param limit Número de organizadores a obtener
+   * @param since Fecha desde la que contar (opcional)
+   * @returns Lista de mejores organizadores
+   */
+  getTopOrganizers(
+    limit: number,
+    since?: Date
+  ): Promise<{ organizerId: string; organizerName: string; eventCount: number; revenue: number }[]>;
+  
+  /**
+   * Obtiene los mejores eventos por ingresos
+   * @param limit Número de eventos a obtener
+   * @param since Fecha desde la que contar (opcional)
+   * @returns Lista de mejores eventos
+   */
+  getTopEvents(
+    limit: number,
+    since?: Date
+  ): Promise<{ eventId: string; eventTitle: string; organizerId: string; organizerName: string; ticketsSold: number; revenue: number }[]>;
 } 

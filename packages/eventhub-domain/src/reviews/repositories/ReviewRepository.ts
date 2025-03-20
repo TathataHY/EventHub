@@ -85,6 +85,19 @@ export interface ReviewDistribution {
 }
 
 /**
+ * Distribución numérica simple de calificaciones
+ * Representa un conteo simple de calificaciones por valor
+ */
+export interface RatingDistribution {
+  '1': number;
+  '2': number;
+  '3': number;
+  '4': number;
+  '5': number;
+  total: number;
+}
+
+/**
  * Interfaz del repositorio de reseñas
  * 
  * Define todos los métodos necesarios para gestionar la persistencia
@@ -230,4 +243,38 @@ export interface ReviewRepository extends Repository<string, Review> {
    * });
    */
   findPendingModeration(options: PaginationOptions): Promise<{ reviews: Review[]; total: number }>;
+  
+  /**
+   * Busca una reseña específica por evento y usuario
+   * 
+   * Útil para obtener la reseña que un usuario en particular
+   * ha realizado sobre un evento específico.
+   * 
+   * @param eventId ID del evento
+   * @param userId ID del usuario
+   * @returns La reseña específica o null si no existe
+   */
+  findByEventAndUser(eventId: string, userId: string): Promise<Review | null>;
+  
+  /**
+   * Obtiene la puntuación promedio para un evento
+   * 
+   * Calcula la media de todas las puntuaciones de las reseñas
+   * para un evento específico.
+   * 
+   * @param eventId ID del evento
+   * @returns Puntuación media (de 1 a 5)
+   */
+  getAverageRating(eventId: string): Promise<number>;
+  
+  /**
+   * Obtiene la distribución de puntuaciones para un evento
+   * 
+   * Proporciona un conteo de cuántas reseñas hay para cada
+   * valor posible de puntuación (1-5).
+   * 
+   * @param eventId ID del evento
+   * @returns Distribución de puntuaciones
+   */
+  getRatingDistribution(eventId: string): Promise<RatingDistribution>;
 } 

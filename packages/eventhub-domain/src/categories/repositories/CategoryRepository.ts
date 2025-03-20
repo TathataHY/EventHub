@@ -92,4 +92,17 @@ export interface CategoryRepository extends Repository<string, Category> {
    * @returns Lista de categorías que coinciden
    */
   searchByText(query: string): Promise<Category[]>;
+  
+  /**
+   * Obtiene el árbol completo de categorías
+   * @returns Lista de categorías organizadas en árbol
+   */
+  getCategoryTree(): Promise<Category[]>;
+
+  /**
+   * Obtiene las categorías más populares basadas en la cantidad de eventos
+   * @param limit Límite de categorías a retornar
+   * @returns Lista de categorías con su conteo de eventos
+   */
+  getPopularCategories(limit: number): Promise<{ categoryId: string; name: string; eventCount: number }[]>;
 } 

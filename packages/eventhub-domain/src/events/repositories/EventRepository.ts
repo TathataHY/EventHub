@@ -193,4 +193,37 @@ export interface EventRepository extends Repository<Event, string> {
    * @returns Lista completa de eventos a los que asiste el usuario
    */
   findByAttendeeId(userId: string): Promise<Event[]>;
+
+  /**
+   * Cuenta eventos publicados
+   * @returns Total de eventos publicados
+   */
+  countPublishedEvents(): Promise<number>;
+
+  /**
+   * Cuenta eventos próximos
+   * @returns Total de eventos próximos
+   */
+  countUpcomingEvents(): Promise<number>;
+
+  /**
+   * Cuenta eventos cancelados
+   * @returns Total de eventos cancelados
+   */
+  countCancelledEvents(): Promise<number>;
+
+  /**
+   * Obtiene estadísticas de eventos por día
+   * @param since Fecha desde la que obtener estadísticas
+   * @returns Estadísticas de eventos por día
+   */
+  getEventsPerDay(since?: Date): Promise<{ date: string; count: number }[]>;
+
+  /**
+   * Obtiene los eventos más populares
+   * @param limit Número de eventos a obtener
+   * @param since Fecha desde la que contar
+   * @returns Lista de eventos más populares
+   */
+  getMostPopularEvents(limit: number, since?: Date): Promise<Event[]>;
 } 

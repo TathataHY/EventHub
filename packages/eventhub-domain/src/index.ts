@@ -31,6 +31,8 @@ export * from './events';         // Gestión de eventos
 export * from './notifications';  // Sistema de notificaciones
 export * from './groups';         // Gestión de grupos de usuarios
 export * from './payments';       // Pagos y transacciones
+export * from './organizers';     // Gestión de organizadores de eventos
+export * from './statistics';     // Estadísticas y métricas del sistema
 
 // Módulo de asistencias a eventos
 /**

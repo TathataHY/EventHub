@@ -163,4 +163,54 @@ export interface EventAttendeeRepository extends Repository<EventAttendee, strin
    * @returns Asistencia actualizada o null si no existe
    */
   confirmFromWaitlist(id: string): Promise<EventAttendee | null>;
+
+  /**
+   * Verifica si un usuario está registrado en un evento
+   * @param eventId ID del evento
+   * @param userId ID del usuario
+   * @returns true si el usuario está registrado, false en caso contrario
+   */
+  isRegistered(eventId: string, userId: string): Promise<boolean>;
+  
+  /**
+   * Obtiene el estado de asistencia de un usuario en un evento
+   * @param eventId ID del evento
+   * @param userId ID del usuario
+   * @returns Estado de la asistencia o null si no existe
+   */
+  getAttendanceStatus(eventId: string, userId: string): Promise<AttendanceStatus | null>;
+  
+  /**
+   * Registra el check-in de un usuario en un evento
+   * @param eventId ID del evento
+   * @param userId ID del usuario
+   */
+  checkInByEventAndUser(eventId: string, userId: string): Promise<void>;
+  
+  /**
+   * Registra el check-out de un usuario en un evento
+   * @param eventId ID del evento
+   * @param userId ID del usuario
+   */
+  checkOut(eventId: string, userId: string): Promise<void>;
+  
+  /**
+   * Cancela la asistencia de un usuario a un evento
+   * @param eventId ID del evento
+   * @param userId ID del usuario
+   */
+  cancelAttendance(eventId: string, userId: string): Promise<void>;
+  
+  /**
+   * Busca asistencias con paginación
+   * @param page Número de página
+   * @param limit Elementos por página
+   * @param eventId ID del evento (opcional)
+   * @param userId ID del usuario (opcional)
+   * @returns Lista de asistencias y total
+   */
+  findWithPagination(page: number, limit: number, eventId?: string, userId?: string): Promise<{
+    attendances: EventAttendee[];
+    total: number;
+  }>;
 } 

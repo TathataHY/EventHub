@@ -46,6 +46,8 @@ export interface GroupProps {
   updatedAt: Date;
   /** Indica si el grupo está activo en el sistema */
   isActive: boolean;
+  /** Lista de miembros del grupo */
+  members?: any[];
 }
 
 /**

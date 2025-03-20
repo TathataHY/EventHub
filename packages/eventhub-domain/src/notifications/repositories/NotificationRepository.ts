@@ -8,6 +8,7 @@ export interface FindNotificationsOptions {
   page?: number;
   limit?: number;
   read?: boolean;
+  type?: string;
 }
 
 /**
@@ -58,4 +59,51 @@ export interface NotificationRepository extends Repository<Notification, string>
    * @param userId ID del usuario
    */
   markAllAsRead(userId: string): Promise<void>;
+  
+  /**
+   * Busca notificaciones por ID de usuario y tipo
+   * @param userId ID del usuario
+   * @param type Tipo de notificación
+   * @returns Lista de notificaciones
+   */
+  findByUserIdAndType(userId: string, type: string): Promise<Notification[]>;
+
+  /**
+   * Busca notificaciones no leídas por ID de usuario
+   * @param userId ID del usuario
+   * @returns Lista de notificaciones no leídas
+   */
+  findUnreadByUserId(userId: string): Promise<Notification[]>;
+
+  /**
+   * Obtiene el conteo de notificaciones no leídas para un usuario
+   * @param userId ID del usuario
+   * @returns Número de notificaciones no leídas
+   */
+  countUnreadByUserId(userId: string): Promise<number>;
+
+  /**
+   * Marca todas las notificaciones de un usuario como leídas
+   * @param userId ID del usuario
+   */
+  markAllAsReadByUserId(userId: string): Promise<void>;
+
+  /**
+   * Marca una notificación como leída o no leída
+   * @param id ID de la notificación
+   * @param read Estado de lectura (true para leída, false para no leída)
+   */
+  markAsRead(id: string, read: boolean): Promise<void>;
+
+  /**
+   * Elimina todas las notificaciones leídas de un usuario
+   * @param userId ID del usuario
+   */
+  deleteReadByUserId(userId: string): Promise<void>;
+
+  /**
+   * Elimina todas las notificaciones de un usuario
+   * @param userId ID del usuario
+   */
+  deleteAllByUserId(userId: string): Promise<void>;
 } 

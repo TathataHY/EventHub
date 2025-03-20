@@ -1,6 +1,7 @@
 import { Repository } from '../../core/interfaces/Repository';
 import { Group } from '../entities/Group';
 import { GroupStatus, GroupStatusEnum } from '../value-objects/GroupStatus';
+import { GroupMemberRole } from '../value-objects/GroupMemberRole';
 
 /**
  * Opciones para filtrar grupos
@@ -64,4 +65,83 @@ export interface GroupRepository extends Repository<Group, string> {
    * @returns Número de grupos
    */
   countByEventId(eventId: string): Promise<number>;
+
+  /**
+   * Busca grupos por ID del organizador
+   * @param organizerId ID del organizador
+   * @returns Lista de grupos
+   */
+  findByOrganizerId(organizerId: string): Promise<Group[]>;
+
+  /**
+   * Busca grupos por ID de miembro
+   * @param userId ID del usuario miembro
+   * @returns Lista de grupos
+   */
+  findByMemberId(userId: string): Promise<Group[]>;
+
+  /**
+   * Busca grupos por nombre exacto
+   * @param name Nombre del grupo
+   * @returns Lista de grupos
+   */
+  findByName(name: string): Promise<Group[]>;
+
+  /**
+   * Verifica si un usuario es miembro de un grupo
+   * @param groupId ID del grupo
+   * @param userId ID del usuario
+   * @returns true si es miembro, false en caso contrario
+   */
+  isMember(groupId: string, userId: string): Promise<boolean>;
+
+  /**
+   * Obtiene el rol de un miembro en un grupo
+   * @param groupId ID del grupo
+   * @param userId ID del usuario
+   * @returns Rol del miembro o null si no es miembro
+   */
+  getMemberRole(groupId: string, userId: string): Promise<GroupMemberRole | null>;
+
+  /**
+   * Agrega miembros a un grupo
+   * @param groupId ID del grupo
+   * @param userIds IDs de los usuarios a agregar
+   * @param role Rol a asignar a los nuevos miembros
+   */
+  addMembers(groupId: string, userIds: string[], role: GroupMemberRole): Promise<void>;
+
+  /**
+   * Elimina miembros de un grupo
+   * @param groupId ID del grupo
+   * @param userIds IDs de los usuarios a eliminar
+   */
+  removeMembers(groupId: string, userIds: string[]): Promise<void>;
+
+  /**
+   * Actualiza el rol de un miembro en un grupo
+   * @param groupId ID del grupo
+   * @param userId ID del usuario
+   * @param role Nuevo rol a asignar
+   */
+  updateMemberRole(groupId: string, userId: string, role: GroupMemberRole): Promise<void>;
+
+  /**
+   * Obtiene los miembros de un grupo
+   * @param groupId ID del grupo
+   * @returns Lista de miembros del grupo
+   */
+  getMembers(groupId: string): Promise<any[]>;
+
+  /**
+   * Busca grupos con paginación
+   * @param page Número de página
+   * @param limit Elementos por página
+   * @param search Texto de búsqueda opcional
+   * @returns Resultado paginado
+   */
+  findWithPagination(page: number, limit: number, search?: string): Promise<{
+    groups: Group[];
+    total: number;
+  }>;
 } 

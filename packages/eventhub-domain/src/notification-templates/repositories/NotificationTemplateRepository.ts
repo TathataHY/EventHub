@@ -115,4 +115,37 @@ export interface NotificationTemplateRepository extends Repository<NotificationT
    * @returns Lista de plantillas que coinciden con el término
    */
   searchByNameOrDescription(query: string): Promise<NotificationTemplate[]>;
+
+  /**
+   * Busca plantillas activas
+   * @returns Lista de plantillas activas
+   */
+  findActive(): Promise<NotificationTemplate[]>;
+
+  /**
+   * Busca plantillas con paginación
+   * @param page Número de página
+   * @param limit Elementos por página
+   * @param type Tipo de notificación (opcional)
+   * @param search Texto de búsqueda (opcional)
+   * @returns Resultado paginado de plantillas
+   */
+  findWithPagination(page: number, limit: number, type?: NotificationType, search?: string): Promise<{
+    templates: NotificationTemplate[];
+    total: number;
+  }>;
+
+  /**
+   * Verifica si existe una plantilla con el mismo nombre
+   * @param name Nombre a verificar
+   * @returns true si existe, false en caso contrario
+   */
+  existsByName(name: string): Promise<boolean>;
+
+  /**
+   * Obtiene las variables utilizadas en una plantilla
+   * @param templateId ID de la plantilla
+   * @returns Lista de variables en la plantilla
+   */
+  getTemplateVariables(templateId: string): Promise<string[]>;
 } 
