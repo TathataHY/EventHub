@@ -1,4 +1,4 @@
-import { ValueObject } from '../../../core/interfaces/ValueObject';
+import { ValueObject } from '../../core/interfaces/ValueObject';
 
 /**
  * Canales de notificación disponibles en el sistema

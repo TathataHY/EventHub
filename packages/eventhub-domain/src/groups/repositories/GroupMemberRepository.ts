@@ -1,4 +1,4 @@
-import { Repository } from '../../../core/interfaces/Repository';
+import { Repository } from '../../core/interfaces/Repository';
 import { GroupMember } from '../entities/GroupMember';
 import { GroupMemberRole, GroupMemberRoleEnum } from '../value-objects/GroupMemberRole';
 import { GroupMemberStatus, GroupMemberStatusEnum } from '../value-objects/GroupMemberStatus';

@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Entity } from '../../../core/interfaces/Entity';
+import { Entity } from '../../core/interfaces/Entity';
 import { NotificationType } from '../value-objects/NotificationType';
 import { NotificationChannel } from '../value-objects/NotificationChannel';
 import { NotificationPreferenceException } from '../exceptions/NotificationPreferenceException';

@@ -1,130 +1,185 @@
 # EventHub Domain
 
-Este paquete contiene las entidades de dominio, interfaces de repositorio, value objects y excepciones de la aplicación EventHub.
+## Descripción
 
-## Nueva Estructura Organizada por Características
+La capa de dominio de EventHub implementa las reglas de negocio y la lógica central de la aplicación siguiendo los principios de Domain-Driven Design (DDD). Esta capa es independiente de frameworks y tecnologías específicas, lo que permite centrarse en el modelado del problema y facilita su reutilización y testabilidad.
 
-La capa de dominio está organizada por características del negocio, siguiendo principios de Domain-Driven Design (DDD) y Clean Architecture:
+## Arquitectura
+
+La arquitectura de la capa de dominio sigue el siguiente modelo:
 
 ```
-src/
-├── core/                 # Componentes base y compartidos
-│   ├── exceptions/       # Excepciones base del dominio
-│   ├── interfaces/       # Interfaces comunes
-│   └── utils/            # Utilidades del dominio
+packages/eventhub-domain/
+├── src/
+│   ├── core/               # Componentes base y compartidos
+│   │   ├── exceptions/     # Excepciones base del dominio
+│   │   ├── interfaces/     # Interfaces comunes (Entity, ValueObject, Repository)
+│   │   └── utils/          # Utilidades del dominio
+│   │
+│   ├── users/              # Módulo de usuarios
+│   ├── events/             # Módulo de eventos
+│   ├── tickets/            # Módulo de tickets
+│   ├── payments/           # Módulo de pagos
+│   ├── groups/             # Módulo de grupos
+│   ├── attendances/        # Módulo de asistencias
+│   ├── notifications/      # Módulo de notificaciones
+│   ├── reviews/            # Módulo de reseñas
+│   ├── media/              # Módulo de archivos multimedia
+│   └── ...
 │
-├── events/               # Módulo de eventos
-│   ├── entities/         # Event y entidades relacionadas
-│   ├── repositories/     # Interfaces de repositorios de eventos
-│   ├── exceptions/       # Excepciones específicas de eventos
-│   └── value-objects/    # Value objects específicos de eventos
-│
-├── users/                # Módulo de usuarios
-│   ├── entities/         # User y entidades relacionadas
-│   ├── repositories/     # Interfaces de repositorios de usuarios
-│   ├── exceptions/       # Excepciones específicas de usuarios
-│   └── value-objects/    # Value objects específicos de usuarios
-│
-├── payments/             # Módulo de pagos
-│   ├── entities/         # Payment, Ticket, etc.
-│   ├── repositories/     # Interfaces de repositorios de pagos
-│   ├── exceptions/       # Excepciones específicas de pagos
-│   └── value-objects/    # Value objects específicos de pagos
-│
-├── groups/               # Módulo de grupos
-│   ├── entities/         # Group, GroupMember
-│   ├── repositories/     # Interfaces de repositorios de grupos
-│   ├── exceptions/       # Excepciones específicas de grupos
-│   └── value-objects/    # Value objects específicos de grupos
-│
-├── notifications/        # Módulo de notificaciones
-│   ├── entities/         # Notification, NotificationPreference
-│   ├── repositories/     # Interfaces de repositorios de notificaciones
-│   ├── exceptions/       # Excepciones específicas de notificaciones
-│   └── value-objects/    # NotificationTemplate, NotificationChannel, etc.
-│
-├── ratings/              # Módulo de calificaciones
-│   ├── entities/         # Rating, Comment
-│   ├── repositories/     # Interfaces de repositorios de calificaciones
-│   └── exceptions/       # Excepciones específicas de calificaciones
-│
-└── index.ts              # Archivo de exportación
+└── tests/                  # Tests unitarios
 ```
 
-## Principios de Diseño
+## Principios y patrones
 
-### 1. Entidades Inmutables
+Esta capa implementa los siguientes patrones y principios:
 
-Las entidades son inmutables para evitar efectos secundarios. Cada operación que modifica el estado devuelve una nueva instancia de la entidad.
+### 1. Domain-Driven Design (DDD)
 
-```typescript
-// Ejemplo de operación inmutable
-const userActivated = user.activate(); // Devuelve una nueva instancia
+- **Entidades**: Objetos con identidad única y ciclo de vida largo (Event, User, etc.).
+- **Objetos de Valor**: Objetos inmutables sin identidad (Money, Email, etc.).
+- **Agregados**: Agrupaciones de entidades y objetos de valor con una entidad raíz.
+- **Repositorios**: Interfaces para la persistencia de agregados.
+
+### 2. Clean Architecture
+
+- **Independencia de frameworks**: La lógica de dominio no depende de frameworks externos.
+- **Inversión de dependencias**: El dominio define interfaces que la infraestructura implementa.
+- **Testabilidad**: Todas las reglas de negocio pueden probarse de forma aislada.
+
+### 3. Arquitectura Hexagonal
+
+- **Puertos y adaptadores**: El dominio define puertos (interfaces) que son implementados por adaptadores.
+- **Separación clara**: División entre la lógica de dominio y la infraestructura.
+
+## Estructura modular
+
+Cada módulo de dominio sigue esta estructura:
+
+```
+module/
+├── entities/            # Entidades del módulo
+├── value-objects/       # Objetos de valor específicos
+├── repositories/        # Interfaces de repositorio
+├── exceptions/          # Excepciones específicas
+└── index.ts             # Exporta todos los componentes del módulo
 ```
 
-### 2. Value Objects
+### Estándares de codificación
 
-Los Value Objects encapsulan conceptos del dominio que se identifican por su valor, no por su identidad.
+1. **Inmutabilidad**: Las entidades y objetos de valor son inmutables para prevenir efectos secundarios.
+2. **Factory methods**: Se utilizan métodos estáticos para crear instancias validadas.
+3. **Validación temprana**: Los datos se validan en el momento de la creación.
+4. **Encapsulamiento**: Las propiedades privadas se acceden mediante getters.
+5. **Nombres descriptivos**: Uso de nombres que reflejan el lenguaje ubicuo del dominio.
 
-```typescript
-// Ejemplo de Value Object
-const email = new Email('user@example.com');
-```
+## Componentes principales
 
-### 3. Repositorios como Interfaces
+### Core
 
-Las interfaces de repositorio definen contratos para acceder a datos sin depender de tecnologías específicas.
+- **Entity**: Interfaz base para todas las entidades con id y métodos comunes.
+- **ValueObject**: Interfaz para objetos de valor inmutables.
+- **Repository**: Interfaz genérica para operaciones CRUD.
+- **DomainException**: Clase base para excepciones específicas del dominio.
 
-```typescript
-export interface UserRepository extends Repository<User, string> {
-  findByEmail(email: string): Promise<User | null>;
-}
-```
+### Módulos de dominio
 
-### 4. Excepciones de Dominio
+#### Users
 
-Cada módulo define sus propias excepciones específicas para encapsular errores del dominio.
+Gestiona los usuarios, roles y autenticación.
 
-```typescript
-throw new UserCreateException('El nombre es requerido');
-```
+#### Events
 
-## Módulos Principales
+Gestiona la creación, publicación y administración de eventos.
 
-### Users (Usuarios)
+#### Tickets
 
-Gestiona la creación, actualización y validación de usuarios del sistema.
+Gestiona la venta y administración de tickets para eventos.
 
-### Events (Eventos)
+#### Payments
 
-Controla la lógica de creación y gestión de eventos, incluyendo asistentes e información del evento.
+Gestiona las transacciones y pagos de la plataforma.
 
-### Notifications (Notificaciones)
+#### Groups
 
-Administra el envío y recepción de notificaciones entre usuarios y eventos.
+Gestiona grupos de usuarios con intereses comunes.
 
-### Payments (Pagos)
+#### Notifications
 
-Gestiona pagos, transacciones y tickets para los eventos.
+Gestiona las notificaciones enviadas a los usuarios.
 
-### Groups (Grupos)
+## Reglas de negocio principales
 
-Controla la lógica de grupos de usuarios para asistir a eventos conjuntamente.
-
-### Ratings (Calificaciones)
-
-Gestiona calificaciones y comentarios de los usuarios sobre eventos.
+- Los eventos deben tener un título, descripción, fecha y organizador.
+- Los tickets están asociados a un evento específico y tienen una cantidad limitada.
+- Los usuarios pueden tener diferentes roles con distintos permisos.
+- Los pagos deben registrar el método, monto, estado y referencias.
+- Las notificaciones tienen un tipo, destinatario y contenido.
 
 ## Uso
 
-Cada módulo exporta sus componentes a través de un archivo index.ts, lo que facilita su importación:
+Para utilizar la capa de dominio en otros componentes:
 
 ```typescript
-import { User, UserRepository, Email, Role } from '@eventhub/domain/users';
+// En una capa de aplicación o infraestructura
+import { Event, EventRepository, EventCreateProps, EventFilters } from '@eventhub/domain';
+
+// Creación de una entidad
+const eventProps: EventCreateProps = {
+  title: 'Conferencia de Tecnología',
+  description: 'Evento sobre las últimas tendencias',
+  startDate: new Date(),
+  endDate: new Date(Date.now() + 86400000),
+  location: EventLocation.create({
+    name: 'Centro de Convenciones',
+    address: 'Calle Principal 123',
+    city: 'Madrid',
+    country: 'España'
+  }),
+  organizerId: 'user-123'
+};
+
+const event = Event.create(eventProps);
+
+// Uso de un repositorio (implementado en la capa de infraestructura)
+const savedEvent = await eventRepository.save(event);
 ```
 
-El archivo principal index.ts exporta todos los módulos organizados:
+## Desarrollo
 
-```typescript
-import { User, Event, Payment } from '@eventhub/domain';
-``` 
+### Instalación
+
+```bash
+cd packages/eventhub-domain
+npm install
+```
+
+### Compilación
+
+```bash
+npm run build
+```
+
+### Tests
+
+```bash
+npm test
+```
+
+## Extensibilidad
+
+Para agregar un nuevo módulo de dominio:
+
+1. Crear carpeta para el nuevo módulo con su estructura estándar.
+2. Definir entidades, objetos de valor y excepciones.
+3. Definir interfaces de repositorio.
+4. Exportar todos los componentes en el index.ts del módulo.
+5. Actualizar el index.ts principal para exportar el nuevo módulo.
+
+## Contribución
+
+1. Mantener la independencia de la capa de dominio.
+2. Aplicar principios de código limpio y DDD.
+3. Escribir tests para todas las reglas de negocio.
+4. Documentar con TSDoc todas las clases, métodos e interfaces.
+5. Seguir los estándares de codificación del proyecto. 

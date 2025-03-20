@@ -1,4 +1,4 @@
-import { ValueObject } from '../../../core/interfaces/ValueObject';
+import { ValueObject } from '../../core/interfaces/ValueObject';
 
 /**
  * Enum para definir los posibles estados de un evento

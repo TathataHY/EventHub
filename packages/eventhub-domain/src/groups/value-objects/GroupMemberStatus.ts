@@ -1,4 +1,4 @@
-import { ValueObject } from '../../../core/interfaces/ValueObject';
+import { ValueObject } from '../../core/interfaces/ValueObject';
 
 /**
  * Valores permitidos para el estado de un miembro en un grupo

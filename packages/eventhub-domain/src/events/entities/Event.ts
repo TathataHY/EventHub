@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Entity } from '../../../core/interfaces/Entity';
+import { Entity } from '../../core/interfaces/Entity';
 import { EventStatus, EventStatusEnum } from '../value-objects/EventStatus';
 import { EventLocation, EventLocationProps } from '../value-objects/EventLocation';
 import { EventTags } from '../value-objects/EventTags';
@@ -8,32 +8,133 @@ import { EventUpdateException } from '../exceptions/EventUpdateException';
 import { EventAttendanceException } from '../exceptions/EventAttendanceException';
 
 /**
+ * Interfaz que define las propiedades de un evento
+ * Contiene todos los datos necesarios para representar completamente un evento
+ */
+export interface EventProps {
+  /** Identificador único del evento */
+  id: string;
+  /** Fecha de creación del evento en el sistema */
+  createdAt: Date;
+  /** Fecha de última actualización del evento */
+  updatedAt: Date;
+  /** Indica si el evento está activo en el sistema */
+  isActive: boolean;
+  /** Título o nombre del evento */
+  title: string;
+  /** Descripción detallada del evento */
+  description: string;
+  /** Fecha y hora de inicio del evento */
+  startDate: Date;
+  /** Fecha y hora de finalización del evento */
+  endDate: Date;
+  /** Ubicación donde se realizará el evento */
+  location: EventLocation;
+  /** Identificador del usuario organizador del evento */
+  organizerId: string;
+  /** Capacidad máxima de asistentes (null si es ilimitada) */
+  capacity: number | null;
+  /** Lista de identificadores de usuarios que asistirán al evento */
+  attendees: string[];
+  /** Estado actual del evento (borrador, publicado, etc.) */
+  status: EventStatus;
+  /** Etiquetas para categorizar el evento */
+  tags: EventTags;
+}
+
+/**
+ * Interfaz para la creación de eventos
+ * Contiene solo las propiedades necesarias para crear un evento nuevo
+ */
+export interface EventCreateProps {
+  /** Título o nombre del evento */
+  title: string;
+  /** Descripción detallada del evento */
+  description: string;
+  /** Fecha y hora de inicio del evento */
+  startDate: Date;
+  /** Fecha y hora de finalización del evento */
+  endDate: Date;
+  /** Ubicación donde se realizará el evento */
+  location: EventLocation | EventLocationProps;
+  /** Identificador del usuario organizador del evento */
+  organizerId: string;
+  /** Capacidad máxima de asistentes (opcional) */
+  capacity?: number;
+  /** Etiquetas para categorizar el evento (opcional) */
+  tags?: string[] | EventTags;
+}
+
+/**
+ * Interfaz para actualización de eventos
+ * Todas las propiedades son opcionales para permitir actualizaciones parciales
+ */
+export interface EventUpdateProps {
+  /** Título o nombre del evento */
+  title?: string;
+  /** Descripción detallada del evento */
+  description?: string;
+  /** Fecha y hora de inicio del evento */
+  startDate?: Date;
+  /** Fecha y hora de finalización del evento */
+  endDate?: Date;
+  /** Ubicación donde se realizará el evento */
+  location?: EventLocation | EventLocationProps;
+  /** Capacidad máxima de asistentes */
+  capacity?: number | null;
+  /** Etiquetas para categorizar el evento */
+  tags?: string[] | EventTags;
+}
+
+/**
  * Entidad de dominio para eventos
- * Encapsula reglas de negocio relacionadas con eventos
- * Implementa el patrón de entidad inmutable
+ * 
+ * Representa un evento organizado dentro de la plataforma, con todas sus propiedades
+ * y comportamientos asociados. Implementa las reglas de negocio relacionadas con
+ * la creación, modificación y gestión de eventos, así como la administración de asistentes.
+ * 
+ * Esta entidad es inmutable para garantizar la integridad de los datos y usa el patrón
+ * de métodos factory para validar la creación.
+ * 
+ * @implements {Entity<string>} Implementa la interfaz base Entity con identificador de tipo string
  */
 export class Event implements Entity<string> {
-  // Propiedades base de la entidad
+  /** Identificador único del evento */
   readonly id: string;
+  /** Fecha de creación del evento en el sistema */
   readonly createdAt: Date;
+  /** Fecha de última actualización del evento */
   readonly updatedAt: Date;
+  /** Indica si el evento está activo en el sistema */
   readonly isActive: boolean;
 
-  // Propiedades específicas del evento
+  /** Título o nombre del evento */
   readonly title: string;
+  /** Descripción detallada del evento */
   readonly description: string;
+  /** Fecha y hora de inicio del evento */
   readonly startDate: Date;
+  /** Fecha y hora de finalización del evento */
   readonly endDate: Date;
+  /** Ubicación donde se realizará el evento */
   readonly location: EventLocation;
+  /** Identificador del usuario organizador del evento */
   readonly organizerId: string;
+  /** Capacidad máxima de asistentes (null si es ilimitada) */
   readonly capacity: number | null;
+  /** Lista de identificadores de usuarios que asistirán al evento */
   readonly attendees: string[];
+  /** Estado actual del evento (borrador, publicado, etc.) */
   readonly status: EventStatus;
+  /** Etiquetas para categorizar el evento */
   readonly tags: EventTags;
 
   /**
    * Constructor privado de Event
-   * Se debe usar el método estático create() para crear instancias
+   * Se utiliza el patrón de constructor privado para forzar la creación a través
+   * del método estático create() que garantiza la validación de los datos.
+   * 
+   * @param props Propiedades completas del evento
    */
   private constructor(props: EventProps) {
     this.id = props.id;
@@ -438,57 +539,4 @@ export class Event implements Entity<string> {
       updatedAt: this.updatedAt
     };
   }
-}
-
-/**
- * Props para reconstruir un evento existente
- */
-export interface EventProps {
-  id: string;
-  title: string;
-  description: string;
-  startDate: Date;
-  endDate: Date;
-  location: EventLocation;
-  organizerId: string;
-  capacity: number | null;
-  attendees: string[];
-  status: EventStatus;
-  tags: EventTags;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-/**
- * Props para crear un nuevo evento
- */
-export interface EventCreateProps {
-  id?: string;
-  title: string;
-  description: string;
-  startDate: Date | string;
-  endDate: Date | string;
-  location: EventLocation | EventLocationProps;
-  organizerId: string;
-  capacity?: number | null;
-  attendees?: string[];
-  status?: EventStatus | EventStatusEnum;
-  tags?: EventTags | string[];
-  isActive?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-/**
- * Props para actualizar un evento
- */
-export interface EventUpdateProps {
-  title?: string;
-  description?: string;
-  startDate?: Date | string;
-  endDate?: Date | string;
-  location?: EventLocation | EventLocationProps;
-  capacity?: number | null;
-  tags?: EventTags | string[];
 } 

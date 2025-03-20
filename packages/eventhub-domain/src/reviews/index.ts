@@ -1,15 +1,22 @@
-// Entidades
-export { Review } from './entities/Review';
-export { type ReviewProps, type ReviewCreateProps } from './entities/Review';
+/**
+ * Módulo de Reseñas
+ * 
+ * Este módulo maneja todas las entidades y lógica relacionada con las reseñas
+ * de eventos en la plataforma, permitiendo a los usuarios compartir sus opiniones
+ * y calificaciones sobre los eventos a los que han asistido.
+ * 
+ * @module reviews
+ */
 
-// Repositorios
-export { 
-  type ReviewRepository, 
-  type ReviewFilters, 
-  type PaginationOptions,
-  type ReviewDistribution
-} from './repositories/ReviewRepository';
+// Entidades
+export * from './entities/Review';
 
 // Excepciones
-export { ReviewCreateException } from './exceptions/ReviewCreateException';
-export { ReviewUpdateException } from './exceptions/ReviewUpdateException'; 
+export * from './exceptions/ReviewCreateException';
+export * from './exceptions/ReviewUpdateException';
+
+// Repositorios
+export * from './repositories/ReviewRepository';
+
+// Value Objects
+// Actualmente no hay value objects específicos para reseñas 

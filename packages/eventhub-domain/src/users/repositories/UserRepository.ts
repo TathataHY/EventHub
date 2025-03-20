@@ -1,92 +1,127 @@
-import { Repository } from '../../../core/interfaces/Repository';
+import { Repository } from '../../core/interfaces/Repository';
 import { User } from '../entities/User';
+import { Email } from '../value-objects/Email';
+import { Role, RoleEnum } from '../value-objects/Role';
 
 /**
- * Interfaz para el repositorio de usuarios
- * Extiende la interfaz Repository base para operaciones comunes
- * Añade métodos específicos para usuarios
+ * Opciones de filtrado para búsqueda de usuarios
+ * Permite filtrar usuarios por diferentes criterios como rol, estado de activación, etc.
  */
-export interface UserRepository extends Repository<User, string> {
-  /**
-   * Encuentra un usuario por su email
-   * @param email Email del usuario
-   * @returns El usuario encontrado o null si no existe
-   */
-  findByEmail(email: string): Promise<User | null>;
+export interface UserFilterOptions {
+  /** Rol del usuario para filtrar resultados */
+  role?: Role | RoleEnum;
   
-  /**
-   * Encuentra usuarios por su rol
-   * @param role Rol de los usuarios a buscar
-   * @returns Lista de usuarios con el rol especificado
-   */
-  findByRole(role: string): Promise<User[]>;
+  /** Estado de activación para filtrar (activo/inactivo) */
+  isActive?: boolean;
   
-  /**
-   * Encuentra usuarios con opciones de filtrado y paginación
-   * @param options Opciones de filtrado
-   * @returns Lista de usuarios y total que cumplen con los filtros
-   */
-  findWithFilters(options: UserFilterOptions): Promise<{ users: User[], total: number }>;
+  /** Término de búsqueda para filtrar por nombre o email */
+  query?: string;
   
-  /**
-   * Busca usuarios que coincidan con un término de búsqueda en su nombre o email
-   * @param searchTerm Término de búsqueda
-   * @returns Lista de usuarios que coinciden con la búsqueda
-   */
-  search(searchTerm: string): Promise<User[]>;
+  /** Fecha de creación mínima para filtrar usuarios creados después de esta fecha */
+  createdAfter?: Date;
   
-  /**
-   * Cuenta el número de usuarios con un rol específico
-   * @param role Rol para contar usuarios
-   * @returns Número de usuarios con el rol
-   */
-  countByRole(role: string): Promise<number>;
-  
-  /**
-   * Cambia el estado activo/inactivo de un usuario
-   * @param id ID del usuario
-   * @param isActive Nuevo estado
-   * @returns El usuario actualizado o null si no existe
-   */
-  changeActiveStatus(id: string, isActive: boolean): Promise<User | null>;
+  /** Fecha de creación máxima para filtrar usuarios creados antes de esta fecha */
+  createdBefore?: Date;
 }
 
 /**
- * Opciones para filtrar usuarios
+ * Opciones de paginación para resultados de búsqueda
  */
-export interface UserFilterOptions {
-  /**
-   * Término de búsqueda (nombre, email)
-   */
-  search?: string;
+export interface PaginationOptions {
+  /** Número de página a recuperar */
+  page: number;
   
-  /**
-   * Rol a filtrar
-   */
-  role?: string;
+  /** Cantidad de usuarios por página */
+  limit: number;
   
-  /**
-   * Estado activo/inactivo
-   */
-  isActive?: boolean;
+  /** Campo por el cual ordenar los resultados */
+  orderBy?: string;
   
-  /**
-   * Número de página (inicia en 1)
-   */
-  page?: number;
-  
-  /**
-   * Cantidad de elementos por página
-   */
-  limit?: number;
-  
-  /**
-   * Campo por el cual ordenar
-   */
-  orderBy?: 'name' | 'email' | 'createdAt';
-  
-  /**
-   * Dirección de ordenamiento
-   */
+  /** Dirección del ordenamiento (ascendente o descendente) */
   orderDirection?: 'asc' | 'desc';
+}
+
+/**
+ * Resultado de una búsqueda paginada de usuarios
+ */
+export interface PaginatedUsersResult {
+  /** Lista de usuarios encontrados */
+  users: User[];
+  /** Número total de usuarios que coinciden con los filtros */
+  total: number;
+  /** Número de página actual */
+  page: number;
+  /** Cantidad de usuarios por página */
+  limit: number;
+  /** Número total de páginas */
+  totalPages: number;
+}
+
+/**
+ * Interfaz del repositorio de usuarios
+ * 
+ * Define los métodos necesarios para persistir y recuperar usuarios del sistema.
+ * Extiende la interfaz Repository genérica añadiendo operaciones específicas 
+ * para usuarios como búsqueda por email, rol, etc.
+ * 
+ * @extends {Repository<string, User>} Extiende el repositorio base con identificador string
+ */
+export interface UserRepository extends Repository<string, User> {
+  /**
+   * Busca un usuario por su dirección de email
+   * 
+   * @param email Dirección de email a buscar (puede ser string o Email)
+   * @returns El usuario encontrado o null si no existe
+   */
+  findByEmail(email: string | Email): Promise<User | null>;
+
+  /**
+   * Busca usuarios aplicando filtros y paginación
+   * 
+   * @param filters Criterios de filtrado opcionales
+   * @param pagination Opciones de paginación y ordenamiento
+   * @returns Resultado paginado con usuarios que coinciden con los filtros
+   */
+  findWithFilters(
+    filters?: UserFilterOptions,
+    pagination?: PaginationOptions
+  ): Promise<PaginatedUsersResult>;
+
+  /**
+   * Busca usuarios que tengan un rol específico
+   * 
+   * @param role Rol a buscar (puede ser Role o RoleEnum)
+   * @returns Lista de usuarios con el rol especificado
+   */
+  findByRole(role: Role | RoleEnum): Promise<User[]>;
+
+  /**
+   * Busca usuarios activos en el sistema
+   * 
+   * @returns Lista de usuarios activos
+   */
+  findActive(): Promise<User[]>;
+
+  /**
+   * Busca usuarios inactivos en el sistema
+   * 
+   * @returns Lista de usuarios inactivos
+   */
+  findInactive(): Promise<User[]>;
+
+  /**
+   * Verifica si existe un usuario con el email especificado
+   * 
+   * @param email Email a verificar
+   * @returns true si existe un usuario con ese email
+   */
+  existsByEmail(email: string | Email): Promise<boolean>;
+
+  /**
+   * Busca usuarios por coincidencia en nombre o email
+   * 
+   * @param query Texto a buscar
+   * @returns Lista de usuarios que coinciden con la búsqueda
+   */
+  search(query: string): Promise<User[]>;
 } 

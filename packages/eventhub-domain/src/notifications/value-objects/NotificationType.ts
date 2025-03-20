@@ -1,50 +1,79 @@
-import { ValueObject } from '../../../core/interfaces/ValueObject';
+import { ValueObject } from '../../core/interfaces/ValueObject';
 
 /**
  * Tipos de notificaciones en el sistema
+ * 
+ * Enumera los diferentes tipos de notificaciones que pueden ser enviadas
+ * a los usuarios en la plataforma, agrupados por categorías funcionales.
  */
 export enum NotificationType {
   // Notificaciones del sistema
+  /** Notificación informativa general */
   INFO = 'info',
+  /** Notificación de advertencia */
   WARNING = 'warning',
+  /** Notificación de error */
   ERROR = 'error',
+  /** Notificación de éxito o confirmación */
   SUCCESS = 'success',
   
   // Notificaciones de eventos
+  /** Notificación cuando se crea un nuevo evento */
   EVENT_CREATED = 'event_created',
+  /** Notificación cuando se actualiza un evento */
   EVENT_UPDATED = 'event_updated',
+  /** Notificación cuando se cancela un evento */
   EVENT_CANCELLED = 'event_cancelled',
+  /** Recordatorio de un evento próximo */
   EVENT_REMINDER = 'event_reminder',
+  /** Aviso de que un evento comenzará pronto */
   EVENT_STARTING_SOON = 'event_starting_soon',
   
   // Notificaciones de asistentes
+  /** Notificación cuando se añade un asistente a un evento */
   ATTENDEE_ADDED = 'attendee_added',
+  /** Notificación cuando se elimina un asistente de un evento */
   ATTENDEE_REMOVED = 'attendee_removed',
   
   // Notificaciones de comentarios
+  /** Notificación cuando se añade un comentario a un evento */
   COMMENT_ADDED = 'comment_added',
+  /** Notificación cuando se responde a un comentario */
   COMMENT_REPLIED = 'comment_replied',
   
   // Notificaciones de calificaciones
+  /** Notificación cuando se añade una nueva calificación */
   RATING_ADDED = 'rating_added',
   
   // Recordatorios
+  /** Recordatorio general */
   REMINDER = 'reminder'
 }
 
 /**
  * Información adicional sobre los tipos de notificación
+ * 
+ * Define los metadatos asociados a cada tipo de notificación,
+ * incluyendo nombre para mostrar, descripción y configuración por defecto.
  */
 export interface NotificationTypeInfo {
+  /** Tipo de notificación (referencia al enum) */
   type: NotificationType;
+  /** Nombre descriptivo para mostrar en UI */
   displayName: string;
+  /** Descripción del propósito de este tipo de notificación */
   description: string;
+  /** Canales predeterminados para enviar este tipo de notificación */
   defaultChannel: string[];
+  /** Nivel de prioridad predeterminado */
   priority: 'low' | 'medium' | 'high';
 }
 
 /**
  * Información detallada de cada tipo de notificación
+ * 
+ * Mapa que asocia cada tipo de notificación con su información
+ * detallada para uso en el sistema.
  */
 export const notificationTypeDetails: Record<NotificationType, NotificationTypeInfo> = {
   [NotificationType.INFO]: {

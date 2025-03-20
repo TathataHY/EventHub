@@ -1,4 +1,4 @@
-import { Repository } from '../../../core/interfaces/Repository';
+import { Repository } from '../../core/interfaces/Repository';
 import { Payment } from '../entities/Payment';
 import { PaymentStatus } from '../value-objects/PaymentStatus';
 

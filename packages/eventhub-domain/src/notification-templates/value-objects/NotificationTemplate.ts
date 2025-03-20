@@ -1,6 +1,6 @@
 import { NotificationType } from '../../../notifications/value-objects/NotificationType';
 import { NotificationChannel } from './NotificationChannel';
-import { Entity } from '../../../core/interfaces/Entity';
+import { Entity } from '../../core/interfaces/Entity';
 import { v4 as uuidv4 } from 'uuid';
 import { NotificationTemplateCreateException } from '../exceptions/NotificationTemplateCreateException';
 import { NotificationTemplateUpdateException } from '../exceptions/NotificationTemplateUpdateException';

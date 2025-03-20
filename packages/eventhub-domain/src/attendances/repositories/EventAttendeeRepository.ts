@@ -1,4 +1,4 @@
-import { Repository } from '../../../core/interfaces/Repository';
+import { Repository } from '../../core/interfaces/Repository';
 import { EventAttendee } from '../entities/EventAttendee';
 import { AttendanceStatus, AttendanceStatusEnum } from '../value-objects/AttendanceStatus';
 

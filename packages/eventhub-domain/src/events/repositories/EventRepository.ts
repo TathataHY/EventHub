@@ -1,69 +1,71 @@
-import { Repository } from '../../../core/interfaces/Repository';
+import { Repository } from '../../core/interfaces/Repository';
 import { Event } from '../entities/Event';
 import { EventTags } from '../value-objects/EventTags';
 import { EventStatus, EventStatusEnum } from '../value-objects/EventStatus';
 
 /**
  * Interfaz para filtros de búsqueda de eventos
+ * Permite filtrar eventos por diferentes criterios como organizador, fechas, ubicación, etc.
  */
 export interface EventFilters {
   /**
-   * ID del organizador
+   * ID del organizador para filtrar eventos por creador
    */
   organizerId?: string;
   
   /**
-   * Estado del evento
+   * Estado del evento (borrador, publicado, cancelado, etc.)
    */
   status?: EventStatusEnum | EventStatus;
   
   /**
-   * Fecha de inicio mínima
+   * Fecha de inicio mínima para filtrar eventos que comienzan después de esta fecha
    */
   startDateFrom?: Date;
   
   /**
-   * Fecha de inicio máxima
+   * Fecha de inicio máxima para filtrar eventos que comienzan antes de esta fecha
    */
   startDateTo?: Date;
   
   /**
-   * Término de búsqueda (título, descripción, ubicación)
+   * Término de búsqueda para filtrar por título, descripción o ubicación
    */
   query?: string;
   
   /**
-   * Etiquetas para filtrar
+   * Etiquetas para filtrar eventos por categorías o temas
    */
   tags?: string[] | EventTags;
   
   /**
-   * Ciudad
+   * Ciudad donde se realiza el evento
    */
   city?: string;
   
   /**
-   * País
+   * País donde se realiza el evento
    */
   country?: string;
   
   /**
-   * Solo eventos virtuales
+   * Indica si se deben filtrar solo eventos virtuales
    */
   virtualOnly?: boolean;
   
   /**
-   * Solo eventos con capacidad disponible
+   * Indica si se deben filtrar solo eventos con capacidad disponible
    */
   availableCapacity?: boolean;
 }
 
 /**
- * Opciones de paginación y ordenamiento
+ * Opciones de paginación y ordenamiento para búsquedas de eventos
+ * Permite controlar la cantidad de resultados y su orden
  */
 export interface PaginationOptions {
   /**
-   * Número de página (comienza en 1)
+   * Número de página a recuperar (comienza en 1)
    */
   page: number;
   
@@ -73,112 +75,122 @@ export interface PaginationOptions {
   limit: number;
   
   /**
-   * Campo por el cual ordenar
+   * Campo por el cual ordenar los resultados
    */
   orderBy?: 'startDate' | 'createdAt' | 'title';
   
   /**
-   * Dirección del ordenamiento
+   * Dirección del ordenamiento (ascendente o descendente)
    */
   orderDirection?: 'asc' | 'desc';
 }
 
 /**
- * Interfaz para el repositorio de eventos
- * Extiende la interfaz Repository base para operaciones comunes
- * Añade métodos específicos para eventos
+ * Resultado paginado de una búsqueda de eventos
+ */
+export interface PaginatedEventsResult {
+  /** Lista de eventos encontrados */
+  events: Event[];
+  /** Número total de eventos que coinciden con el filtro */
+  total: number;
+}
+
+/**
+ * Interfaz del repositorio de eventos
+ * Define todas las operaciones disponibles para persistencia y recuperación de eventos
+ * Extiende la interfaz Repository base añadiendo métodos específicos para eventos
  */
 export interface EventRepository extends Repository<Event, string> {
   /**
-   * Encuentra eventos con filtros y paginación
-   * @param filters Filtros para la búsqueda
-   * @param options Opciones de paginación
-   * @returns Lista de eventos y total
+   * Encuentra eventos aplicando filtros y paginación
+   * @param filters Filtros para refinar la búsqueda de eventos
+   * @param options Opciones de paginación y ordenamiento
+   * @returns Objeto con eventos encontrados y total de coincidencias
    */
   findWithFilters(
     filters: EventFilters,
     options?: PaginationOptions
-  ): Promise<{ events: Event[]; total: number }>;
+  ): Promise<PaginatedEventsResult>;
   
   /**
-   * Encuentra eventos organizados por un usuario
-   * @param organizerId ID del organizador
-   * @returns Lista de eventos
+   * Encuentra eventos organizados por un usuario específico
+   * @param organizerId ID del usuario organizador
+   * @returns Lista de eventos organizados por el usuario
    */
   findByOrganizerId(organizerId: string): Promise<Event[]>;
   
   /**
-   * Encuentra eventos por estado
-   * @param status Estado del evento
-   * @returns Lista de eventos
+   * Encuentra eventos que tengan un estado específico
+   * @param status Estado del evento a filtrar
+   * @returns Lista de eventos con el estado indicado
    */
   findByStatus(status: EventStatusEnum | EventStatus): Promise<Event[]>;
   
   /**
-   * Encuentra eventos que coincidan con etiquetas
-   * @param tags Etiquetas a buscar
-   * @returns Lista de eventos
+   * Encuentra eventos que incluyan ciertas etiquetas
+   * @param tags Etiquetas a buscar en los eventos
+   * @returns Lista de eventos que contienen las etiquetas especificadas
    */
   findByTags(tags: string[] | EventTags): Promise<Event[]>;
   
   /**
-   * Encuentra eventos cercanos a una fecha
-   * @param date Fecha de referencia
-   * @param daysBefore Días antes de la fecha
-   * @param daysAfter Días después de la fecha
-   * @returns Lista de eventos
+   * Encuentra eventos que ocurrirán en un rango de fechas específico
+   * @param date Fecha de referencia central
+   * @param daysBefore Días anteriores a la fecha de referencia
+   * @param daysAfter Días posteriores a la fecha de referencia
+   * @returns Lista de eventos dentro del rango de fechas
    */
   findByDateRange(date: Date, daysBefore: number, daysAfter: number): Promise<Event[]>;
   
   /**
-   * Encuentra eventos que tengan lugar en una ciudad
-   * @param city Ciudad
-   * @returns Lista de eventos
+   * Encuentra eventos que se realizarán en una ciudad específica
+   * @param city Nombre de la ciudad
+   * @returns Lista de eventos en la ciudad especificada
    */
   findByCity(city: string): Promise<Event[]>;
   
   /**
-   * Busca eventos por término de búsqueda
-   * @param query Término de búsqueda
-   * @returns Lista de eventos
+   * Busca eventos que coincidan con un término de búsqueda
+   * @param query Término de búsqueda para título, descripción o ubicación
+   * @returns Lista de eventos que coinciden con la búsqueda
    */
   search(query: string): Promise<Event[]>;
   
   /**
-   * Actualiza el estado de un evento
-   * @param id ID del evento
-   * @param status Nuevo estado
+   * Actualiza el estado de un evento existente
+   * @param id ID del evento a actualizar
+   * @param status Nuevo estado a asignar
    * @returns Evento actualizado o null si no existe
    */
   updateStatus(id: string, status: EventStatusEnum | EventStatus): Promise<Event | null>;
   
   /**
-   * Añade un asistente a un evento
+   * Registra a un usuario como asistente a un evento
    * @param eventId ID del evento
-   * @param userId ID del usuario
+   * @param userId ID del usuario asistente
    * @returns Evento actualizado o null si no existe
    */
   addAttendee(eventId: string, userId: string): Promise<Event | null>;
   
   /**
-   * Elimina un asistente de un evento
+   * Elimina a un usuario de la lista de asistentes de un evento
    * @param eventId ID del evento
-   * @param userId ID del usuario
+   * @param userId ID del usuario a eliminar de asistentes
    * @returns Evento actualizado o null si no existe
    */
   removeAttendee(eventId: string, userId: string): Promise<Event | null>;
   
   /**
-   * Encuentra los próximos eventos para un usuario
+   * Encuentra los próximos eventos a los que asistirá un usuario
    * @param userId ID del usuario
-   * @returns Lista de eventos
+   * @returns Lista de eventos futuros a los que asistirá el usuario
    */
   findUpcomingByUserId(userId: string): Promise<Event[]>;
   
   /**
-   * Encuentra eventos a los que asiste un usuario
+   * Encuentra todos los eventos a los que un usuario asiste o ha asistido
    * @param userId ID del usuario
-   * @returns Lista de eventos
+   * @returns Lista completa de eventos a los que asiste el usuario
    */
   findByAttendeeId(userId: string): Promise<Event[]>;
 } 

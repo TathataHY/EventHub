@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Entity } from '../../../core/interfaces/Entity';
+import { Entity } from '../../core/interfaces/Entity';
 import { AttendanceStatus, AttendanceStatusEnum } from '../value-objects/AttendanceStatus';
 import { EventAttendeeCreateException } from '../exceptions/EventAttendeeCreateException';
 import { EventAttendeeUpdateException } from '../exceptions/EventAttendeeUpdateException';

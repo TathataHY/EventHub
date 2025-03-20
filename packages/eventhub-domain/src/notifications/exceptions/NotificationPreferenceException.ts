@@ -1,4 +1,4 @@
-import { DomainException } from '../../../core/exceptions/DomainException';
+import { DomainException } from '../../core/exceptions/DomainException';
 
 /**
  * Excepción específica para errores en las preferencias de notificaciones

@@ -1,31 +1,46 @@
 import { v4 as uuidv4 } from 'uuid';
-import { Entity } from '../../../core/interfaces/Entity';
+import { Entity } from '../../core/interfaces/Entity';
 import { PaymentStatus, PaymentStatusEnum } from '../value-objects/PaymentStatus';
 import { PaymentProvider, PaymentProviderEnum } from '../value-objects/PaymentProvider';
 import { PaymentCreateException } from '../exceptions/PaymentCreateException';
 import { PaymentUpdateException } from '../exceptions/PaymentUpdateException';
 
 /**
- * Entidad de pago en el dominio
- * Implementa Entity para seguir el patrón común de entidades
+ * Entidad que representa un pago en el sistema
+ * 
+ * Encapsula toda la información y comportamiento relacionado con transacciones
+ * financieras en la plataforma, manteniendo el historial y estado de cada pago.
+ * @implements {Entity<string>}
  */
 export class Payment implements Entity<string> {
+  /** Identificador único del pago */
   readonly id: string;
+  /** ID del usuario que realiza el pago */
   readonly userId: string;
+  /** ID del evento asociado al pago */
   readonly eventId: string;
+  /** Monto del pago en la moneda especificada */
   readonly amount: number;
+  /** Código de la moneda (USD, EUR, MXN, etc.) */
   readonly currency: string;
+  /** Estado actual del pago (pendiente, completado, etc.) */
   readonly status: PaymentStatus;
+  /** Proveedor de servicios de pago utilizado */
   readonly provider: PaymentProvider;
+  /** ID de la transacción en el sistema del proveedor */
   readonly providerPaymentId: string | null;
+  /** Descripción o concepto del pago */
   readonly description: string | null;
+  /** Datos adicionales asociados al pago */
   readonly metadata: Record<string, any> | null;
+  /** Fecha de creación del pago */
   readonly createdAt: Date;
+  /** Fecha de última actualización */
   readonly updatedAt: Date;
 
   /**
-   * Constructor privado de Payment
-   * Se debe usar el método estático create() para crear instancias
+   * Constructor privado (patrón Factory)
+   * @param props Propiedades completas del pago
    */
   private constructor(props: PaymentProps) {
     this.id = props.id;
@@ -43,65 +58,72 @@ export class Payment implements Entity<string> {
   }
 
   /**
-   * Crea un nuevo pago validando los datos
+   * Crea un nuevo pago con validación de datos
+   * 
    * @param props Propiedades para crear el pago
    * @returns Nueva instancia de Payment
-   * @throws PaymentCreateException si los datos no son válidos
+   * @throws {PaymentCreateException} Si los datos son inválidos
    */
   static create(props: PaymentCreateProps): Payment {
-    const id = props.id || uuidv4();
-    
-    // Validar userId
+    // Validaciones
     if (!props.userId) {
-      throw new PaymentCreateException('El ID del usuario es requerido');
+      throw new PaymentCreateException('El ID de usuario es requerido');
     }
 
-    // Validar eventId
     if (!props.eventId) {
-      throw new PaymentCreateException('El ID del evento es requerido');
+      throw new PaymentCreateException('El ID de evento es requerido');
     }
 
-    // Validar amount
-    if (props.amount <= 0) {
-      throw new PaymentCreateException('El monto del pago debe ser mayor a cero');
+    if (!props.amount || props.amount <= 0) {
+      throw new PaymentCreateException('El monto debe ser un número positivo');
     }
 
-    // Validar currency
     if (!props.currency) {
-      throw new PaymentCreateException('La moneda del pago es requerida');
+      throw new PaymentCreateException('La moneda es requerida');
     }
 
-    // Convertir o crear status
+    // Normalizar provider si viene como string o enum
+    let provider: PaymentProvider;
+    if (typeof props.provider === 'string') {
+      try {
+        provider = PaymentProvider.fromValue(props.provider as PaymentProviderEnum);
+      } catch (error) {
+        throw new PaymentCreateException(`Proveedor de pago inválido: ${props.provider}`);
+      }
+    } else if (props.provider instanceof PaymentProvider) {
+      provider = props.provider;
+    } else {
+      try {
+        provider = PaymentProvider.fromValue(props.provider);
+      } catch (error) {
+        throw new PaymentCreateException(`Proveedor de pago inválido: ${props.provider}`);
+      }
+    }
+
+    // Estado inicial (por defecto PENDING)
     let status: PaymentStatus;
-    if (props.status instanceof PaymentStatus) {
-      status = props.status;
+    if (!props.status) {
+      status = PaymentStatus.pending();
     } else if (typeof props.status === 'string') {
       try {
-        status = PaymentStatus.create(props.status);
+        status = PaymentStatus.fromValue(props.status as PaymentStatusEnum);
       } catch (error) {
-        throw new PaymentCreateException(`Estado inválido: ${error.message}`);
+        throw new PaymentCreateException(`Estado de pago inválido: ${props.status}`);
       }
+    } else if (props.status instanceof PaymentStatus) {
+      status = props.status;
     } else {
-      status = PaymentStatus.pending();
-    }
-
-    // Convertir o crear provider
-    let provider: PaymentProvider;
-    if (props.provider instanceof PaymentProvider) {
-      provider = props.provider;
-    } else if (typeof props.provider === 'string') {
       try {
-        provider = PaymentProvider.create(props.provider);
+        status = PaymentStatus.fromValue(props.status);
       } catch (error) {
-        throw new PaymentCreateException(`Proveedor inválido: ${error.message}`);
+        throw new PaymentCreateException(`Estado de pago inválido: ${props.status}`);
       }
-    } else {
-      throw new PaymentCreateException('El proveedor de pago es requerido');
     }
 
     // Crear pago
+    const now = new Date();
     return new Payment({
-      id,
+      id: props.id || uuidv4(),
       userId: props.userId,
       eventId: props.eventId,
       amount: props.amount,
@@ -111,14 +133,15 @@ export class Payment implements Entity<string> {
       providerPaymentId: props.providerPaymentId || null,
       description: props.description || null,
       metadata: props.metadata || null,
-      createdAt: props.createdAt || new Date(),
-      updatedAt: props.updatedAt || new Date()
+      createdAt: props.createdAt || now,
+      updatedAt: props.updatedAt || now
     });
   }
 
   /**
-   * Reconstruye un Payment desde almacenamiento (sin validaciones)
-   * @param props Propiedades para reconstruir el pago
+   * Reconstruye un pago desde persistencia
+   * 
+   * @param props Propiedades completas del pago
    * @returns Instancia de Payment reconstruida
    */
   static reconstitute(props: PaymentProps): Payment {
@@ -126,9 +149,10 @@ export class Payment implements Entity<string> {
   }
 
   /**
-   * Compara si dos entidades Payment son iguales por su identidad
-   * @param entity Entidad a comparar
-   * @returns true si las entidades tienen el mismo ID
+   * Compara si este pago es igual a otra entidad
+   * 
+   * @param entity Otra entidad para comparar
+   * @returns true si tienen el mismo ID
    */
   equals(entity: Entity<string>): boolean {
     if (!(entity instanceof Payment)) {
@@ -140,17 +164,18 @@ export class Payment implements Entity<string> {
 
   /**
    * Marca el pago como completado
-   * @param providerPaymentId ID del pago en el proveedor
-   * @returns Pago completado
-   * @throws PaymentUpdateException si el pago no puede ser completado
+   * 
+   * @param providerPaymentId ID de la transacción en el sistema del proveedor
+   * @returns Nueva instancia con el pago completado
+   * @throws {PaymentUpdateException} Si el pago no puede ser completado
    */
   completePayment(providerPaymentId: string): Payment {
-    if (this.status.isCompleted()) {
-      throw new PaymentUpdateException('El pago ya está marcado como completado');
+    if (!this.status.isPending()) {
+      throw new PaymentUpdateException('Solo se pueden completar pagos pendientes');
     }
 
-    if (this.status.isRefunded()) {
-      throw new PaymentUpdateException('No se puede completar un pago reembolsado');
+    if (!providerPaymentId) {
+      throw new PaymentUpdateException('Se requiere el ID de pago del proveedor');
     }
 
     return new Payment({
@@ -163,92 +188,101 @@ export class Payment implements Entity<string> {
 
   /**
    * Marca el pago como fallido
-   * @param errorDetails Detalles del error (opcional)
-   * @returns Pago fallido
-   * @throws PaymentUpdateException si el pago no puede ser marcado como fallido
+   * 
+   * @param errorDetails Detalles opcionales sobre el error
+   * @returns Nueva instancia con el pago fallido
+   * @throws {PaymentUpdateException} Si el pago no puede ser marcado como fallido
    */
   failPayment(errorDetails?: Record<string, any>): Payment {
-    if (this.status.isCompleted()) {
-      throw new PaymentUpdateException('No se puede marcar como fallido un pago completado');
+    if (!this.status.isPending()) {
+      throw new PaymentUpdateException('Solo se pueden marcar como fallidos los pagos pendientes');
     }
 
-    const newMetadata = errorDetails ? {
+    const metadata = {
       ...this.metadata,
-      error: errorDetails
-    } : this.metadata;
+      error: errorDetails || { message: 'Pago fallido' }
+    };
 
     return new Payment({
       ...this.toObject(),
       status: PaymentStatus.failed(),
-      metadata: newMetadata,
+      metadata,
       updatedAt: new Date()
     });
   }
 
   /**
-   * Reembolsa el pago
-   * @param reason Motivo del reembolso (opcional)
-   * @returns Pago reembolsado
-   * @throws PaymentUpdateException si el pago no puede ser reembolsado
+   * Marca el pago como reembolsado
+   * 
+   * @param reason Motivo opcional del reembolso
+   * @returns Nueva instancia con el pago reembolsado
+   * @throws {PaymentUpdateException} Si el pago no puede ser reembolsado
    */
   refundPayment(reason?: string): Payment {
     if (!this.status.isCompleted()) {
       throw new PaymentUpdateException('Solo se pueden reembolsar pagos completados');
     }
 
-    const newMetadata = reason ? {
+    const metadata = {
       ...this.metadata,
-      refundReason: reason
-    } : this.metadata;
+      refund: {
+        reason: reason || 'Reembolso solicitado',
+        date: new Date()
+      }
+    };
 
     return new Payment({
       ...this.toObject(),
       status: PaymentStatus.refunded(),
-      metadata: newMetadata,
+      metadata,
       updatedAt: new Date()
     });
   }
 
   /**
-   * Cancela el pago
-   * @returns Pago cancelado
-   * @throws PaymentUpdateException si el pago no puede ser cancelado
+   * Cancela el pago mientras está pendiente
+   * 
+   * @returns Nueva instancia con el pago cancelado
+   * @throws {PaymentUpdateException} Si el pago no puede ser cancelado
    */
   cancelPayment(): Payment {
-    if (this.status.isCompleted()) {
-      throw new PaymentUpdateException('No se puede cancelar un pago completado');
+    if (!this.status.isPending()) {
+      throw new PaymentUpdateException('Solo se pueden cancelar pagos pendientes');
     }
 
-    if (this.status.isRefunded()) {
-      throw new PaymentUpdateException('No se puede cancelar un pago reembolsado');
-    }
+    const metadata = {
+      ...this.metadata,
+      cancellation: {
+        date: new Date()
+      }
+    };
 
     return new Payment({
       ...this.toObject(),
       status: PaymentStatus.cancelled(),
+      metadata,
       updatedAt: new Date()
     });
   }
 
   /**
    * Actualiza los metadatos del pago
-   * @param metadata Nuevos metadatos
-   * @returns Pago con metadatos actualizados
+   * 
+   * @param metadata Nuevos metadatos a añadir o actualizar
+   * @returns Nueva instancia con los metadatos actualizados
    */
   updateMetadata(metadata: Record<string, any>): Payment {
     return new Payment({
       ...this.toObject(),
-      metadata: {
-        ...this.metadata,
-        ...metadata
-      },
+      metadata: { ...this.metadata, ...metadata },
       updatedAt: new Date()
     });
   }
 
   /**
    * Convierte la entidad a un objeto plano
-   * @returns Objeto plano con las propiedades del pago
+   * 
+   * @returns Objeto con todas las propiedades del pago
    */
   toObject(): PaymentProps {
     return {
@@ -269,37 +303,61 @@ export class Payment implements Entity<string> {
 }
 
 /**
- * Props para reconstruir un pago existente
+ * Propiedades completas de un pago
  */
 export interface PaymentProps {
+  /** Identificador único */
   id: string;
+  /** ID del usuario que realiza el pago */
   userId: string;
+  /** ID del evento asociado */
   eventId: string;
+  /** Monto del pago */
   amount: number;
+  /** Código de moneda */
   currency: string;
+  /** Estado del pago */
   status: PaymentStatus;
+  /** Proveedor de pago */
   provider: PaymentProvider;
+  /** ID en el sistema del proveedor */
   providerPaymentId: string | null;
+  /** Descripción o concepto */
   description: string | null;
+  /** Datos adicionales */
   metadata: Record<string, any> | null;
+  /** Fecha de creación */
   createdAt: Date;
+  /** Fecha de última actualización */
   updatedAt: Date;
 }
 
 /**
- * Props para crear un nuevo pago
+ * Propiedades para crear un nuevo pago
  */
 export interface PaymentCreateProps {
+  /** Identificador único (opcional) */
   id?: string;
+  /** ID del usuario que realiza el pago */
   userId: string;
+  /** ID del evento asociado */
   eventId: string;
+  /** Monto del pago */
   amount: number;
+  /** Código de moneda */
   currency: string;
+  /** Estado inicial del pago (opcional) */
   status?: PaymentStatus | PaymentStatusEnum | string;
+  /** Proveedor de servicios de pago */
   provider: PaymentProvider | PaymentProviderEnum | string;
+  /** ID en el sistema del proveedor (opcional) */
   providerPaymentId?: string;
+  /** Descripción o concepto (opcional) */
   description?: string;
+  /** Datos adicionales (opcional) */
   metadata?: Record<string, any>;
+  /** Fecha de creación (opcional) */
   createdAt?: Date;
+  /** Fecha de última actualización (opcional) */
   updatedAt?: Date;
 } 

@@ -1,4 +1,4 @@
-import { Repository } from '../../../core/interfaces/Repository';
+import { Repository } from '../../core/interfaces/Repository';
 import { Group } from '../entities/Group';
 import { GroupStatus, GroupStatusEnum } from '../value-objects/GroupStatus';
 

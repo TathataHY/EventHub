@@ -1,4 +1,4 @@
-import { Repository } from '../../../core/interfaces/Repository';
+import { Repository } from '../../core/interfaces/Repository';
 import { NotificationPreference } from '../entities/NotificationPreference';
 
 /**
