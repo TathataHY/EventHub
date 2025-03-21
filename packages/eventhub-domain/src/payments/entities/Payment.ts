@@ -6,6 +6,10 @@ import { PaymentCreateException } from '../exceptions/PaymentCreateException';
 import { PaymentUpdateException } from '../exceptions/PaymentUpdateException';
 import { Currency } from '../value-objects/Currency';
 import { PaymentMethod } from '../value-objects/PaymentMethod';
+import { PaymentStatus as PaymentStatusEnum } from '../enums/PaymentStatus';
+import { PaymentProvider as PaymentProviderEnum } from '../enums/PaymentProvider';
+import { PaymentMethod as PaymentMethodEnum } from '../enums/PaymentMethod';
+import { Currency as CurrencyEnum } from '../../shared/enums/Currency';
 
 /**
  * Entidad que representa un pago en el sistema
