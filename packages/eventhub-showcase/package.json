@@ -1,13 +1,14 @@
 {
-  "name": "eventhub-showcase",
+  "name": "@eventhub/showcase",
   "type": "module",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "clean": "powershell -Command \"Get-ChildItem -Path . -Recurse -Include *.js -Exclude node_modules,dist,*.config.js,*.config.mjs,node_modules,astro.config.mjs,tailwind.config.mjs | Remove-Item\""
   },
   "dependencies": {
     "astro": "^5.5.3"

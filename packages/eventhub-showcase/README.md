@@ -1,48 +1,76 @@
-# Astro Starter Kit: Basics
+# EventHub Showcase
 
-```sh
-npm create astro@latest -- --template basics
+Este repositorio contiene el sitio web demostrativo de EventHub, una plataforma para la gestión de eventos empresariales y networking profesional.
+
+## 🌐 Demo en vivo
+
+**Ver el sitio web desplegado:** [https://tathatahy.github.io/eventhub-showcase/](https://tathatahy.github.io/eventhub-showcase/)
+
+El sitio se actualiza automáticamente con cada push a la rama main gracias a GitHub Actions.
+
+## 🚀 Características
+
+- **Diseño Moderno y Responsivo**: Adaptado a todos los dispositivos
+- **Landing Page Informativa**: Presenta la plataforma EventHub
+- **Páginas Demostrativas**: Muestra las funcionalidades y casos de uso
+- **Formulario de Contacto**: Permite a visitantes solicitar información
+- **Despliegue Automático**: Configurado con GitHub Actions para despliegue en GitHub Pages
+
+## 📁 Estructura del Proyecto
+
 ```
-
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/withastro/astro/tree/latest/examples/basics)
-[![Open with CodeSandbox](https://assets.codesandbox.io/github/button-edit-lime.svg)](https://codesandbox.io/p/sandbox/github/withastro/astro/tree/latest/examples/basics)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/withastro/astro?devcontainer_path=.devcontainer/basics/devcontainer.json)
-
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-![just-the-basics](https://github.com/withastro/astro/assets/2244813/a0a5533c-a856-4198-8470-2d67b1d7c554)
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-│   └── favicon.svg
+eventhub-showcase/
+├── public/                # Archivos estáticos (imágenes, favicon)
 ├── src/
-│   ├── layouts/
-│   │   └── Layout.astro
-│   └── pages/
-│       └── index.astro
-└── package.json
+│   ├── assets/            # Recursos gráficos
+│   ├── layouts/           # Plantilla principal (Layout.astro)
+│   ├── pages/             # Páginas (index, funcionalidades, etc.)
+│   └── components/        # Componentes reutilizables (vacío)
+└── astro.config.mjs       # Configuración de Astro y despliegue
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+## 💻 Tecnologías
 
-## 🧞 Commands
+- **Astro**: Framework para sitios web estáticos
+- **TailwindCSS**: Framework CSS para diseño responsivo
+- **GitHub Pages**: Plataforma de despliegue
 
-All commands are run from the root of the project, from a terminal:
+## 🔧 Instalación
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+```bash
+# Clonar este repositorio
+git clone https://github.com/TathataHY/eventhub-showcase.git
 
-## 👀 Want to learn more?
+# Entrar al directorio
+cd eventhub-showcase
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+# Instalar dependencias
+npm install
+```
+
+## 🚀 Desarrollo
+
+```bash
+# Iniciar servidor de desarrollo
+npm run dev
+
+# Compilar para producción
+npm run build
+
+# Previsualizar versión de producción
+npm run preview
+```
+
+## 🔄 Relación con EventHub
+
+Este showcase es la landing page promocional para el ecosistema EventHub, que incluye:
+
+- Aplicación móvil
+- API backend
+- Sistema completo de gestión de eventos
+
+## 📝 Personalización
+
+Para añadir nuevas páginas, crear archivos `.astro` en `src/pages/` usando el componente Layout como base.
+
+Para modificar el diseño global, editar `src/layouts/Layout.astro`.
