@@ -18,4 +18,5 @@ export {
 
 // Excepciones
 export { UserCreateException } from './exceptions/UserCreateException';
-export { UserUpdateException } from './exceptions/UserUpdateException'; 
+export { UserUpdateException } from './exceptions/UserUpdateException';
+export { UserAlreadyExistsException } from './exceptions/UserAlreadyExistsException'; 

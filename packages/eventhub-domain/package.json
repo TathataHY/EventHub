@@ -1,10 +1,10 @@
 {
-  "name": "eventhub-domain",
-  "version": "0.1.0",
+  "name": "@eventhub/domain",
+  "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc --noEmitOnError false",
+    "build": "tsc",
     "watch": "tsc -w",
     "test": "jest"
   },
