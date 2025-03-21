@@ -96,3 +96,73 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+# EventHub API
+
+Este proyecto contiene la API para la aplicación EventHub.
+
+## Estructura del Proyecto Propuesta
+
+La nueva estructura del proyecto está organizada siguiendo principios de arquitectura limpia y evitando duplicaciones:
+
+```
+src/
+├── controllers/           # Controladores de la API (endpoints)
+├── common/                # Código común para toda la aplicación
+│   ├── decorators/        # Decoradores personalizados (roles, auth, etc.)
+│   ├── filters/           # Filtros de excepciones HTTP
+│   ├── guards/            # Guards de autenticación/autorización
+│   ├── interceptors/      # Interceptores de solicitudes HTTP
+│   ├── interfaces/        # Interfaces comunes (JWT payload, etc.)
+│   ├── pipes/             # Pipes de validación
+│   └── utils/             # Utilidades comunes
+├── config/                # Configuraciones de la aplicación
+│   ├── env/               # Configuraciones por entorno
+│   ├── swagger/           # Configuración de Swagger
+│   └── typeorm/           # Configuración de TypeORM
+├── app.module.ts          # Módulo principal de la aplicación
+└── main.ts                # Punto de entrada de la aplicación
+```
+
+## Controladores
+
+Los controladores están organizados por funcionalidad:
+
+- `auth.controller.ts` - Autenticación y autorización
+- `user.controller.ts` - Gestión de usuarios
+- `event.controller.ts` - Gestión de eventos
+- `ticket.controller.ts` - Gestión de tickets
+- `payment.controller.ts` - Procesamiento de pagos
+- `notification.controller.ts` - Gestión de notificaciones
+- `notification-preference.controller.ts` - Preferencias de notificaciones
+- etc.
+
+## Guía de Desarrollo
+
+### Añadir un nuevo controlador
+
+1. Crear el archivo de controlador en `src/controllers/`
+2. Exportarlo en `src/controllers/index.ts`
+3. Registrarlo en `src/app.module.ts`
+
+### Convenciones de Código
+
+- Nombres de archivos: kebab-case (ej. `auth-controller.ts`)
+- Nombres de clases: PascalCase (ej. `AuthController`)
+- Métodos y propiedades: camelCase (ej. `getUserById`)
+- Usar decoradores de NestJS para definir rutas y métodos HTTP
+
+## Cambios Propuestos de Reestructuración
+
+1. **Mover todo el código de infraestructura a la capa de infraestructura**
+   - Mantener los controladores en la capa API
+   - Mover las implementaciones de servicios y repositorios a `eventhub-infrastructure`
+
+2. **Centralizar decoradores, guardias y filtros en `common/`**
+   - Eliminar carpetas duplicadas en la raíz
+   - Eliminar carpetas duplicadas en `infrastructure/`
+   - Mantener una única fuente de verdad para cada componente
+
+3. **Reorganizar módulos**
+   - Un único `app.module.ts` en la raíz
+   - Centralizar la importación de módulos desde la capa de infraestructura

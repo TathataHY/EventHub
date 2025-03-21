@@ -1,7 +1,12 @@
 import { SetMetadata } from '@nestjs/common';
 
 /**
- * Decorador para marcar rutas como públicas (no requieren autenticación)
- * Uso: @Public()
+ * Clave para identificar si una ruta es pública
  */
-export const Public = () => SetMetadata('isPublic', true); 
+export const IS_PUBLIC_KEY = 'isPublic';
+
+/**
+ * Decorador para marcar una ruta como pública (no requiere autenticación)
+ * Ejemplo: @Public()
+ */
+export const Public = () => SetMetadata(IS_PUBLIC_KEY, true); 
