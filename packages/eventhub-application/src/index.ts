@@ -1,45 +1,40 @@
-// Exportaciones de la capa de aplicación
-// Aquí se exportarán los casos de uso, servicios de aplicación, etc.
+// Core - contiene interfaces y clases base reutilizables
+export * from './core';
 
-// DTOs
-export { CreateEventDto } from './dtos/event/CreateEventDto';
-export { UpdateEventDto } from './dtos/event/UpdateEventDto';
-export { EventDto } from './dtos/event/EventDto';
-export { EventFilters } from './dtos/event/EventFilters';
-export { CreateUserDto } from './dtos/user/CreateUserDto';
-export { UpdateUserDto } from './dtos/user/UpdateUserDto';
-export { UserDto } from './dtos/user/UserDto';
-export { 
-  CreateNotificationDto, 
-  NotificationDto, 
-  UpdateNotificationPreferenceDto,
-  NotificationPreferenceDto 
-} from './dto';
+// Importamos los módulos para evitar colisiones de nombres
+import * as tickets from './tickets';
+import * as reviews from './reviews';
+import * as users from './users';
+import * as events from './events';
+import * as payments from './payments';
+import * as categories from './categories';
+import * as organizers from './organizers';
+import * as locations from './locations';
+import * as groups from './groups';
+import * as eventTypes from './event-types';
+import * as auth from './auth';
+import * as attendances from './attendances';
+import * as statistics from './statistics';
+import * as media from './media';
+import * as notifications from './notifications';
+import * as notificationTemplates from './notification-templates';
 
-// Casos de uso
-export { CreateEventUseCase } from './use-cases/event/CreateEventUseCase';
-export { UpdateEventUseCase } from './use-cases/event/UpdateEventUseCase';
-export { GetEventByIdUseCase } from './use-cases/event/GetEventByIdUseCase';
-export { GetEventsUseCase } from './use-cases/event/GetEventsUseCase';
-export { AddAttendeeUseCase } from './use-cases/event/AddAttendeeUseCase';
-export { RemoveAttendeeUseCase } from './use-cases/event/RemoveAttendeeUseCase';
-export { CancelEventUseCase } from './use-cases/event/CancelEventUseCase';
-export { CreateUserUseCase } from './use-cases/user/CreateUserUseCase';
-export { GetUserByIdUseCase } from './use-cases/user/GetUserByIdUseCase';
-export { UpdateUserUseCase } from './use-cases/user/UpdateUserUseCase';
-export { 
-  CreateNotificationUseCase, 
-  GetUserNotificationsUseCase,
-  UpdateNotificationPreferenceUseCase 
-} from './use-cases';
-
-// Exportaciones de casos de uso de notificaciones
-export { MarkNotificationReadUseCase } from './use-cases/notification/MarkNotificationReadUseCase';
-export { MarkAllNotificationsReadUseCase } from './use-cases/notification/MarkAllNotificationsReadUseCase';
-export { GetUnreadCountUseCase } from './use-cases/notification/GetUnreadCountUseCase';
-
-export { LoginUseCase } from './use-cases/auth/LoginUseCase';
-
-export { LoginDto } from './dtos/auth/LoginDto';
-
-export {}; // Exportación vacía por ahora 
+// Exportamos los módulos como namespaces para evitar conflictos de nombres
+export {
+  tickets,
+  reviews,
+  users,
+  events,
+  payments,
+  categories,
+  organizers,
+  locations,
+  groups,
+  eventTypes,
+  auth,
+  attendances,
+  statistics,
+  media,
+  notifications,
+  notificationTemplates
+}; 
