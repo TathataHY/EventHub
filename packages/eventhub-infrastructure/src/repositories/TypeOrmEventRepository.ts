@@ -1,5 +1,5 @@
 import { Event, EventFilters, EventRepository } from 'eventhub-domain';
-import { Repository, Like } from 'typeorm';
+import { Repository, Like, Between, EntityManager } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventEntity } from '../entities/EventEntity';
@@ -13,6 +13,14 @@ export class TypeOrmEventRepository implements EventRepository {
     @InjectRepository(EventEntity)
     private readonly eventRepository: Repository<EventEntity>
   ) {}
+
+  /**
+   * Obtiene el repositorio de eventos adecuado (default o transaccional)
+   * @param entityManager Opcional: EntityManager para operaciones en transacción
+   */
+  private getRepository(entityManager?: EntityManager): Repository<EventEntity> {
+    return entityManager ? entityManager.getRepository(EventEntity) : this.eventRepository;
+  }
 
   /**
    * Convierte una entidad de dominio a una entidad de base de datos
@@ -48,111 +56,137 @@ export class TypeOrmEventRepository implements EventRepository {
       location: entity.location,
       organizerId: entity.organizerId,
       capacity: entity.capacity,
-      attendees: entity.attendees,
+      attendees: entity.attendees || [],
       isActive: entity.isActive,
-      tags: entity.tags,
+      tags: entity.tags || [],
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
     });
   }
 
-  async findById(id: string): Promise<Event | null> {
-    const entity = await this.eventRepository.findOne({ where: { id } });
-    return entity ? this.toDomain(entity) : null;
+  /**
+   * Encuentra un evento por su ID
+   * @param id ID del evento
+   * @param entityManager Opcional: EntityManager para operaciones en transacción
+   */
+  async findById(id: string, entityManager?: EntityManager): Promise<Event | null> {
+    const repository = this.getRepository(entityManager);
+    const eventEntity = await repository.findOne({ where: { id } });
+    return eventEntity ? this.toDomain(eventEntity) : null;
   }
 
-  async findAll(): Promise<Event[]> {
-    const entities = await this.eventRepository.find();
-    return entities.map(entity => this.toDomain(entity));
+  /**
+   * Encuentra todos los eventos
+   * @param entityManager Opcional: EntityManager para operaciones en transacción
+   */
+  async findAll(entityManager?: EntityManager): Promise<Event[]> {
+    const repository = this.getRepository(entityManager);
+    const eventEntities = await repository.find();
+    return eventEntities.map(entity => this.toDomain(entity));
   }
 
   /**
    * Encuentra eventos con filtros
+   * @param filters Filtros para la búsqueda
+   * @param page Número de página (opcional)
+   * @param limit Límite de eventos por página (opcional)
+   * @param entityManager Opcional: EntityManager para operaciones en transacción
    */
   async findWithFilters(
     filters: EventFilters,
-    page = 1,
-    limit = 10
+    page: number = 1,
+    limit: number = 10,
+    entityManager?: EntityManager
   ): Promise<{ events: Event[]; total: number }> {
-    const queryBuilder = this.eventRepository
-      .createQueryBuilder('event');
-
-    // Aplicar filtros
-    if (filters.organizerId) {
-      queryBuilder.andWhere('event.organizerId = :organizerId', {
-        organizerId: filters.organizerId
-      });
+    const repository = this.getRepository(entityManager);
+    const { organizerId, isActive, startDate, endDate, query, tags } = filters;
+    
+    // Construir las condiciones de búsqueda
+    const where: any = {};
+    
+    if (organizerId) {
+      where.organizerId = organizerId;
     }
-
-    if (filters.isActive !== undefined) {
-      queryBuilder.andWhere('event.isActive = :isActive', {
-        isActive: filters.isActive
-      });
+    
+    if (isActive !== undefined) {
+      where.isActive = isActive;
     }
-
-    if (filters.startDate) {
-      queryBuilder.andWhere('event.startDate >= :startDate', {
-        startDate: filters.startDate
-      });
+    
+    if (startDate && endDate) {
+      where.startDate = Between(startDate, endDate);
+    } else if (startDate) {
+      where.startDate = Between(startDate, new Date('3000-01-01'));
+    } else if (endDate) {
+      where.endDate = Between(new Date('1970-01-01'), endDate);
     }
-
-    if (filters.endDate) {
-      queryBuilder.andWhere('event.endDate <= :endDate', {
-        endDate: filters.endDate
-      });
+    
+    if (query) {
+      where.title = Like(`%${query}%`);
+      // También podríamos buscar en la descripción, pero TypeORM no permite OR en objetos
     }
-
-    if (filters.query) {
-      queryBuilder.andWhere(
-        '(event.title LIKE :query OR event.description LIKE :query)',
-        { query: `%${filters.query}%` }
-      );
-    }
-
-    if (filters.tags && filters.tags.length > 0) {
-      // La implementación depende de cómo se almacenan las etiquetas en la base de datos
-      // Esta es una implementación simplificada
-      queryBuilder.andWhere('event.tags @> :tags', { 
-        tags: filters.tags 
-      });
-    }
-
+    
+    // Para tags, necesitaríamos una lógica más compleja con un query builder
+    
     // Aplicar paginación
     const skip = (page - 1) * limit;
-    queryBuilder.skip(skip).take(limit);
-
-    // Ordenar por fecha de creación (más recientes primero)
-    queryBuilder.orderBy('event.createdAt', 'DESC');
-
-    // Ejecutar la consulta
-    const [eventEntities, total] = await queryBuilder.getManyAndCount();
-
-    // Mapear entidades a objetos de dominio
-    const events = eventEntities.map(entity => this.toDomain(entity));
-
+    
+    const [entities, total] = await repository.findAndCount({
+      where,
+      skip,
+      take: limit,
+      order: { startDate: 'ASC' }
+    });
+    
+    const events = entities.map(entity => this.toDomain(entity));
+    
     return { events, total };
   }
 
-  async findByOrganizerId(organizerId: string): Promise<Event[]> {
-    const entities = await this.eventRepository.find({
-      where: { organizerId }
+  /**
+   * Encuentra eventos por ID del organizador
+   * @param organizerId ID del organizador
+   * @param entityManager Opcional: EntityManager para operaciones en transacción
+   */
+  async findByOrganizerId(organizerId: string, entityManager?: EntityManager): Promise<Event[]> {
+    const repository = this.getRepository(entityManager);
+    const entities = await repository.find({ 
+      where: { organizerId },
+      order: { startDate: 'ASC' }
     });
     return entities.map(entity => this.toDomain(entity));
   }
 
-  async save(event: Event): Promise<Event> {
+  /**
+   * Guarda un nuevo evento
+   * @param event Evento a guardar
+   * @param entityManager Opcional: EntityManager para operaciones en transacción
+   */
+  async save(event: Event, entityManager?: EntityManager): Promise<Event> {
+    const repository = this.getRepository(entityManager);
     const entity = this.toEntity(event);
-    const savedEntity = await this.eventRepository.save(entity);
+    const savedEntity = await repository.save(entity);
     return this.toDomain(savedEntity);
   }
 
-  async update(event: Event): Promise<Event> {
+  /**
+   * Actualiza un evento existente
+   * @param event Evento a actualizar
+   * @param entityManager Opcional: EntityManager para operaciones en transacción
+   */
+  async update(event: Event, entityManager?: EntityManager): Promise<Event> {
+    const repository = this.getRepository(entityManager);
     const entity = this.toEntity(event);
-    const updatedEntity = await this.eventRepository.save(entity);
+    const updatedEntity = await repository.save(entity);
     return this.toDomain(updatedEntity);
   }
 
-  async delete(id: string): Promise<void> {
-    await this.eventRepository.delete(id);
+  /**
+   * Elimina un evento
+   * @param id ID del evento a eliminar
+   * @param entityManager Opcional: EntityManager para operaciones en transacción
+   */
+  async delete(id: string, entityManager?: EntityManager): Promise<void> {
+    const repository = this.getRepository(entityManager);
+    await repository.delete(id);
   }
 } 
