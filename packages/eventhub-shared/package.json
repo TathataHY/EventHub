@@ -1,11 +1,12 @@
 {
-  "name": "eventhub-shared",
-  "version": "0.1.0",
+  "name": "@eventhub/shared",
+  "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "watch": "tsc -w"
+    "build": "tsc --noEmitOnError false",
+    "watch": "tsc -w",
+    "clean": "powershell -Command \"Get-ChildItem -Path . -Recurse -Include *.js -Exclude node_modules,dist,*.config.js | Remove-Item\""
   },
   "devDependencies": {
     "typescript": "^5.0.0"
