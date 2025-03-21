@@ -5,21 +5,41 @@
     "packages/*"
   ],
   "scripts": {
-    "domain:build": "yarn workspace eventhub-domain build",
-    "domain:watch": "yarn workspace eventhub-domain watch",
-    "application:build": "yarn workspace eventhub-application build",
-    "application:watch": "yarn workspace eventhub-application watch",
-    "infrastructure:build": "yarn workspace eventhub-infrastructure build",
-    "infrastructure:watch": "yarn workspace eventhub-infrastructure watch",
-    "shared:build": "yarn workspace eventhub-shared build",
-    "api:dev": "yarn workspace eventhub-api start:dev",
-    "mobile:dev": "yarn workspace eventhub-mobile start",
+    "domain:build": "yarn workspace @eventhub/domain build",
+    "domain:watch": "yarn workspace @eventhub/domain watch",
+    "domain:test": "yarn workspace @eventhub/domain test",
+    "application:build": "yarn workspace @eventhub/application build",
+    "application:watch": "yarn workspace @eventhub/application watch",
+    "infrastructure:build": "yarn workspace @eventhub/infrastructure build",
+    "infrastructure:watch": "yarn workspace @eventhub/infrastructure watch",
+    "shared:build": "yarn workspace @eventhub/shared build",
+    "api:dev": "yarn workspace @eventhub/api start:dev",
+    "mobile:dev": "yarn workspace @eventhub/mobile start",
+    "showcase:dev": "yarn workspace @eventhub/showcase dev",
+    "showcase:build": "yarn workspace @eventhub/showcase build",
+    "showcase:preview": "yarn workspace @eventhub/showcase preview",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
     "docker:build": "docker-compose build",
     "docker:restart": "docker-compose restart",
     "check:api": "node check-api.js",
-    "build:all": "yarn domain:build && yarn application:build && yarn infrastructure:build && yarn shared:build"
-  }
-} 
+    "build:all": "yarn domain:build && yarn application:build && yarn infrastructure:build && yarn shared:build",
+    "test:all": "yarn domain:test",
+    "build": "tsc --skipLibCheck --noEmit false --declaration false",
+    "watch": "tsc -w",
+    "api:build": "yarn workspace @eventhub/api build",
+    "api:start": "yarn workspace @eventhub/api start",
+    "clean:all": "powershell -Command \"Get-ChildItem -Path ./packages -Directory | ForEach-Object { cd $_.FullName; yarn clean; cd ../../ }\""
+  },
+  "version": "1.0.0",
+  "description": "EventHub - Plataforma de Eventos",
+  "main": "check-api.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "devDependencies": {},
+  "keywords": [],
+  "author": "Tathata <andre.yovera1@gmail.com>",
+  "license": "MIT"
+}
