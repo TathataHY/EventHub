@@ -1,5 +1,5 @@
 {
-  "name": "eventhub-mobile",
+  "name": "@eventhub/mobile",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -9,7 +9,8 @@
     "web": "expo start --web",
     "lint": "eslint .",
     "test": "jest",
-    "build": "expo export"
+    "build": "expo export",
+    "clean": "powershell -Command \"Get-ChildItem -Path . -Recurse -Include *.js -Exclude node_modules,dist,metro.config.js,babel.config.js,.eslintrc.js | Remove-Item\""
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.4",
@@ -22,15 +23,17 @@
     "expo-font": "~11.10.3",
     "expo-image-picker": "~14.7.1",
     "expo-linking": "~6.2.2",
+    "expo-location": "~16.1.0",
     "expo-router": "~3.4.8",
     "expo-splash-screen": "~0.26.4",
     "expo-status-bar": "~1.11.1",
     "formik": "^2.4.5",
+    "geolib": "^3.3.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native": "0.73.6",
     "react-native-gesture-handler": "~2.14.0",
-    "react-native-maps": "1.10.0",
+    "react-native-maps": "1.7.1",
     "react-native-reanimated": "~3.6.2",
     "react-native-safe-area-context": "4.8.2",
     "react-native-screens": "~3.29.0",
@@ -40,6 +43,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@types/react": "~18.2.45",
+    "babel-plugin-module-resolver": "^5.0.2",
     "eslint": "^8.56.0",
     "jest": "^29.7.0",
     "jest-expo": "~50.0.0",

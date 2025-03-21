@@ -1,0 +1,21 @@
+import { Stack } from 'expo-router';
+import { EventDetailsScreen } from '../../src/modules/events';
+
+/**
+ * Pantalla de detalles de evento usando la estructura modular
+ * 
+ * Este archivo es un ejemplo de cómo adaptar las páginas existentes
+ * para usar los componentes modularizados.
+ */
+export default function EventPage() {
+  return (
+    <>
+      <Stack.Screen options={{ 
+        title: 'Detalles del evento',
+        headerTransparent: true,
+        headerTintColor: 'white',
+      }} />
+      <EventDetailsScreen />
+    </>
+  );
+} 
