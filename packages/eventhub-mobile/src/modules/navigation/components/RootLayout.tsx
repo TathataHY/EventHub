@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { AppProvider } from '../../../app/AppProvider';
+import { AppProvider } from '../../../app';
 
 /**
  * Componente que define la estructura de navegación principal

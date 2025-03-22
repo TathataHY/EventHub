@@ -20,6 +20,16 @@ Aplicación móvil para la plataforma EventHub, que permite a los usuarios descu
 - AsyncStorage para el almacenamiento local
 - date-fns para el manejo de fechas
 
+## Documentación de Arquitectura
+
+La aplicación móvil sigue una **Arquitectura Modular** (Feature-First) que organiza el código por características o módulos funcionales.
+
+### Documentación Detallada
+
+- [Arquitectura Modular de la Capa Móvil](../../docs/architecture/mobile_modular_architecture.md): Descripción general de la arquitectura, sus principios y estructura.
+- [Guía de Comunicación entre Módulos](../../docs/architecture/mobile_modules_communication.md): Patrones y directrices para la comunicación entre los diferentes módulos.
+- [Patrones de Inyección de Dependencias](../../docs/architecture/mobile_dependency_injection.md): Implementación de inyección de dependencias para mejorar la testabilidad.
+
 ## Estructura Actual del Proyecto
 
 ```

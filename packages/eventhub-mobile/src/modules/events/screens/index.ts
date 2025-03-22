@@ -2,7 +2,15 @@
  * Exportación de pantallas del módulo de eventos
  */
 
+// Lista de eventos
 export { EventsScreen } from './EventsScreen';
-export { EventDetailScreen } from './EventDetailScreen';
+
+// Detalles de evento
+export { EventDetailsScreen } from './EventDetailsScreen';
+
+// Formulario de evento
 export { EventFormScreen } from './EventFormScreen';
-export * from './EventDetailsScreen'; 
+
+// Otras pantallas relacionadas con eventos
+export { EventCommentsScreen } from './EventCommentsScreen';
+export { EventLocationScreen } from './EventLocationScreen'; 

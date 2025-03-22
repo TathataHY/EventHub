@@ -8,4 +8,5 @@ export * from './social';
 export * from './users';
 export * from './home';
 export * from './gamification';
-export * from './navigation'; 
+export * from './navigation';
+export * from './tickets'; 
