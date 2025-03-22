@@ -1,80 +1,212 @@
-import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  FlatList, 
+  TouchableOpacity, 
+  Image, 
+  TextInput,
+  ActivityIndicator,
+  RefreshControl,
+  StatusBar
+} from 'react-native';
+import { FontAwesome } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-// Simulación de datos de eventos
-const mockEvents = [
-  { id: '1', title: 'Conferencia de Tecnología', date: '2025-04-15', location: 'Madrid' },
-  { id: '2', title: 'Festival de Música', date: '2025-05-20', location: 'Barcelona' },
-  { id: '3', title: 'Exposición de Arte', date: '2025-06-10', location: 'Valencia' },
-  { id: '4', title: 'Maratón Benéfico', date: '2025-07-05', location: 'Sevilla' },
-  { id: '5', title: 'Feria Gastronómica', date: '2025-08-12', location: 'Bilbao' },
-];
+import { eventService } from '../../src/services/event.service';
+import { EventsList } from '../../src/components/event/EventsList';
+import { NearbyEventsSection } from '../../src/components/home/NearbyEventsSection';
+import { RecommendedEventsSection } from '../../src/components/home/RecommendedEventsSection';
+import { HomeScreen } from '../../src/modules/home/screens';
 
-export default function EventsScreen() {
-  const [events, setEvents] = useState(mockEvents);
-
-  // En el futuro, aquí se cargarían los eventos desde la API
-  useEffect(() => {
-    // Simulación de carga de datos
-    console.log('Cargando eventos...');
-  }, []);
-
-  const renderEventItem = ({ item }) => (
-    <View style={styles.eventCard}>
-      <Text style={styles.eventTitle}>{item.title}</Text>
-      <Text style={styles.eventDetails}>Fecha: {item.date}</Text>
-      <Text style={styles.eventDetails}>Ubicación: {item.location}</Text>
-    </View>
-  );
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Próximos Eventos</Text>
-      <FlatList
-        data={events}
-        renderItem={renderEventItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContainer}
-      />
-    </View>
-  );
+/**
+ * Página de inicio (home) que utiliza la estructura modular
+ */
+export default function HomePage() {
+  return <HomeScreen />;
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f9f9f9',
   },
-  header: {
+  encabezado: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  titulo: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
     color: '#333',
   },
-  listContainer: {
+  crearEventoButton: {
+    padding: 10,
+  },
+  cargandoContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cargandoTexto: {
+    marginTop: 10,
+    color: '#666',
+    fontSize: 16,
+  },
+  listaContainer: {
     paddingBottom: 20,
   },
-  eventCard: {
-    backgroundColor: 'white',
+  filtrosContainer: {
+    padding: 15,
+  },
+  busquedaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
     borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    height: 44,
+  },
+  busquedaIcono: {
+    marginRight: 10,
+  },
+  busquedaInput: {
+    flex: 1,
+    height: 44,
+    color: '#333',
+  },
+  filtroTitulo: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+  },
+  categoriasList: {
+    paddingVertical: 5,
+  },
+  categoriaFiltro: {
+    backgroundColor: '#f2f2f2',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  categoriaSeleccionada: {
+    backgroundColor: '#4a80f5',
+  },
+  categoriaFiltroTexto: {
+    color: '#666',
+    fontSize: 14,
+  },
+  categoriaSeleccionadaTexto: {
+    color: 'white',
+  },
+  eventoCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginHorizontal: 15,
+    marginTop: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 3,
   },
-  eventTitle: {
+  eventoImagen: {
+    width: '100%',
+    height: 150,
+  },
+  eventoContenido: {
+    padding: 15,
+  },
+  eventoTitulo: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#2e78b7',
+    color: '#333',
+    marginBottom: 10,
   },
-  eventDetails: {
+  eventoInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  infoIcono: {
+    width: 20,
+    marginRight: 5,
+  },
+  eventoFecha: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 4,
+  },
+  eventoUbicacion: {
+    fontSize: 14,
+    color: '#666',
+    flex: 1,
+  },
+  eventoFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  categoriaEtiqueta: {
+    backgroundColor: '#f2f2f2',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+  },
+  categoriaTexto: {
+    fontSize: 12,
+    color: '#666',
+  },
+  asistiendoEtiqueta: {
+    backgroundColor: '#4cd964',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  asistiendoTexto: {
+    fontSize: 12,
+    color: 'white',
+    marginLeft: 5,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 50,
+    paddingHorizontal: 20,
+  },
+  emptyTexto: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 15,
+    marginBottom: 20,
+  },
+  resetButton: {
+    backgroundColor: '#4a80f5',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 25,
+  },
+  resetButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });

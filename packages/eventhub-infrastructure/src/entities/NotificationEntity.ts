@@ -1,39 +1,71 @@
-import { NotificationType } from 'eventhub-domain';
+import { Entity, Column, PrimaryColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { NotificationType } from '../../../eventhub-domain/src/value-objects/NotificationType';
+import { NotificationChannel } from '../../../eventhub-domain/src/value-objects/NotificationChannel';
 
 /**
- * Entidad ORM para notificaciones
- * Representa la estructura de la tabla de notificaciones en la base de datos
+ * Entidad de notificación para TypeORM
  */
+@Entity('notifications')
 export class NotificationEntity {
+  @PrimaryColumn('uuid')
   id: string;
-  userId: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-  data?: Record<string, any>;
-  isRead: boolean;
-  createdAt: Date;
-  updatedAt: Date;
 
-  constructor(params: {
-    id: string;
-    userId: string;
-    type: NotificationType;
-    title: string;
-    message: string;
-    data?: Record<string, any>;
-    isRead: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-  }) {
-    this.id = params.id;
-    this.userId = params.userId;
-    this.type = params.type;
-    this.title = params.title;
-    this.message = params.message;
-    this.data = params.data;
-    this.isRead = params.isRead;
-    this.createdAt = params.createdAt;
-    this.updatedAt = params.updatedAt;
-  }
+  @Column('uuid')
+  @Index()
+  userId: string;
+
+  @Column()
+  title: string;
+
+  @Column('text')
+  message: string;
+
+  @Column({
+    type: 'enum',
+    enum: NotificationType
+  })
+  type: NotificationType;
+
+  @Column({
+    type: 'enum',
+    enum: NotificationChannel
+  })
+  channel: NotificationChannel;
+
+  @Column('text', { nullable: true })
+  html?: string;
+
+  @Column('boolean', { default: false })
+  read: boolean;
+
+  @Column('boolean', { default: false })
+  sent: boolean;
+
+  @Column('timestamp', { nullable: true })
+  deliveredAt?: Date;
+
+  @Column('timestamp', { nullable: true })
+  readAt?: Date;
+
+  @Column('uuid', { nullable: true })
+  relatedEntityId?: string;
+
+  @Column({ nullable: true })
+  relatedEntityType?: string;
+
+  @Column({
+    type: 'enum',
+    enum: ['low', 'medium', 'high'],
+    default: 'medium'
+  })
+  priority: 'low' | 'medium' | 'high';
+
+  @Column('jsonb', { nullable: true })
+  data?: Record<string, any>;
+
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 } 

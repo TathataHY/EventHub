@@ -18,14 +18,14 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "eventhub-domain": ["../eventhub-domain/src"],
-      "eventhub-domain/*": ["../eventhub-domain/src/*"],
-      "eventhub-application": ["../eventhub-application/src"],
-      "eventhub-application/*": ["../eventhub-application/src/*"],
-      "eventhub-infrastructure": ["../eventhub-infrastructure/src"],
-      "eventhub-infrastructure/*": ["../eventhub-infrastructure/src/*"],
-      "eventhub-shared": ["../eventhub-shared/src"],
-      "eventhub-shared/*": ["../eventhub-shared/src/*"]
+      "@eventhub/domain": ["../eventhub-domain/src"],
+      "@eventhub/domain/*": ["../eventhub-domain/src/*"],
+      "@eventhub/application": ["../eventhub-application/src"],
+      "@eventhub/application/*": ["../eventhub-application/src/*"],
+      "@eventhub/infrastructure": ["../eventhub-infrastructure/src"],
+      "@eventhub/infrastructure/*": ["../eventhub-infrastructure/src/*"],
+      "@eventhub/shared": ["../eventhub-shared/src"],
+      "@eventhub/shared/*": ["../eventhub-shared/src/*"]
     }
   }
 }

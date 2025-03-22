@@ -36,3 +36,29 @@ coverage/
 .history
 .tmp
 temp/ 
+
+# TypeScript
+*.tsbuildinfo
+*.js
+*.js.map
+*.d.ts
+
+# Excepciones de TypeScript
+!jest.config.js
+!.eslintrc.js
+!next.config.js
+!postcss.config.js
+!tailwind.config.js
+!vite.config.js
+!webpack.config.js
+
+# IDEs y editores adicionales
+.vs/
+*.swp
+*.swo
+*.swn
+*.bak
+
+# Carpetas de compilación adicionales
+out/
+lib/

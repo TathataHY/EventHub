@@ -1,0 +1,10 @@
+export { EventDetail } from './EventDetail';
+export { EventCard } from './EventCard';
+export { EventsList } from './EventsList';
+export { EventsSearchBar } from './EventsSearchBar';
+export { EventFilters } from './EventFilters';
+export { EventComments } from './EventComments';
+export { EventJoinButton } from './EventJoinButton';
+export { EventMap } from './EventMap';
+export { EventShareButtons } from './EventShareButtons';
+export { SimilarEvents } from './SimilarEvents'; 

@@ -7,11 +7,12 @@ import {
   Logger
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { DomainException } from 'eventhub-application';
 
 /**
  * Filtro para manejar excepciones HTTP y formatear la respuesta
  */
-@Catch(HttpException)
+@Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
@@ -20,38 +21,81 @@ export class HttpExceptionFilter implements ExceptionFilter {
    * @param exception Excepción capturada
    * @param host Host de argumentos que contiene información de la solicitud
    */
-  catch(exception: HttpException, host: ArgumentsHost) {
+  catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
-    const status = exception.getStatus();
-    const errorResponse = exception.getResponse();
-
-    // Extraer mensaje y detalle de la excepción
+    
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Error interno del servidor';
-    let detail = null;
-
-    if (typeof errorResponse === 'string') {
-      message = errorResponse;
-    } else if (typeof errorResponse === 'object') {
-      message = (errorResponse as any).message || message;
-      detail = (errorResponse as any).error || null;
+    let errorCode = 'INTERNAL_SERVER_ERROR';
+    
+    // Manejar excepciones HTTP estándar
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      const exceptionResponse = exception.getResponse();
+      
+      if (typeof exceptionResponse === 'string') {
+        message = exceptionResponse;
+      } else if (typeof exceptionResponse === 'object' && 'message' in exceptionResponse) {
+        message = Array.isArray(exceptionResponse['message']) 
+          ? exceptionResponse['message'][0]
+          : exceptionResponse['message'];
+      } else {
+        message = exception.message;
+      }
+      
+      errorCode = this.getErrorCodeFromStatus(status);
     }
-
-    // Registrar el error en los logs
+    // Manejar excepciones de dominio
+    else if (exception instanceof DomainException) {
+      status = HttpStatus.BAD_REQUEST;
+      message = exception.message;
+      errorCode = exception.constructor.name.replace('Exception', '').toUpperCase();
+    }
+    // Manejar excepciones no controladas
+    else if (exception instanceof Error) {
+      message = exception.message;
+      this.logger.error(`Error no controlado: ${exception.message}`, exception.stack);
+    } else {
+      this.logger.error(`Error desconocido: ${exception}`);
+    }
+    
+    // Registrar información de la excepción
     this.logger.error(
-      `${request.method} ${request.url} ${status} - ${message}`,
-      exception.stack
+      `Path: ${request.url} - Método: ${request.method} - Código: ${status} - Mensaje: ${message}`,
     );
-
-    // Responder con formato consistente
+    
+    // Devolver respuesta formateada
     response.status(status).json({
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
+      method: request.method,
       message,
-      detail,
+      errorCode,
     });
+  }
+  
+  private getErrorCodeFromStatus(status: number): string {
+    switch (status) {
+      case HttpStatus.BAD_REQUEST:
+        return 'BAD_REQUEST';
+      case HttpStatus.UNAUTHORIZED:
+        return 'UNAUTHORIZED';
+      case HttpStatus.FORBIDDEN:
+        return 'FORBIDDEN';
+      case HttpStatus.NOT_FOUND:
+        return 'NOT_FOUND';
+      case HttpStatus.CONFLICT:
+        return 'CONFLICT';
+      case HttpStatus.UNPROCESSABLE_ENTITY:
+        return 'UNPROCESSABLE_ENTITY';
+      case HttpStatus.TOO_MANY_REQUESTS:
+        return 'TOO_MANY_REQUESTS';
+      default:
+        return 'INTERNAL_SERVER_ERROR';
+    }
   }
 }
 

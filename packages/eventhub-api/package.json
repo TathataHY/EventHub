@@ -1,6 +1,6 @@
 {
-  "name": "eventhub-api",
-  "version": "0.0.1",
+  "name": "@eventhub/api",
+  "version": "1.0.0",
   "description": "API para la plataforma EventHub",
   "author": "EventHub Team",
   "private": true,
@@ -19,8 +19,9 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed:dev": "ts-node -r tsconfig-paths/register ./src/infrastructure/typeorm/seeds/seed.ts",
-    "seed:test": "cross-env NODE_ENV=test ts-node -r tsconfig-paths/register ./src/infrastructure/typeorm/seeds/seed.ts"
+    "seed:dev": "ts-node -r tsconfig-paths/register ./src/config/typeorm/seeds/seed.ts",
+    "seed:test": "cross-env NODE_ENV=test ts-node -r tsconfig-paths/register ./src/config/typeorm/seeds/seed.ts",
+    "clean": "powershell -Command \"Get-ChildItem -Path . -Recurse -Include *.js -Exclude node_modules,dist,*.config.js | Remove-Item\""
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -34,8 +35,8 @@
     "bcrypt": "^5.1.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.0",
-    "eventhub-application": "^0.0.1",
-    "eventhub-domain": "^0.0.1",
+    "@eventhub/application": "1.0.0",
+    "@eventhub/domain": "1.0.0",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
     "mysql2": "^3.6.0",

@@ -1,88 +1,112 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { JwtModule } from '@nestjs/jwt';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
-// Entidades de infraestructura
-import { 
-  UserEntity, 
-  EventEntity, 
-  NotificationEntity,
-  NotificationPreferenceEntity 
-} from 'eventhub-infrastructure';
-
-// Módulos de la nueva arquitectura
-import { DomainModule } from './infrastructure/modules/domain.module';
-import { ApplicationModule } from './infrastructure/modules/application.module';
-import { EventModule } from './infrastructure/modules/event.module';
-import { UserModule } from './infrastructure/modules/user.module';
-import { NotificationModule } from './infrastructure/modules/notification.module';
-import { AuthModule } from './infrastructure/modules/auth.module';
-import { WebsocketModule } from './infrastructure/modules/websocket.module';
+// Configuración
+import { getTypeOrmConfig } from './config/typeorm/typeorm.config';
+import { configValidationSchema } from './config/env/env-validation';
 
 // Controladores
-import { TestController } from './infrastructure/controllers/test.controller';
+import {
+  UserController,
+  AuthController,
+  EventController,
+  PaymentController,
+  CategoryController,
+  CommentController,
+  RatingController,
+  SearchController,
+  WebhookController,
+  AnalyticsController,
+  GroupController
+} from './controllers';
+
+// Filtros, Guards, Interceptores globales
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+
+// Servicios compartidos
+import { JwtService, PasswordService, ExceptionHandlerService } from './common/services';
+import { StripeWebhookService } from './infrastructure-layer/services';
 
 /**
  * Módulo principal de la aplicación
  */
 @Module({
   imports: [
-    // Configuración global
+    // Configuración de variables de entorno
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
+      validationSchema: configValidationSchema,
     }),
     
-    // Configuración de JWT
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET', 'development_secret'),
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '1d'),
-        },
-      }),
-      inject: [ConfigService],
-    }),
-    
-    // Configuración de TypeORM
+    // Base de datos
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
+      useFactory: getTypeOrmConfig,
+    }),
+    
+    // JWT para autenticación
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        type: 'mysql',
-        host: configService.get('DB_HOST', 'localhost'),
-        port: configService.get('DB_PORT', 3306),
-        username: configService.get('DB_USERNAME', 'root'),
-        password: configService.get('DB_PASSWORD', 'root'),
-        database: configService.get('DB_NAME', 'eventhub'),
-        entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-        autoLoadEntities: true,
-        synchronize: configService.get('DB_SYNC', 'false') === 'true',
-        logging: configService.get('DB_LOGGING', 'false') === 'true',
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { 
+          expiresIn: configService.get<string>('JWT_EXPIRES') || '1d' 
+        },
       }),
     }),
     
-    // Módulos de la aplicación
-    DomainModule,
-    ApplicationModule,
-    EventModule,
-    UserModule,
-    NotificationModule,
-    AuthModule,
-    WebsocketModule,
+    // Servir archivos estáticos
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'),
+    }),
   ],
   controllers: [
-    TestController
+    UserController,
+    AuthController,
+    EventController,
+    PaymentController,
+    CategoryController,
+    CommentController,
+    RatingController,
+    SearchController,
+    WebhookController,
+    AnalyticsController,
+    GroupController
   ],
   providers: [
-    // Configurar JwtAuthGuard como guardia global
+    // Filtros globales
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
+    },
+    
+    // Guards globales
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
+    
+    // Interceptores globales
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+    
+    // Servicios compartidos
+    JwtService,
+    PasswordService,
+    ExceptionHandlerService,
+    StripeWebhookService,
   ],
 })
 export class AppModule {} 

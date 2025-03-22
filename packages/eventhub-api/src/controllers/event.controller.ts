@@ -9,7 +9,10 @@ import {
   Patch, 
   Post, 
   Query, 
-  UseGuards 
+  UseGuards, 
+  Put, 
+  UploadedFile, 
+  UseInterceptors
 } from '@nestjs/common';
 import { 
   ApiOperation, 
@@ -30,11 +33,38 @@ import {
   GetEventsUseCase, 
   RemoveAttendeeUseCase, 
   UpdateEventDto, 
-  UpdateEventUseCase 
+  UpdateEventUseCase,
+  UploadEventImageUseCase,
+  NotFoundException,
+  DomainException,
+  EventMapper
 } from 'eventhub-application';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { User } from '../common/decorators/user.decorator';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
+import { Roles } from '../common/decorators/roles.decorator';
+import { RequirePermissions } from '../common/decorators/permissions.decorator';
+import { Public } from '../common/decorators/public.decorator';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ExceptionHandlerService } from '../common/services/exception-handler.service';
+
+// Definir el tipo JwtPayload para corregir errores
+interface ExtendedJwtPayload extends JwtPayload {
+  userId: string;
+}
+
+// Definir el tipo para Express.Multer.File
+declare global {
+  namespace Express {
+    namespace Multer {
+      interface File {
+        buffer: Buffer;
+        originalname: string;
+        mimetype: string;
+      }
+    }
+  }
+}
 
 @ApiTags('eventos')
 @Controller('events')
@@ -46,31 +76,35 @@ export class EventController {
     private readonly getEventsUseCase: GetEventsUseCase,
     private readonly addAttendeeUseCase: AddAttendeeUseCase,
     private readonly removeAttendeeUseCase: RemoveAttendeeUseCase,
-    private readonly cancelEventUseCase: CancelEventUseCase
+    private readonly cancelEventUseCase: CancelEventUseCase,
+    private readonly uploadEventImageUseCase: UploadEventImageUseCase,
+    private readonly exceptionHandler: ExceptionHandlerService
   ) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @Roles('ADMIN', 'ORGANIZER')
+  @RequirePermissions('events:create')
   @ApiOperation({ summary: 'Crear un nuevo evento' })
   @ApiResponse({ status: 201, description: 'Evento creado', type: EventDto })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
   @ApiBody({ type: CreateEventDto })
   async createEvent(
     @Body() createEventDto: CreateEventDto,
-    @User() user: JwtPayload
+    @User() user: ExtendedJwtPayload
   ): Promise<EventDto> {
     try {
-      return await this.createEventUseCase.execute(createEventDto, user.id);
+      createEventDto.organizerId = user.userId;
+      
+      const event = await this.createEventUseCase.execute(createEventDto);
+      return event;
     } catch (error) {
-      throw new HttpException(
-        error.message || 'Error al crear el evento',
-        HttpStatus.BAD_REQUEST
-      );
+      return this.exceptionHandler.handleException(error, 'Error al crear el evento');
     }
   }
 
   @Get()
-  @ApiOperation({ summary: 'Obtener eventos filtrados' })
+  @Public()
+  @ApiOperation({ summary: 'Obtener todos los eventos' })
   @ApiResponse({ status: 200, description: 'Lista de eventos' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -92,6 +126,8 @@ export class EventController {
   ) {
     try {
       const filters: EventFilters = {
+        page: page || 1,
+        limit: limit || 10,
         organizerId,
         isActive,
         startDate,
@@ -99,62 +135,63 @@ export class EventController {
         query,
         tags
       };
-
-      return await this.getEventsUseCase.execute(
-        filters,
-        page ? Number(page) : 1,
-        limit ? Number(limit) : 10
-      );
+      
+      const result = await this.getEventsUseCase.execute(filters);
+      return result;
     } catch (error) {
-      throw new HttpException(
-        error.message || 'Error al obtener los eventos',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
+      return this.exceptionHandler.handleException(error, 'Error al buscar eventos');
     }
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener evento por ID' })
-  @ApiResponse({ status: 200, description: 'Evento encontrado', type: EventDto })
+  @Public()
+  @ApiOperation({ summary: 'Obtener un evento por ID' })
+  @ApiResponse({ status: 200, description: 'Evento obtenido correctamente' })
   @ApiResponse({ status: 404, description: 'Evento no encontrado' })
-  @ApiParam({ name: 'id', type: String })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
+  @ApiParam({ name: 'id', description: 'ID del evento' })
   async getEventById(@Param('id') id: string): Promise<EventDto> {
     try {
-      return await this.getEventByIdUseCase.execute(id);
+      const event = await this.getEventByIdUseCase.execute({ id });
+      
+      if (!event) {
+        throw new NotFoundException('Evento', id);
+      }
+      
+      return event;
     } catch (error) {
-      throw new HttpException(
-        error.message || 'Evento no encontrado',
-        HttpStatus.NOT_FOUND
-      );
+      return this.exceptionHandler.handleException(error, 'Error al obtener el evento');
     }
   }
 
-  @Patch(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Actualizar evento' })
-  @ApiResponse({ status: 200, description: 'Evento actualizado', type: EventDto })
+  @Put(':id')
+  @Roles('ADMIN', 'ORGANIZER')
+  @RequirePermissions('events:update')
+  @ApiOperation({ summary: 'Actualizar un evento' })
+  @ApiResponse({ status: 200, description: 'Evento actualizado correctamente' })
+  @ApiResponse({ status: 400, description: 'Datos de entrada inválidos' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 403, description: 'Prohibido - No es el organizador' })
   @ApiResponse({ status: 404, description: 'Evento no encontrado' })
-  @ApiResponse({ status: 403, description: 'No autorizado' })
-  @ApiParam({ name: 'id', type: String })
-  @ApiBody({ type: UpdateEventDto })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor' })
+  @ApiParam({ name: 'id', description: 'ID del evento a actualizar' })
+  @ApiBody({ type: Object })
   async updateEvent(
     @Param('id') id: string,
     @Body() updateEventDto: UpdateEventDto,
-    @User() user: JwtPayload
+    @User() user: ExtendedJwtPayload
   ): Promise<EventDto> {
     try {
-      return await this.updateEventUseCase.execute(id, updateEventDto, user.id);
+      // Agregar el ID al DTO
+      const dto = { 
+        ...updateEventDto, 
+        id 
+      };
+      
+      const event = await this.updateEventUseCase.execute(dto, user.userId);
+      return event;
     } catch (error) {
-      if (error.message.includes('no encontrado')) {
-        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
-      }
-      if (error.message.includes('organizador')) {
-        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
-      }
-      throw new HttpException(
-        error.message || 'Error al actualizar el evento',
-        HttpStatus.BAD_REQUEST
-      );
+      return this.exceptionHandler.handleException(error, 'Error al actualizar el evento');
     }
   }
 
@@ -173,13 +210,7 @@ export class EventController {
     try {
       return await this.addAttendeeUseCase.execute(eventId, userId);
     } catch (error) {
-      if (error.message.includes('no encontrado')) {
-        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
-      }
-      throw new HttpException(
-        error.message || 'Error al registrar asistente',
-        HttpStatus.BAD_REQUEST
-      );
+      return this.exceptionHandler.handleException(error, 'Error al registrar asistente');
     }
   }
 
@@ -198,40 +229,54 @@ export class EventController {
     try {
       return await this.removeAttendeeUseCase.execute(eventId, userId);
     } catch (error) {
-      if (error.message.includes('no encontrado')) {
-        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
-      }
-      throw new HttpException(
-        error.message || 'Error al eliminar asistente',
-        HttpStatus.BAD_REQUEST
-      );
+      return this.exceptionHandler.handleException(error, 'Error al eliminar asistente');
     }
   }
 
   @Patch(':id/cancel')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Cancelar evento' })
+  @Roles('ADMIN', 'ORGANIZER')
+  @RequirePermissions('events:cancel')
+  @ApiOperation({ summary: 'Cancelar un evento' })
   @ApiResponse({ status: 200, description: 'Evento cancelado', type: EventDto })
   @ApiResponse({ status: 404, description: 'Evento no encontrado' })
-  @ApiResponse({ status: 403, description: 'No autorizado' })
+  @ApiResponse({ status: 403, description: 'No autorizado para cancelar este evento' })
   @ApiParam({ name: 'id', type: String })
   async cancelEvent(
     @Param('id') id: string,
-    @User() user: JwtPayload
+    @User() user: ExtendedJwtPayload
   ): Promise<EventDto> {
     try {
-      return await this.cancelEventUseCase.execute(id, user.id);
+      return await this.cancelEventUseCase.execute(id, user.userId);
     } catch (error) {
-      if (error.message.includes('no encontrado')) {
-        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
-      }
-      if (error.message.includes('organizador')) {
-        throw new HttpException(error.message, HttpStatus.FORBIDDEN);
-      }
-      throw new HttpException(
-        error.message || 'Error al cancelar el evento',
-        HttpStatus.BAD_REQUEST
-      );
+      return this.exceptionHandler.handleException(error, 'Error al cancelar el evento');
+    }
+  }
+
+  @Post(':id/images')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiOperation({ summary: 'Subir imagen para un evento' })
+  @ApiResponse({ status: 200, description: 'Imagen subida correctamente' })
+  @ApiResponse({ status: 400, description: 'Error al subir la imagen' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 403, description: 'Prohibido - No es el organizador' })
+  @ApiResponse({ status: 404, description: 'Evento no encontrado' })
+  @ApiParam({ name: 'id', description: 'ID del evento' })
+  async uploadEventImage(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @User() user: ExtendedJwtPayload
+  ): Promise<EventDto> {
+    try {
+      return await this.uploadEventImageUseCase.execute({
+        eventId: id,
+        image: file.buffer,
+        filename: file.originalname,
+        mimetype: file.mimetype,
+        userId: user.userId
+      });
+    } catch (error) {
+      return this.exceptionHandler.handleException(error, 'Error al subir la imagen');
     }
   }
 } 

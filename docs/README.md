@@ -1,57 +1,80 @@
-# Documentación del Proyecto EventHub
+# Documentación de EventHub
 
-Este directorio contiene toda la documentación relacionada con el desarrollo del proyecto EventHub, una aplicación móvil para la gestión de eventos sociales y empresariales.
+Esta carpeta contiene toda la documentación relacionada con el proyecto EventHub.
 
 ## Estructura de la Documentación
 
-```
-docs/
-│
-├── architecture/                // Documentación de arquitectura
-│   └── clean_architecture.md   // Principios de Clean Architecture aplicados al proyecto
-│
-├── requirements/               // Requisitos y análisis
-│   ├── altornivel/            // Requisitos de alto nivel
-│   │   └── requerimientos.md  // Tabla de requerimientos generales
-│   │
-│   ├── acceptance/            // Criterios de aceptación
-│   │   └── criterios_aceptacion.md  // Criterios de aceptación por área funcional
-│   │
-│   ├── usecases/              // Casos de uso
-│   │   └── casos_uso.md       // Detalle de casos de uso del sistema
-│   │
-│   ├── flows/                 // Diagramas de flujo
-│   │   ├── flujos_procesos.md // Descripción de flujos principales
-│   │   └── instrucciones_plantuml.md // Instrucciones para usar PlantUML
-│   │
-│   └── userstories/           // Historias de usuario
-│       └── historias_usuario.md // Historias desde perspectiva del usuario
-│
-├── technical/                  // Documentación técnica
-│   └── plan_implementacion.md  // Plan de implementación técnica
-│
-└── user/                       // Documentación para usuarios finales
-    └── guia_usuario.md         // Guía de uso de la aplicación
-```
+### 1. Arquitectura
 
-## Índice de Contenidos
+- [**Clean Architecture**](./architecture/clean_architecture.md) - Detalla la implementación de Clean Architecture en el proyecto, incluyendo el estado actual de cada capa
+- [**Diagramas de Arquitectura**](./architecture/diagramas_arquitectura.md) - Diagramas visuales de la arquitectura del sistema
+- [**Diseño General**](./architecture/diseno_general.md) - Descripción del diseño general del sistema y estructura del monorepo
 
-### Arquitectura
-- [Clean Architecture](architecture/clean_architecture.md) - Descripción de los principios de Clean Architecture aplicados al proyecto.
+### 2. Documentación Técnica
 
-### Requisitos
-- [Requerimientos de Alto Nivel](requirements/altornivel/requerimientos.md) - Lista completa de requerimientos del sistema.
-- [Casos de Uso](requirements/usecases/casos_uso.md) - Descripción detallada de los casos de uso.
-- [Flujos de Procesos](requirements/flows/flujos_procesos.md) - Diagramas y descripción de los principales flujos de la aplicación usando PlantUML.
-- [Instrucciones PlantUML](requirements/flows/instrucciones_plantuml.md) - Guía para visualizar y editar los diagramas de flujo con PlantUML.
-- [Historias de Usuario](requirements/userstories/historias_usuario.md) - Historias desde la perspectiva del usuario.
-- [Criterios de Aceptación](requirements/acceptance/criterios_aceptacion.md) - Criterios de aceptación detallados por área funcional.
+- [**Estado Actual del Proyecto**](./technical/estado_actual.md) - Resumen actualizado del estado del proyecto, componentes implementados y pendientes
+- [**Avance del Backend**](./technical/avance_backend.md) - Detalle del avance en el desarrollo del backend por módulos
+- [**Esquema de Base de Datos**](./technical/esquema_basedatos.md) - Documentación del esquema de la base de datos MySQL
+- [**Plan de Implementación**](./technical/plan_implementacion.md) - Plan detallado para la implementación del proyecto
+- [**Roadmap Técnico**](./technical/roadmap.md) - Planificación detallada de los próximos sprints y prioridades
+- [**API Endpoints**](./technical/api_endpoints.md) - Documentación detallada de todos los endpoints de la API
 
-### Documentación Técnica
-- [Plan de Implementación](technical/plan_implementacion.md) - Detalles sobre la implementación técnica del proyecto.
+### 3. Requerimientos
 
-### Documentación de Usuario
-- [Guía de Usuario](user/guia_usuario.md) - Guía completa para los usuarios finales de la aplicación.
+#### Alto Nivel
+- [**Requerimientos Generales**](./requirements/altornivel/requerimientos.md) - Lista detallada de requerimientos funcionales y no funcionales
+
+#### Casos de Uso
+- [**Casos de Uso**](./requirements/usecases/casos_uso.md) - Descripción detallada de los casos de uso del sistema
+
+#### Flujos de Procesos
+- [**Flujos de Procesos**](./requirements/flows/flujos_procesos.md) - Diagramas de flujo de los principales procesos
+- [**Instrucciones PlantUML**](./requirements/flows/instrucciones_plantuml.md) - Guía para visualizar y editar diagramas PlantUML
+
+#### Historias de Usuario
+- [**Historias de Usuario**](./requirements/userstories/historias_usuario.md) - Historias de usuario con criterios de aceptación
+
+#### Criterios de Aceptación
+- [**Criterios de Aceptación**](./requirements/acceptance/criterios_aceptacion.md) - Criterios de aceptación generales
+
+### 4. Documentación para Usuarios
+- [**Guía de Usuario**](./user/guia_usuario.md) - Guía completa para los usuarios finales
+
+## Estado del Proyecto
+
+El proyecto EventHub se encuentra actualmente en desarrollo activo. Las principales características del backend ya han sido implementadas, incluyendo:
+
+- Autenticación y gestión de usuarios
+- Gestión de eventos
+- Sistema de tickets
+- Procesamiento de pagos
+- Notificaciones
+- Comentarios y valoraciones
+- Sistema de búsqueda
+- Analíticas
+
+Las prioridades actuales son:
+1. Completar la refactorización de controladores a la nueva arquitectura limpia
+2. Mejorar la validación de entradas
+3. Desarrollar pruebas unitarias y de integración
+4. Optimizar el rendimiento de consultas complejas
+
+Para más detalles sobre el estado actual y próximos pasos, consulta el [Estado Actual del Proyecto](./technical/estado_actual.md), el [Avance del Backend](./technical/avance_backend.md) y el [Roadmap Técnico](./technical/roadmap.md).
+
+## Cómo Utilizar Esta Documentación
+
+Esta documentación está diseñada para ser consultada por diferentes personas involucradas en el proyecto:
+
+- **Desarrolladores**: Consultar principalmente la documentación de arquitectura, técnica y la documentación de [API Endpoints](./technical/api_endpoints.md).
+- **Diseñadores**: Revisar las historias de usuario y criterios de aceptación.
+- **Gerentes de Proyecto**: Utilizar el [Plan de Implementación](./technical/plan_implementacion.md) y el [Roadmap Técnico](./technical/roadmap.md).
+- **Testers**: Enfocarse en los criterios de aceptación, casos de uso y endpoints de API.
+
+Se recomienda comenzar con el [Estado Actual del Proyecto](./technical/estado_actual.md) para obtener una visión general del progreso actual.
+
+## Actualización de la Documentación
+
+Esta documentación debe actualizarse regularmente a medida que el proyecto evoluciona. Cualquier cambio significativo en el código debe reflejarse en los documentos correspondientes.
 
 ## Cómo contribuir a la documentación
 

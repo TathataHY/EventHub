@@ -1,0 +1,13 @@
+import React from 'react';
+// Importar directamente desde el módulo app que exporta todo lo necesario
+import { AppProvider } from '../src/app/AppProvider';
+import { RootLayout } from '../src/modules/navigation';
+
+/**
+ * Ejemplo de cómo actualizar el _layout.tsx para usar la nueva estructura
+ * Este archivo mantiene la compatibilidad con Expo Router
+ */
+export default function Layout() {
+  // Simplemente renderizar el RootLayout que ahora está modularizado
+  return <RootLayout />;
+} 
