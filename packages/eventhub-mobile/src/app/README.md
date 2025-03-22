@@ -1,58 +1,51 @@
-# Estructura de la Aplicación EventHub Mobile
+# Configuración Global de la Aplicación
 
-Este directorio contiene la estructura principal de la aplicación EventHub Mobile organizada de manera modular.
+Este directorio contiene la configuración global y los componentes principales que definen la estructura base de la aplicación.
 
-## Estructura de carpetas
+## Propósito
+
+La carpeta `app` dentro de `src` se encarga de:
+
+1. Proveer la configuración global de la aplicación
+2. Definir los proveedores principales (ThemeProvider, AppProvider, etc.)
+3. Establecer la estructura base de navegación
+4. Centralizar las exportaciones de componentes principales
+
+## Estructura
 
 ```
-eventhub-mobile/
-├── app/                  # Carpeta Expo Router (páginas y rutas)
-├── src/                  # Código fuente principal
-│   ├── app/              # Configuración y componentes principales (punto de entrada)
-│   ├── core/             # Funcionalidad central (servicios, navegación, etc.)
-│   │   ├── api/          # Configuración y servicios de API
-│   │   ├── context/      # Contextos globales (tema, autenticación, etc.)
-│   │   ├── mocks/        # Datos de prueba
-│   │   ├── navigation/   # Configuración de navegación
-│   │   ├── services/     # Servicios compartidos 
-│   │   └── storage/      # Almacenamiento local
-│   ├── modules/          # Módulos funcionales de la aplicación
-│   │   ├── auth/         # Autenticación
-│   │   ├── events/       # Gestión de eventos
-│   │   ├── users/        # Gestión de usuarios
-│   │   └── ...           # Otros módulos
-│   ├── shared/           # Componentes y utilidades compartidas
-│   │   ├── components/   # Componentes UI reutilizables
-│   │   ├── hooks/        # Hooks personalizados
-│   │   ├── layouts/      # Layouts reutilizables
-│   │   ├── forms/        # Componentes de formulario
-│   │   ├── types/        # Interfaces y tipos
-│   │   └── utils/        # Utilidades generales
-│   └── theme/            # Configuración de estilos y tema
+app/
+├── AppProvider.tsx     # Proveedor principal que combina todos los proveedores
+├── AppLayout.tsx      # Layout principal de la aplicación
+└── index.ts          # Exportaciones centralizadas
 ```
 
-## Guía de organización
+## Uso
 
-1. **app/**: Contiene los componentes principales y configuración central.
-   - `AppProvider.tsx`: Proveedor global de contextos.
-   - `AppLayout.tsx`: Estructura de navegación principal.
+Los componentes y proveedores de esta carpeta son utilizados principalmente por:
 
-2. **modules/**: Cada módulo funcional debe estar autocontenido:
-   - `components/`: Componentes específicos del módulo
-   - `screens/`: Pantallas del módulo
-   - `services/`: Servicios específicos del módulo
-   - `hooks/`: Hooks específicos del módulo
-   - `types/`: Tipos e interfaces del módulo
+1. El layout principal de la aplicación (`app/_layout.tsx`)
+2. Los layouts específicos de cada sección
+3. Otros módulos que requieren acceso a la configuración global
 
-3. **shared/**: Componentes y utilidades compartidas entre módulos
-   - Solo debe contener elementos reutilizables en múltiples módulos
-   
-4. **core/**: Funcionalidad central y servicios globales
-   - Maneja operaciones fundamentales como autenticación, almacenamiento, etc.
+## Ejemplo de uso
 
-## Buenas prácticas
+```tsx
+// En app/_layout.tsx
+import { AppProvider } from '../src/app';
 
-1. **Modularidad**: Cada módulo debe ser independiente y autocontenido
-2. **Reutilización**: Promover componentes compartidos en `shared/`
-3. **Tipos**: Utilizar TypeScript para todas las definiciones de tipos
-4. **Exportaciones**: Cada carpeta debe tener un `index.ts` que exporte sus componentes 
+export default function RootLayout() {
+  return (
+    <AppProvider>
+      {/* Contenido de la aplicación */}
+    </AppProvider>
+  );
+}
+```
+
+## Notas importantes
+
+- Este módulo NO debe contener lógica de negocio específica
+- Debe mantenerse lo más ligero posible
+- Solo debe exportar componentes y configuraciones esenciales
+- La lógica específica debe estar en los módulos correspondientes 
