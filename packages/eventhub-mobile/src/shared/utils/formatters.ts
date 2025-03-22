@@ -92,4 +92,30 @@ export const formatNumber = (number: number): string => {
   }
   
   return `${(number / 1000000).toFixed(1)}M`;
-}; 
+};
+
+/**
+ * Formatea una fecha como texto relativo (ej: "hace 5 minutos")
+ * @param dateString Fecha a formatear como string
+ * @returns String con formato relativo
+ */
+export function formatRelativeDate(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+  
+  if (diffInSeconds < 60) {
+    return 'hace unos segundos';
+  } else if (diffInSeconds < 3600) {
+    const minutes = Math.floor(diffInSeconds / 60);
+    return `hace ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
+  } else if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600);
+    return `hace ${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+  } else if (diffInSeconds < 604800) {
+    const days = Math.floor(diffInSeconds / 86400);
+    return `hace ${days} ${days === 1 ? 'día' : 'días'}`;
+  } else {
+    return date.toLocaleDateString();
+  }
+} 

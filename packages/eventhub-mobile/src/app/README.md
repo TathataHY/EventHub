@@ -8,38 +8,43 @@ La carpeta `app` dentro de `src` se encarga de:
 
 1. Proveer la configuración global de la aplicación
 2. Definir los proveedores principales (ThemeProvider, AppProvider, etc.)
-3. Establecer la estructura base de navegación
-4. Centralizar las exportaciones de componentes principales
 
-## Estructura
+## Estructura Actual y Problemas Detectados
+
+Actualmente existe cierta duplicación entre este directorio y otras partes de la aplicación:
 
 ```
 app/
 ├── AppProvider.tsx     # Proveedor principal que combina todos los proveedores
-├── AppLayout.tsx      # Layout principal de la aplicación
-└── index.ts          # Exportaciones centralizadas
+├── AppLayout.tsx       # Layout principal de la aplicación (duplicado con RootLayout)
+└── index.ts           # Exportaciones centralizadas
 ```
 
-## Uso
+Se ha detectado duplicación con:
+- `src/modules/navigation/components/RootLayout.tsx` (similar a AppLayout.tsx)
+- `src/core/providers/RootLayoutProvider.tsx` (similar a AppProvider.tsx)
 
-Los componentes y proveedores de esta carpeta son utilizados principalmente por:
+Además, existe una referencia circular:
+- `app/_layout.tsx` → `RootLayoutProvider` → `RootLayout` → `AppProvider`
 
-1. El layout principal de la aplicación (`app/_layout.tsx`)
-2. Los layouts específicos de cada sección
-3. Otros módulos que requieren acceso a la configuración global
+## Propuesta de Mejora
 
-## Ejemplo de uso
+Se sugiere consolidar estos componentes:
+
+1. Mantener solo `AppProvider.tsx` en esta carpeta y eliminar `AppLayout.tsx`
+2. Usar `RootLayout` desde `modules/navigation` como la definición única del layout
+3. Reorganizar los imports para evitar referencias circulares
+
+## Uso Recomendado
+
+Una vez resueltos los problemas, el uso recomendado sería:
 
 ```tsx
 // En app/_layout.tsx
-import { AppProvider } from '../src/app';
+import { RootLayoutProvider } from '../src/core/providers';
 
 export default function RootLayout() {
-  return (
-    <AppProvider>
-      {/* Contenido de la aplicación */}
-    </AppProvider>
-  );
+  return <RootLayoutProvider />;
 }
 ```
 

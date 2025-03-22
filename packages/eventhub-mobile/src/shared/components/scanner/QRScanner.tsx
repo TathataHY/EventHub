@@ -13,7 +13,7 @@ import { BarCodeScanner } from 'expo-barcode-scanner';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useTheme } from '../../../core/theme';
+import { useTheme } from '@core/context/ThemeContext';
 
 interface QRScannerProps {
   /**

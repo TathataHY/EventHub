@@ -1,14 +1,15 @@
-import { apiService } from './api.service';
+import { apiClient } from '@core/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { recommendationService } from './recommendation.service';
-import { authService } from './auth.service';
+import { authService } from '@modules/auth/services/auth.service';
+import { Event as EventType, EventSearchParams as EventSearchParamsType } from '../types/event.types';
 
-// Interfaces
-export interface Event {
+// Interfaces para compatibilidad - Usar para migración gradual
+export interface Event extends Partial<EventType> {
   id: number | string;
   title: string;
   description: string;
-  location: string;
+  location: string | any;
   startDate: string;
   endDate?: string;
   category: string;
@@ -18,9 +19,10 @@ export interface Event {
   organizerId: number | string;
   organizerName?: string;
   isAttending?: boolean;
+  recommendationScore?: number;
 }
 
-export interface EventSearchParams {
+export interface EventSearchParams extends Partial<EventSearchParamsType> {
   query?: string;
   category?: string;
   startDate?: string;
@@ -32,7 +34,7 @@ class EventService {
   // Obtener todos los eventos
   async getAllEvents(): Promise<Event[]> {
     try {
-      const response = await apiService.get('/events');
+      const response = await apiClient.get('/events');
       return response.data;
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -43,7 +45,7 @@ class EventService {
   // Obtener eventos próximos
   async getUpcomingEvents() {
     try {
-      return await apiService.get('/events/upcoming');
+      return await apiClient.get('/events/upcoming');
     } catch (error) {
       console.error('Error al obtener eventos próximos:', error);
       throw error;
@@ -53,7 +55,7 @@ class EventService {
   // Buscar eventos
   async searchEvents(query: string): Promise<Event[]> {
     try {
-      const response = await apiService.get(`/events/search?q=${encodeURIComponent(query)}`);
+      const response = await apiClient.get(`/events/search?q=${encodeURIComponent(query)}`);
       return response.data;
     } catch (error) {
       console.error(`Error searching events with query ${query}:`, error);
@@ -99,7 +101,7 @@ class EventService {
   // Crear un nuevo evento
   async createEvent(eventData: Partial<Event>): Promise<Event> {
     try {
-      const response = await apiService.post('/events', eventData);
+      const response = await apiClient.post('/events', eventData);
       return response.data;
     } catch (error) {
       console.error('Error creating event:', error);
@@ -110,7 +112,7 @@ class EventService {
   // Actualizar un evento
   async updateEvent(id: string, eventData: Partial<Event>): Promise<Event> {
     try {
-      const response = await apiService.put(`/events/${id}`, eventData);
+      const response = await apiClient.put(`/events/${id}`, eventData);
       return response.data;
     } catch (error) {
       console.error(`Error updating event with id ${id}:`, error);
@@ -121,7 +123,7 @@ class EventService {
   // Eliminar un evento
   async deleteEvent(id: string): Promise<void> {
     try {
-      await apiService.delete(`/events/${id}`);
+      await apiClient.delete(`/events/${id}`);
     } catch (error) {
       console.error(`Error deleting event with id ${id}:`, error);
       throw error;
@@ -154,7 +156,7 @@ class EventService {
   // Cancelar registro a un evento
   async cancelAttendance(id: string): Promise<void> {
     try {
-      await apiService.delete(`/events/${id}/attend`);
+      await apiClient.delete(`/events/${id}/attend`);
     } catch (error) {
       console.error(`Error canceling attendance for event with id ${id}:`, error);
       throw error;
@@ -164,7 +166,7 @@ class EventService {
   // Obtener mis eventos (organizados por el usuario)
   async getMyEvents(): Promise<Event[]> {
     try {
-      const response = await apiService.get('/events/my-events');
+      const response = await apiClient.get('/events/my-events');
       return response.data;
     } catch (error) {
       console.error('Error fetching my events:', error);
@@ -175,7 +177,7 @@ class EventService {
   // Obtener eventos a los que asiste el usuario
   async getEventsAttending(): Promise<Event[]> {
     try {
-      const response = await apiService.get('/events/attending');
+      const response = await apiClient.get('/events/attending');
       return response.data;
     } catch (error) {
       console.error('Error fetching events attending:', error);
@@ -185,7 +187,7 @@ class EventService {
 
   async getEventsByCategory(category: string): Promise<Event[]> {
     try {
-      const response = await apiService.get(`/events?category=${encodeURIComponent(category)}`);
+      const response = await apiClient.get(`/events?category=${encodeURIComponent(category)}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching events with category ${category}:`, error);
@@ -204,7 +206,7 @@ class EventService {
       if (params.endDate) queryParams.append('endDate', params.endDate);
       if (params.location) queryParams.append('location', params.location);
       
-      const response = await apiService.get(`/events/search?${queryParams.toString()}`);
+      const response = await apiClient.get(`/events/search?${queryParams.toString()}`);
       return response.data;
     } catch (error) {
       console.error('Error in advanced search:', error);
@@ -230,6 +232,121 @@ class EventService {
     } catch (error) {
       console.error('Error al registrar compartir evento:', error);
       return false;
+    }
+  }
+
+  // Unirse a un evento
+  async joinEvent(eventId: string): Promise<boolean> {
+    try {
+      const user = await authService.getCurrentUser();
+      if (!user) throw new Error('Usuario no autenticado');
+      
+      // Hacer la petición a la API
+      await apiClient.post(`/events/${eventId}/attend`);
+      
+      // Registrar interacción para recomendaciones
+      const event = await this.getEventById(eventId);
+      if (event) {
+        recommendationService.recordInteraction(
+          user.id,
+          eventId,
+          event.category,
+          'attend'
+        );
+      }
+      
+      return true;
+    } catch (error) {
+      console.error(`Error joining event with id ${eventId}:`, error);
+      throw error;
+    }
+  }
+
+  // Abandonar un evento
+  async leaveEvent(eventId: string): Promise<boolean> {
+    try {
+      await apiClient.delete(`/events/${eventId}/attend`);
+      return true;
+    } catch (error) {
+      console.error(`Error leaving event with id ${eventId}:`, error);
+      throw error;
+    }
+  }
+
+  // Verificar si el usuario está asistiendo a un evento
+  async isUserAttending(eventId: string): Promise<boolean> {
+    try {
+      const user = await authService.getCurrentUser();
+      if (!user) return false;
+      
+      const response = await apiClient.get(`/events/${eventId}/attending`);
+      return !!response.data.isAttending;
+    } catch (error) {
+      console.error(`Error checking if user is attending event ${eventId}:`, error);
+      return false;
+    }
+  }
+
+  // Obtener eventos destacados
+  async getFeaturedEvents(limit: number = 5): Promise<Event[]> {
+    try {
+      const response = await apiClient.get(`/events/featured?limit=${limit}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching featured events:', error);
+      // Datos simulados para desarrollo
+      return [];
+    }
+  }
+
+  // Obtener eventos cercanos
+  async getNearbyEvents(limit: number = 5): Promise<Event[]> {
+    try {
+      const response = await apiClient.get(`/events/nearby?limit=${limit}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching nearby events:', error);
+      // Datos simulados para desarrollo
+      return [];
+    }
+  }
+
+  // Obtener categorías de eventos
+  async getCategories(): Promise<string[]> {
+    try {
+      const response = await apiClient.get('/events/categories');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching event categories:', error);
+      // Categorías simuladas para desarrollo
+      return ['Música', 'Tecnología', 'Deportes', 'Arte', 'Gastronomía', 'Educación'];
+    }
+  }
+
+  // Obtener todos los eventos (alias para compatibilidad)
+  async getEvents(): Promise<Event[]> {
+    return this.getAllEvents();
+  }
+
+  // Cancelar asistencia a un evento (alias para compatibilidad)
+  async unattendEvent(eventId: string): Promise<boolean> {
+    try {
+      await this.cancelAttendance(eventId);
+      return true;
+    } catch (error) {
+      console.error(`Error unattending event ${eventId}:`, error);
+      return false;
+    }
+  }
+
+  // Obtener eventos a los que ha asistido un usuario
+  async getUserAttendedEvents(userId: string): Promise<Event[]> {
+    try {
+      const response = await apiClient.get(`/users/${userId}/events/attended`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching attended events for user ${userId}:`, error);
+      return [];
     }
   }
 }

@@ -75,6 +75,14 @@ export const commonColors = {
   transparent: 'transparent',
 };
 
+// Colores de UI básicos
+export const uiColors = {
+  text: '#333333',       // Color de texto principal
+  background: '#ffffff', // Color de fondo principal
+  divider: '#dddddd',    // Color para divisores
+  accent: '#4a80f5',     // Color de acento (igual al primario por defecto)
+};
+
 // Exportamos todos los colores
 export const colors = {
   primary: primaryColors,
@@ -82,4 +90,5 @@ export const colors = {
   ...statusColors,
   grey: greyScale,
   common: commonColors,
+  ...uiColors,
 }; 

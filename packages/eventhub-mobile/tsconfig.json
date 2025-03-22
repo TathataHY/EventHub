@@ -15,7 +15,9 @@
       "@app/*": ["app/*"]
     },
     "outDir": "./dist",
-    "noEmit": true
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
   },
   "include": [
     "**/*.ts",

@@ -11,28 +11,39 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useTheme } from '../../context/ThemeContext';
-import { EventCard } from '../event/EventCard';
-import { recommendationService } from '../../services/recommendation.service';
-import { authService } from '../../services/auth.service';
+import { useTheme } from '@core/context/ThemeContext';
+import { EventCard } from '@modules/events/components/EventCard';
+import { recommendationService } from '@modules/events/services/recommendation.service';
+import { authService } from '@modules/auth/services/auth.service';
+import { Event } from '@modules/events/types';
+import { User } from '@modules/users/types';
 
 interface RecommendedEventsSectionProps {
+  events?: Event[];
   maxEvents?: number;
+  onEventPress?: (event: Event) => void;
 }
 
 export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> = ({
-  maxEvents = 5
+  events,
+  maxEvents = 5,
+  onEventPress
 }) => {
   const { theme } = useTheme();
   const router = useRouter();
   
   const [isLoading, setIsLoading] = useState(true);
-  const [recommendedEvents, setRecommendedEvents] = useState<any[]>([]);
-  const [user, setUser] = useState<{ id: string } | null>(null);
+  const [recommendedEvents, setRecommendedEvents] = useState<Event[]>([]);
+  const [user, setUser] = useState<User | null>(null);
   
   useEffect(() => {
-    loadUserAndRecommendations();
-  }, []);
+    if (events && events.length > 0) {
+      setRecommendedEvents(events.slice(0, maxEvents));
+      setIsLoading(false);
+    } else {
+      loadUserAndRecommendations();
+    }
+  }, [events, maxEvents]);
   
   // Cargar usuario y recomendaciones
   const loadUserAndRecommendations = async () => {
@@ -52,10 +63,7 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
         setRecommendedEvents(recommendations);
       } else {
         // Si no hay usuario autenticado, cargar eventos populares
-        const popularEvents = await recommendationService.getRecommendedEvents(
-          'guest',
-          maxEvents
-        );
+        const popularEvents = await recommendationService.getPopularEvents(maxEvents);
         setRecommendedEvents(popularEvents);
       }
     } catch (error) {
@@ -66,23 +74,24 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
     }
   };
   
-  // Navegar a la pantalla de evento
-  const navigateToEvent = (eventId: string) => {
+  // Manejar selección de evento
+  const handleEventPress = (event: Event) => {
     // Registrar interacción de vista
     if (user) {
-      const event = recommendedEvents.find(e => e.id === eventId);
-      if (event) {
-        recommendationService.recordInteraction(
-          user.id,
-          eventId,
-          event.category,
-          'view'
-        ).catch(error => console.error('Error al registrar interacción:', error));
-      }
+      recommendationService.recordInteraction(
+        user.id,
+        event.id,
+        event.category,
+        'view'
+      ).catch(error => console.error('Error al registrar interacción:', error));
     }
     
-    // Navegar al evento
-    router.push(`/events/evento/${eventId}`);
+    // Usar el handler proporcionado o navegar directamente
+    if (onEventPress) {
+      onEventPress(event);
+    } else {
+      router.push(`/events/${event.id}`);
+    }
   };
   
   // Recargar recomendaciones
@@ -93,26 +102,26 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
           Para ti
         </Text>
         <TouchableOpacity onPress={refreshRecommendations}>
           <Ionicons 
             name="refresh" 
             size={20} 
-            color={theme.colors.primary} 
+            color={theme.colors.primary.main} 
             style={styles.refreshIcon}
           />
         </TouchableOpacity>
       </View>
       
-      <Text style={[styles.subtitle, { color: theme.colors.secondaryText }]}>
+      <Text style={[styles.subtitle, { color: theme.colors.text.secondary }]}>
         Recomendaciones basadas en tus intereses
       </Text>
       
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <ActivityIndicator size="small" color={theme.colors.primary.main} />
         </View>
       ) : recommendedEvents.length > 0 ? (
         <FlatList
@@ -124,14 +133,14 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
           renderItem={({ item }) => (
             <TouchableOpacity 
               style={styles.eventCardContainer}
-              onPress={() => navigateToEvent(item.id)}
+              onPress={() => handleEventPress(item)}
             >
               <EventCard event={item} />
               
               {item.recommendationScore && (
-                <View style={[styles.matchBadge, { backgroundColor: theme.colors.primary }]}>
+                <View style={[styles.matchBadge, { backgroundColor: theme.colors.primary.main }]}>
                   <Text style={styles.matchText}>
-                    {Math.min(99, Math.floor(item.recommendationScore * 2))}% match
+                    {Math.min(99, Math.floor(item.recommendationScore * 100))}% match
                   </Text>
                 </View>
               )}
@@ -140,8 +149,8 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
         />
       ) : (
         <View style={styles.emptyContainer}>
-          <Ionicons name="calendar-outline" size={32} color={theme.colors.secondaryText} />
-          <Text style={[styles.emptyText, { color: theme.colors.secondaryText }]}>
+          <Ionicons name="calendar-outline" size={32} color={theme.colors.text.secondary} />
+          <Text style={[styles.emptyText, { color: theme.colors.text.secondary }]}>
             No hay recomendaciones disponibles
           </Text>
         </View>

@@ -92,20 +92,25 @@ export interface PublicUserProfile {
 }
 
 // Preferencias del usuario (configuración)
-export interface UserPreferences {
+export interface UserAppPreferences {
   notificationsEnabled: boolean;
   emailNotificationsEnabled: boolean;
   eventRemindersEnabled: boolean;
-  eventReminderTime: number;
   darkModeEnabled: boolean;
   language: string;
-  currency: string;
   privacySettings: {
-    profileVisibility: 'public' | 'followers' | 'private';
+    profileVisibility: 'public' | 'private' | 'followers';
+    locationSharing: boolean;
+    activitySharing: boolean;
     showLocation: boolean;
     showUpcomingEvents: boolean;
   };
-  categories?: InterestCategory[];
+  displaySettings?: {
+    showEventDistance: boolean;
+    listViewPreferred: boolean;
+    showPrices: boolean;
+  };
+  categories: InterestCategory[];
 }
 
 // Parámetros para actualizar el perfil
@@ -130,8 +135,44 @@ export interface UpdatePreferencesParams {
   currency?: string;
   privacySettings?: {
     profileVisibility?: 'public' | 'followers' | 'private';
+    locationSharing?: boolean;
+    activitySharing?: boolean;
     showLocation?: boolean;
     showUpcomingEvents?: boolean;
   };
+  displaySettings?: {
+    showEventDistance?: boolean;
+    listViewPreferred?: boolean;
+    showPrices?: boolean;
+  };
   categories?: InterestCategory[];
+}
+
+// Parámetros para actualizar el perfil - renombrando para mantener compatibilidad
+export interface ProfileUpdateData extends UpdateProfileParams {}
+
+// Respuesta al guardar un evento
+export interface SavedEventResponse {
+  id: string;
+  name: string;
+  eventId: string;
+  userId: string;
+  createdAt: string;
+}
+
+// Respuesta con eventos del usuario
+export interface UserEventsResponse {
+  attending: any[];
+  organized: any[];
+  saved: any[];
+}
+
+// Estadísticas del usuario
+export interface UserStats {
+  eventsAttended: number;
+  eventsOrganized: number;
+  followers: number;
+  following: number;
+  totalInteractions: number;
+  savedEvents: number;
 } 

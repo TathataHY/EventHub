@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
-import { colors } from '@theme';
+import { colors } from '@theme/base/colors';
 
 interface UserStatsProps {
   followersCount: number;

@@ -11,7 +11,7 @@ interface EventInteraction {
 }
 
 // Interfaz para el perfil de preferencias
-interface UserPreferences {
+interface UserRecommendationPreferences {
   categories: { [category: string]: number }; // Categoría -> Puntuación
   locations: { [location: string]: number }; // Ubicación -> Puntuación
   lastUpdate: number;
@@ -65,7 +65,7 @@ class RecommendationService {
     try {
       // Cargar preferencias existentes
       const preferencesJson = await AsyncStorage.getItem(`${this.PREFERENCES_KEY}_${userId}`);
-      const preferences: UserPreferences = preferencesJson 
+      const preferences: UserRecommendationPreferences = preferencesJson 
         ? JSON.parse(preferencesJson) 
         : { categories: {}, locations: {}, lastUpdate: Date.now() };
       
@@ -131,7 +131,7 @@ class RecommendationService {
         return this.getPopularEvents(limit);
       }
       
-      const preferences: UserPreferences = JSON.parse(preferencesJson);
+      const preferences: UserRecommendationPreferences = JSON.parse(preferencesJson);
       
       // Obtener todos los eventos
       const allEvents = await eventService.getAllEvents();
@@ -316,6 +316,24 @@ class RecommendationService {
     } catch (error) {
       console.error('Error al resetear datos de usuario:', error);
     }
+  }
+
+  // Adaptar evento a la estructura esperada
+  private adaptEvent(event: any, recommendationScore: number = 0) {
+    // Asignar puntuación de recomendación
+    return {
+      ...event,
+      recommendationScore
+    };
+  }
+
+  // Ordenar eventos por fecha (de más próximo a más lejano)
+  private sortEventsByDate(events: any[]): any[] {
+    return [...events].sort((a, b) => {
+      const dateA = new Date(a.startDate).getTime();
+      const dateB = new Date(b.startDate).getTime();
+      return dateA - dateB;
+    });
   }
 }
 

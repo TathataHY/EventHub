@@ -4,8 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-import { useTheme } from '../../context/ThemeContext';
-import { Ticket, TicketStatus } from '../../services/ticket.service';
+import { useTheme } from '@core/context/ThemeContext';
+import { Ticket, TicketStatus } from '@modules/tickets/types';
 
 interface TicketCardProps {
   ticket: Ticket;
@@ -41,31 +41,31 @@ export const TicketCard: React.FC<TicketCardProps> = ({
       case TicketStatus.VALID:
         return {
           icon: 'checkmark-circle',
-          color: theme.colors.success,
+          color: theme.colors.success.main,
           text: 'Válido'
         };
       case TicketStatus.USED:
         return {
           icon: 'time',
-          color: theme.colors.warning,
+          color: theme.colors.warning.main,
           text: 'Utilizado'
         };
       case TicketStatus.EXPIRED:
         return {
           icon: 'close-circle',
-          color: theme.colors.error,
+          color: theme.colors.error.main,
           text: 'Expirado'
         };
       case TicketStatus.CANCELLED:
         return {
           icon: 'ban',
-          color: theme.colors.error,
+          color: theme.colors.error.main,
           text: 'Cancelado'
         };
       default:
         return {
           icon: 'help-circle',
-          color: theme.colors.secondaryText,
+          color: theme.colors.text.secondary,
           text: 'Desconocido'
         };
     }
@@ -75,7 +75,7 @@ export const TicketCard: React.FC<TicketCardProps> = ({
   
   return (
     <TouchableOpacity
-      style={[styles.container, { backgroundColor: theme.colors.card }]}
+      style={[styles.container, { backgroundColor: theme.colors.background.paper }]}
       onPress={() => onPress(ticket.id)}
       activeOpacity={0.7}
     >
@@ -90,27 +90,27 @@ export const TicketCard: React.FC<TicketCardProps> = ({
         {/* Detalles del ticket */}
         <View style={styles.details}>
           <Text 
-            style={[styles.eventName, { color: theme.colors.text }]} 
+            style={[styles.eventName, { color: theme.colors.text.primary }]} 
             numberOfLines={1}
           >
             {eventName}
           </Text>
           
           <View style={styles.infoRow}>
-            <Ionicons name="pricetag-outline" size={14} color={theme.colors.secondaryText} />
-            <Text style={[styles.infoText, { color: theme.colors.secondaryText }]}>
+            <Ionicons name="pricetag-outline" size={14} color={theme.colors.text.secondary} />
+            <Text style={[styles.infoText, { color: theme.colors.text.secondary }]}>
               {ticket.ticketType} - {ticket.price.toFixed(2)} €
             </Text>
           </View>
           
           <View style={styles.infoRow}>
-            <Ionicons name="calendar-outline" size={14} color={theme.colors.secondaryText} />
-            <Text style={[styles.infoText, { color: theme.colors.secondaryText }]}>
+            <Ionicons name="calendar-outline" size={14} color={theme.colors.text.secondary} />
+            <Text style={[styles.infoText, { color: theme.colors.text.secondary }]}>
               {formatDate(ticket.purchaseDate)}
             </Text>
           </View>
           
-          <View style={[styles.statusBadge, { backgroundColor: statusInfo.color + '20' }]}>
+          <View style={[styles.statusBadge, { backgroundColor: `${statusInfo.color}20` }]}>
             <Ionicons name={statusInfo.icon} size={14} color={statusInfo.color} />
             <Text style={[styles.statusText, { color: statusInfo.color }]}>
               {statusInfo.text}
@@ -120,7 +120,7 @@ export const TicketCard: React.FC<TicketCardProps> = ({
         
         {/* Flecha derecha */}
         <View style={styles.chevron}>
-          <Ionicons name="chevron-forward" size={20} color={theme.colors.secondaryText} />
+          <Ionicons name="chevron-forward" size={20} color={theme.colors.text.secondary} />
         </View>
       </View>
     </TouchableOpacity>

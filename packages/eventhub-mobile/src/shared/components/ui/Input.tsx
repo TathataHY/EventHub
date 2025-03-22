@@ -4,97 +4,80 @@ import {
   TextInput,
   Text,
   StyleSheet,
-  StyleProp,
   ViewStyle,
   TextStyle,
+  TextInputProps,
+  StyleProp,
   TouchableOpacity,
-  Platform,
+  Keyboard,
+  NativeSyntheticEvent,
+  TextInputFocusEventData,
 } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import theme from '../../theme';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { appColors as colors } from '@theme';
+import { typography } from '@theme/base/typography';
+import { appSpacing as spacing } from '@theme';
 
-interface InputProps {
-  value: string;
-  onChangeText: (text: string) => void;
-  placeholder?: string;
+interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
-  leftIcon?: string;
-  rightIcon?: string;
-  onRightIconPress?: () => void;
-  secureTextEntry?: boolean;
-  keyboardType?: 'default' | 'numeric' | 'email-address' | 'phone-pad';
-  multiline?: boolean;
-  numberOfLines?: number;
-  disabled?: boolean;
-  style?: StyleProp<ViewStyle>;
-  inputStyle?: StyleProp<TextStyle>;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  containerStyle?: StyleProp<ViewStyle>;
   labelStyle?: StyleProp<TextStyle>;
+  inputStyle?: StyleProp<TextStyle>;
   errorStyle?: StyleProp<TextStyle>;
-  maxLength?: number;
-  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
-  autoCorrect?: boolean;
+  secureTextEntry?: boolean;
+  touched?: boolean;
+  iconName?: string;
+  iconPosition?: 'left' | 'right';
+  isPassword?: boolean;
+  onIconPress?: () => void;
 }
 
-export const Input: React.FC<InputProps> = ({
-  value,
-  onChangeText,
-  placeholder,
+/**
+ * Componente Input reutilizable para formularios
+ */
+export function Input({
   label,
   error,
   leftIcon,
   rightIcon,
-  onRightIconPress,
-  secureTextEntry = false,
-  keyboardType = 'default',
-  multiline = false,
-  numberOfLines = 1,
-  disabled = false,
-  style,
-  inputStyle,
+  containerStyle,
   labelStyle,
+  inputStyle,
   errorStyle,
-  maxLength,
-  autoCapitalize = 'none',
-  autoCorrect = false,
-}) => {
+  secureTextEntry,
+  style,
+  touched,
+  iconName,
+  iconPosition,
+  isPassword,
+  onIconPress,
+  ...rest
+}: InputProps) {
   const [isFocused, setIsFocused] = useState(false);
-  const [isSecureVisible, setIsSecureVisible] = useState(!secureTextEntry);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  // Determinar el color del borde basado en el estado
-  const getBorderColor = () => {
-    if (error) return theme.colors.error.main;
-    if (isFocused) return theme.colors.primary.main;
-    if (disabled) return theme.colors.border.disabled;
-    return theme.colors.border.main;
+  const handleFocus = () => setIsFocused(true);
+  const handleBlur = (e: any) => {
+    setIsFocused(false);
+    if (rest.onBlur) {
+      rest.onBlur(e);
+    }
   };
 
-  // Función para manejar el toggle de mostrar/ocultar contraseña
-  const toggleSecureEntry = () => {
-    setIsSecureVisible(!isSecureVisible);
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible);
   };
 
-  // Determinar el ícono correcto si es un campo de contraseña
-  const getSecureIcon = () => {
-    return isSecureVisible ? 'eye-slash' : 'eye';
-  };
+  // Determinar si mostrar el error (si hay error y el campo ha sido tocado o no se especifica tocado)
+  const showError = error && (touched === undefined || touched);
 
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, containerStyle]}>
       {label && (
-        <Text
-          style={[
-            styles.label,
-            {
-              color: disabled
-                ? theme.colors.text.disabled
-                : error
-                ? theme.colors.error.main
-                : theme.colors.text.secondary,
-            },
-            labelStyle,
-          ]}
-        >
+        <Text style={[styles.label, labelStyle]}>
           {label}
         </Text>
       )}
@@ -102,133 +85,99 @@ export const Input: React.FC<InputProps> = ({
       <View
         style={[
           styles.inputContainer,
-          {
-            borderColor: getBorderColor(),
-            backgroundColor: disabled
-              ? theme.colors.background.disabled
-              : theme.colors.background.card,
-          },
+          isFocused && styles.inputContainerFocused,
+          showError && styles.inputContainerError,
+          style as any,
         ]}
       >
-        {leftIcon && (
-          <FontAwesome
-            name={leftIcon}
-            size={18}
-            color={
-              disabled
-                ? theme.colors.text.disabled
-                : theme.colors.text.secondary
-            }
-            style={styles.leftIcon}
-          />
-        )}
+        {leftIcon && <View style={styles.iconContainer}>{leftIcon}</View>}
 
         <TextInput
           style={[
             styles.input,
-            {
-              color: disabled
-                ? theme.colors.text.disabled
-                : theme.colors.text.primary,
-              textAlignVertical: multiline ? 'top' : 'center',
-              height: multiline ? 100 : 'auto',
-              paddingLeft: leftIcon ? 0 : theme.spacing.md,
-              paddingRight: rightIcon || secureTextEntry ? 0 : theme.spacing.md,
-            },
+            leftIcon && styles.inputWithLeftIcon,
+            (rightIcon || secureTextEntry) && styles.inputWithRightIcon,
             inputStyle,
           ]}
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          placeholderTextColor={theme.colors.text.placeholder}
-          secureTextEntry={secureTextEntry && !isSecureVisible}
-          keyboardType={keyboardType}
-          multiline={multiline}
-          numberOfLines={multiline ? numberOfLines : undefined}
-          editable={!disabled}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          maxLength={maxLength}
-          autoCapitalize={autoCapitalize}
-          autoCorrect={autoCorrect}
+          placeholderTextColor={colors.grey[400]}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          secureTextEntry={secureTextEntry && !isPasswordVisible}
+          {...rest}
         />
 
         {secureTextEntry && (
           <TouchableOpacity
-            onPress={toggleSecureEntry}
-            style={styles.rightIconContainer}
+            style={styles.iconContainer}
+            onPress={togglePasswordVisibility}
           >
-            <FontAwesome
-              name={getSecureIcon()}
-              size={18}
-              color={theme.colors.text.secondary}
+            <Ionicons
+              name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color={colors.grey[500]}
             />
           </TouchableOpacity>
         )}
 
         {rightIcon && !secureTextEntry && (
-          <TouchableOpacity
-            onPress={onRightIconPress}
-            style={styles.rightIconContainer}
-            disabled={!onRightIconPress}
-          >
-            <FontAwesome
-              name={rightIcon}
-              size={18}
-              color={
-                disabled
-                  ? theme.colors.text.disabled
-                  : theme.colors.text.secondary
-              }
-            />
-          </TouchableOpacity>
+          <View style={styles.iconContainer}>{rightIcon}</View>
         )}
       </View>
 
-      {error && (
-        <Text style={[styles.error, errorStyle]}>
-          {error}
-        </Text>
+      {showError && (
+        <Text style={[styles.errorText, errorStyle]}>{error}</Text>
       )}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: theme.spacing.md,
+    marginBottom: 16,
   },
   label: {
-    fontSize: theme.fontSizes.sm,
-    marginBottom: theme.spacing.xs,
-    fontWeight: '500',
+    ...typography.subtitle2,
+    color: colors.grey[700],
+    marginBottom: 8,
+    fontWeight: "600" as const,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: theme.borderRadius.md,
-    overflow: 'hidden',
+    borderColor: colors.grey[300],
+    borderRadius: 8,
+    backgroundColor: colors.common.white,
+    minHeight: 48,
+  },
+  inputContainerFocused: {
+    borderColor: colors.primary.main,
+  },
+  inputContainerError: {
+    borderColor: colors.error.main,
   },
   input: {
+    ...typography.body1,
     flex: 1,
-    paddingVertical: Platform.OS === 'ios' ? theme.spacing.sm : theme.spacing.xs,
-    fontSize: theme.fontSizes.md,
-    fontFamily: theme.fonts.regular,
+    color: colors.text,
+    padding: spacing.xs,
+    fontWeight: "normal" as const,
   },
-  leftIcon: {
-    paddingHorizontal: theme.spacing.md,
+  inputWithLeftIcon: {
+    paddingLeft: 8,
   },
-  rightIconContainer: {
-    paddingHorizontal: theme.spacing.md,
-    height: '100%',
+  inputWithRightIcon: {
+    paddingRight: 8,
+  },
+  iconContainer: {
+    paddingHorizontal: 12,
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  error: {
-    color: theme.colors.error.main,
-    fontSize: theme.fontSizes.sm,
-    marginTop: theme.spacing.xs,
+  errorText: {
+    ...typography.caption,
+    color: colors.error.main,
+    marginTop: 4,
+    fontWeight: "normal" as const,
   },
-});
-
-export default Input; 
+}); 

@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useTheme } from '../../context/ThemeContext';
-import { Achievement } from '../../services/achievement.service';
+import { useTheme } from '@core/context/ThemeContext';
+import { Achievement } from '@modules/gamification/types';
 
 interface AchievementUnlockedProps {
   achievement: Achievement;
@@ -62,15 +62,15 @@ export const AchievementUnlocked: React.FC<AchievementUnlockedProps> = ({
   const getColorByType = (type: string) => {
     switch (type) {
       case 'attendance':
-        return theme.colors.success;
+        return theme.colors.success.main;
       case 'creation':
-        return theme.colors.primary;
+        return theme.colors.primary.main;
       case 'social':
-        return theme.colors.info;
+        return theme.colors.info.main;
       case 'exploration':
-        return theme.colors.warning;
+        return theme.colors.warning.main;
       default:
-        return theme.colors.primary;
+        return theme.colors.primary.main;
     }
   };
   
@@ -92,7 +92,7 @@ export const AchievementUnlocked: React.FC<AchievementUnlockedProps> = ({
       style={[
         styles.container,
         { 
-          backgroundColor: theme.colors.card,
+          backgroundColor: theme.colors.background.paper,
           transform: [{ translateY }, { scale }]
         }
       ]}
@@ -106,7 +106,7 @@ export const AchievementUnlocked: React.FC<AchievementUnlockedProps> = ({
       </View>
       
       <View style={styles.content}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
+        <Text style={[styles.title, { color: theme.colors.text.primary }]}>
           ¡Logro desbloqueado!
         </Text>
         
@@ -114,13 +114,13 @@ export const AchievementUnlocked: React.FC<AchievementUnlockedProps> = ({
           {achievement.title}
         </Text>
         
-        <Text style={[styles.description, { color: theme.colors.secondaryText }]}>
+        <Text style={[styles.description, { color: theme.colors.text.secondary }]}>
           {achievement.description}
         </Text>
         
         <View style={styles.pointsContainer}>
-          <Ionicons name="star" size={16} color={theme.colors.warning} />
-          <Text style={[styles.points, { color: theme.colors.text }]}>
+          <Ionicons name="star" size={16} color={theme.colors.warning.main} />
+          <Text style={[styles.points, { color: theme.colors.text.primary }]}>
             +{achievement.points} puntos
           </Text>
         </View>
@@ -130,7 +130,7 @@ export const AchievementUnlocked: React.FC<AchievementUnlockedProps> = ({
         style={styles.closeButton}
         onPress={handleClose}
       >
-        <Ionicons name="close" size={20} color={theme.colors.secondaryText} />
+        <Ionicons name="close" size={20} color={theme.colors.text.secondary} />
       </TouchableOpacity>
     </Animated.View>
   );

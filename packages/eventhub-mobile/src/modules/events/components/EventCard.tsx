@@ -5,50 +5,71 @@ import {
   Image,
   StyleSheet,
   TouchableOpacity,
-  Dimensions
+  Dimensions,
+  StyleProp,
+  ViewStyle
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Event, EventStatus } from '../types';
-import { colors } from '@theme';
-import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
-import { EventCategory, EventType } from '../types/event.types';
-import { formatDate, formatLocation } from '../../../utils/formatters';
+import { Ionicons, FontAwesome } from '@expo/vector-icons';
+import { Event, EventStatus } from '@modules/events/types';
+import { useTheme } from '@core/context/ThemeContext';
+import { useNavigation } from '@react-navigation/native';
+import { Card } from '@shared/components/ui/Card';
+
+// Constantes para tipos de eventos
+const EVENT_TYPES = {
+  IN_PERSON: 'presencial',
+  ONLINE: 'online',
+  HYBRID: 'hybrid'
+};
 
 interface EventCardProps {
   event: Event;
-  onPress?: () => void;
-  compact?: boolean;
+  style?: StyleProp<ViewStyle>;
+  onPress?: (event: Event) => void;
 }
 
-export const EventCard: React.FC<EventCardProps> = ({
-  event,
-  onPress,
-  compact = false
-}) => {
-  // Formatear fecha de forma breve
-  const getFormattedDate = () => {
-    try {
-      const date = new Date(event.startDate);
-      const options = { 
-        day: 'numeric',
-        month: 'short'
-      } as Intl.DateTimeFormatOptions;
-      
-      return date.toLocaleDateString('es-ES', options);
-    } catch (error) {
-      return event.startDate?.toString() || 'Fecha no disponible';
+/**
+ * Componente para mostrar la información resumida de un evento en una tarjeta
+ */
+export const EventCard = ({ event, style, onPress }: EventCardProps) => {
+  const navigation = useNavigation();
+  const { theme } = useTheme();
+  
+  // Función para navegar a la pantalla de detalles del evento
+  const handlePress = () => {
+    if (onPress) {
+      onPress(event);
+    } else {
+      // @ts-ignore - Ignorar error de tipado en navegación
+      navigation.navigate('EventDetail', { eventId: event.id });
     }
   };
   
-  // Devolver la ubicación formateada
-  const getFormattedLocation = () => {
-    if (typeof event.location === 'string') {
-      return event.location;
-    } else if (event.location) {
-      const loc = event.location as any;
-      return loc.city ? loc.city : (loc.address || 'Ubicación no disponible');
+  // Función para formatear la fecha
+  const getFormattedDate = () => {
+    const formatDate = (dateString: string) => {
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    };
+    
+    if (event.startDate === event.endDate) {
+      return formatDate(event.startDate);
+    } else {
+      return `${formatDate(event.startDate)} - ${formatDate(event.endDate)}`;
     }
-    return 'Ubicación no disponible';
+  };
+  
+  // Función para formatear la ubicación
+  const getFormattedLocation = () => {
+    if (event.type === EVENT_TYPES.ONLINE) {
+      return 'Evento virtual';
+    } else if (event.location) {
+      return typeof event.location === 'string' 
+        ? event.location 
+        : (event.location.name || 'Ubicación no disponible');
+    } else {
+      return 'Ubicación no disponible';
+    }
   };
   
   // Verificar si el evento está cancelado
@@ -56,55 +77,33 @@ export const EventCard: React.FC<EventCardProps> = ({
     return event.status === EventStatus.CANCELLED;
   };
   
-  // Renderizar la etiqueta de estado
+  // Renderizar badge de estado
   const renderStatusBadge = () => {
-    if (!event.status || event.status === EventStatus.PUBLISHED) return null;
-    
-    let badgeColor = colors.warning;
-    let badgeText = 'Borrador';
-    
-    switch (event.status) {
-      case EventStatus.CANCELLED:
-        badgeColor = colors.danger;
-        badgeText = 'Cancelado';
-        break;
-      case EventStatus.COMPLETED:
-        badgeColor = colors.gray;
-        badgeText = 'Finalizado';
-        break;
-      case EventStatus.POSTPONED:
-        badgeColor = colors.warning;
-        badgeText = 'Pospuesto';
-        break;
-    }
-    
-    return (
-      <View style={[styles.badge, { backgroundColor: badgeColor }]}>
-        <Text style={styles.badgeText}>{badgeText}</Text>
-      </View>
-    );
-  };
-  
-  // Renderizar indicador de gratuito o precio
-  const renderPriceIndicator = () => {
-    const ticketInfo = event.ticketInfo as any;
-    
-    if (!ticketInfo) return null;
-    
-    if (ticketInfo.isFree) {
+    if (isCancelled()) {
       return (
-        <View style={styles.freeTag}>
-          <Text style={styles.freeTagText}>Gratis</Text>
+        <View style={styles.cancellationBadge}>
+          <Text style={styles.cancellationText}>Cancelado</Text>
         </View>
       );
     }
     
-    if (ticketInfo.price) {
+    if (event.featured) {
       return (
-        <View style={styles.priceTag}>
-          <Text style={styles.priceTagText}>
-            {`${ticketInfo.price} ${ticketInfo.currency || 'EUR'}`}
-          </Text>
+        <View style={[styles.featuredBadge, { backgroundColor: theme.colors.primary.main }]}>
+          <FontAwesome name="star" size={12} color="#FFF" />
+          <Text style={styles.featuredText}>Destacado</Text>
+        </View>
+      );
+    }
+    
+    const now = new Date();
+    const eventDate = new Date(event.startDate);
+    const daysUntilEvent = Math.ceil((eventDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysUntilEvent <= 3 && daysUntilEvent > 0) {
+      return (
+        <View style={[styles.soonBadge, { backgroundColor: theme.colors.warning.main }]}>
+          <Text style={styles.soonText}>Próximamente</Text>
         </View>
       );
     }
@@ -112,278 +111,245 @@ export const EventCard: React.FC<EventCardProps> = ({
     return null;
   };
   
-  const getEventIcon = (category: string) => {
-    switch (category) {
-      case EventCategory.MUSIC:
-        return 'music';
-      case EventCategory.SPORTS:
-        return 'dribbble';
-      case EventCategory.TECHNOLOGY:
-        return 'laptop';
-      case EventCategory.ARTS:
-        return 'paint-brush';
-      case EventCategory.FOOD:
-        return 'cutlery';
-      case EventCategory.EDUCATION:
-        return 'graduation-cap';
-      case EventCategory.BUSINESS:
-        return 'briefcase';
-      case EventCategory.HEALTH:
-        return 'heartbeat';
-      default:
-        return 'calendar';
+  // Renderizar indicador de precio
+  const renderPriceIndicator = () => {
+    if (event.isFree) {
+      return (
+        <View style={[styles.priceTag, { backgroundColor: theme.colors.success.main }]}>
+          <Text style={styles.priceText}>Gratis</Text>
+        </View>
+      );
+    } else if (event.price && event.price > 0) {
+      return (
+        <View style={[styles.priceTag, { backgroundColor: theme.colors.primary.main }]}>
+          <Text style={styles.priceText}>{event.price} €</Text>
+        </View>
+      );
     }
+    
+    return null;
   };
-
-  const getEventTypeLabel = (type: string) => {
-    switch (type) {
-      case EventType.IN_PERSON:
-        return 'Presencial';
-      case EventType.ONLINE:
-        return 'Online';
-      case EventType.HYBRID:
-        return 'Híbrido';
-      default:
-        return 'Evento';
-    }
-  };
-
-  const isOnlineEvent = event.type === EventType.ONLINE || event.type === EventType.HYBRID;
   
-  // Si es versión compacta, mostrar en formato más pequeño
-  if (compact) {
-    return (
+  return (
+    <Card style={[styles.card, style, isCancelled() && styles.cancelledCard]}>
       <TouchableOpacity
-        style={styles.compactContainer}
-        onPress={onPress}
+        style={styles.container}
+        onPress={handlePress}
         disabled={isCancelled()}
       >
-        <View style={styles.compactImageContainer}>
+        {/* Imagen del evento */}
+        <View style={styles.imageContainer}>
           <Image
-            source={{ uri: event.imageUrl || 'https://via.placeholder.com/100?text=Evento' }}
-            style={styles.compactImage}
+            source={
+              event.imageUrl
+                ? { uri: event.imageUrl }
+                : require('@assets/images/event-placeholder.jpg')
+            }
+            style={styles.image}
             resizeMode="cover"
           />
-          {renderStatusBadge()}
+          
+          {/* Badges e indicadores */}
+          <View style={styles.badgeContainer}>
+            {renderStatusBadge()}
+            {renderPriceIndicator()}
+          </View>
+          
+          {/* Tipo de evento (online/presencial) */}
+          <View style={[
+            styles.typeIndicator,
+            { backgroundColor: event.type === EVENT_TYPES.ONLINE ? 
+              theme.colors.info.main : theme.colors.success.main }
+          ]}>
+            <Ionicons
+              name={event.type === EVENT_TYPES.ONLINE ? 'globe-outline' : 'location-outline'}
+              size={14}
+              color="#FFF"
+            />
+            <Text style={styles.typeText}>
+              {event.type === EVENT_TYPES.ONLINE ? 'Online' : 'Presencial'}
+            </Text>
+          </View>
         </View>
         
-        <View style={styles.compactContent}>
+        {/* Detalles del evento */}
+        <View style={styles.detailsContainer}>
+          {/* Título */}
           <Text 
-            style={[styles.compactTitle, isCancelled() && styles.cancelledText]} 
-            numberOfLines={1}
+            style={[
+              styles.title, 
+              { color: theme.colors.text.primary },
+              isCancelled() && styles.cancelledText
+            ]}
+            numberOfLines={2}
           >
             {event.title}
           </Text>
           
-          <View style={styles.compactInfo}>
-            <Ionicons name="calendar" size={12} color={colors.primary} />
-            <Text style={styles.compactInfoText}>{getFormattedDate()}</Text>
+          {/* Fecha */}
+          <View style={styles.infoRow}>
+            <Ionicons
+              name="calendar-outline"
+              size={14}
+              color={theme.colors.text.secondary}
+              style={styles.infoIcon}
+            />
+            <Text style={[styles.infoText, { color: theme.colors.text.secondary }]}>
+              {getFormattedDate()}
+            </Text>
           </View>
           
-          <View style={styles.compactInfo}>
-            <Ionicons name="location" size={12} color={colors.primary} />
+          {/* Ubicación */}
+          <View style={styles.infoRow}>
+            <Ionicons
+              name={event.type === EVENT_TYPES.ONLINE ? 'globe-outline' : 'location-outline'}
+              size={14}
+              color={theme.colors.text.secondary}
+              style={styles.infoIcon}
+            />
             <Text 
-              style={styles.compactInfoText} 
+              style={[styles.infoText, { color: theme.colors.text.secondary }]}
               numberOfLines={1}
             >
               {getFormattedLocation()}
             </Text>
           </View>
+          
+          {/* Categoría */}
+          {event.category && (
+            <View style={styles.categoryContainer}>
+              <Text style={[styles.category, { color: theme.colors.primary.main }]}>
+                {typeof event.category === 'string' ? event.category : event.category.name}
+              </Text>
+            </View>
+          )}
         </View>
       </TouchableOpacity>
-    );
-  }
-  
-  // Versión normal (completa)
-  return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={onPress}
-      disabled={isCancelled()}
-    >
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: event.imageUrl || 'https://via.placeholder.com/400x200?text=Evento' }}
-          style={styles.image}
-          resizeMode="cover"
-        />
-        {renderStatusBadge()}
-        {renderPriceIndicator()}
-      </View>
-      
-      <View style={styles.content}>
-        <Text 
-          style={[styles.title, isCancelled() && styles.cancelledText]} 
-          numberOfLines={2}
-        >
-          {event.title}
-        </Text>
-        
-        <View style={styles.infoContainer}>
-          <View style={styles.infoItem}>
-            <Ionicons name="calendar" size={14} color={colors.primary} />
-            <Text style={styles.infoText}>{getFormattedDate()}</Text>
-          </View>
-          
-          <View style={styles.infoItem}>
-            <Ionicons name="location" size={14} color={colors.primary} />
-            <Text style={styles.infoText} numberOfLines={1}>
-              {getFormattedLocation()}
-            </Text>
-          </View>
-        </View>
-        
-        {event.organizerName && (
-          <View style={styles.organizerContainer}>
-            <Text style={styles.organizerText} numberOfLines={1}>
-              Por: {event.organizerName}
-            </Text>
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
+    </Card>
   );
 };
 
 const { width } = Dimensions.get('window');
+const cardWidth = width / 2 - 24; // Para mostrar 2 por fila con margen
 
 const styles = StyleSheet.create({
-  // Estilos versión normal
-  container: {
-    backgroundColor: 'white',
-    borderRadius: 12,
+  card: {
+    borderRadius: 8,
     overflow: 'hidden',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    width: cardWidth,
+    margin: 8,
+  },
+  container: {
+    flexDirection: 'column',
+  },
+  cancelledCard: {
+    opacity: 0.7,
   },
   imageContainer: {
     position: 'relative',
-    height: 160,
+    width: '100%',
+    height: 120,
   },
   image: {
     width: '100%',
     height: '100%',
   },
-  badge: {
+  badgeContainer: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 8,
+    left: 8,
+    flexDirection: 'column',
+  },
+  featuredBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 4,
+    marginBottom: 4,
   },
-  badgeText: {
-    color: 'white',
-    fontSize: 12,
+  featuredText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  soonBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  soonText: {
+    color: '#FFF',
+    fontSize: 10,
     fontWeight: 'bold',
   },
-  freeTag: {
-    position: 'absolute',
-    bottom: 12,
-    left: 12,
-    backgroundColor: colors.success,
-    paddingHorizontal: 10,
+  cancellationBadge: {
+    backgroundColor: '#F44336',
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 16,
+    borderRadius: 4,
+    marginBottom: 4,
   },
-  freeTagText: {
-    color: 'white',
-    fontSize: 12,
+  cancellationText: {
+    color: '#FFF',
+    fontSize: 10,
     fontWeight: 'bold',
   },
   priceTag: {
-    position: 'absolute',
-    bottom: 12,
-    left: 12,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 16,
+    borderRadius: 4,
   },
-  priceTagText: {
-    color: 'white',
-    fontSize: 12,
+  priceText: {
+    color: '#FFF',
+    fontSize: 10,
     fontWeight: 'bold',
   },
-  content: {
-    padding: 16,
+  typeIndicator: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  typeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  detailsContainer: {
+    padding: 12,
   },
   title: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: 'bold',
-    color: colors.textDark,
     marginBottom: 8,
   },
   cancelledText: {
     textDecorationLine: 'line-through',
-    color: colors.textLight,
   },
-  infoContainer: {
-    marginBottom: 8,
-  },
-  infoItem: {
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
+  },
+  infoIcon: {
+    marginRight: 4,
   },
   infoText: {
-    fontSize: 14,
-    color: colors.textDark,
-    marginLeft: 8,
-  },
-  organizerContainer: {
-    marginTop: 4,
-  },
-  organizerText: {
-    fontSize: 14,
-    color: colors.textLight,
-  },
-  
-  // Estilos versión compacta
-  compactContainer: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    borderRadius: 8,
-    overflow: 'hidden',
-    marginBottom: 12,
-    height: 80,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  compactImageContainer: {
-    position: 'relative',
-    width: 80,
-  },
-  compactImage: {
-    width: '100%',
-    height: '100%',
-  },
-  compactContent: {
-    flex: 1,
-    padding: 10,
-    justifyContent: 'space-between',
-  },
-  compactTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.textDark,
-    marginBottom: 4,
-  },
-  compactInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  compactInfoText: {
     fontSize: 12,
-    color: colors.textDark,
-    marginLeft: 4,
+  },
+  categoryContainer: {
+    marginTop: 8,
+  },
+  category: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 }); 

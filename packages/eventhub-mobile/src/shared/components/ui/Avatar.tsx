@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import theme from '../../theme';
+import { useTheme } from '@core/context/ThemeContext';
 
 type AvatarSize = 'tiny' | 'small' | 'medium' | 'large' | 'xlarge' | number;
 type AvatarShape = 'circle' | 'square' | 'rounded';
@@ -50,6 +50,8 @@ export const Avatar: React.FC<AvatarProps> = ({
   statusSize,
   variant = 'circle',
 }) => {
+  const { theme } = useTheme();
+  
   // Determine size based on preset or custom number
   const getSize = () => {
     if (typeof size === 'number') {
@@ -160,7 +162,7 @@ export const Avatar: React.FC<AvatarProps> = ({
         <FontAwesome
           name={icon}
           size={avatarSize * 0.5}
-          color={theme.colors.text.onPrimary}
+          color={theme.colors.common.white}
         />
       );
     }
@@ -172,6 +174,7 @@ export const Avatar: React.FC<AvatarProps> = ({
             styles.text,
             {
               fontSize: avatarSize * 0.4,
+              color: theme.colors.common.white,
             },
             textStyle,
           ]}
@@ -186,7 +189,7 @@ export const Avatar: React.FC<AvatarProps> = ({
       <FontAwesome
         name="user"
         size={avatarSize * 0.5}
-        color={theme.colors.text.onPrimary}
+        color={theme.colors.common.white}
       />
     );
   };
@@ -205,6 +208,7 @@ export const Avatar: React.FC<AvatarProps> = ({
               backgroundColor: getStatusColor(),
               borderRadius: statusDotSize / 2,
               borderWidth: statusPadding,
+              borderColor: theme.colors.background.default,
             },
           ]}
         />
@@ -235,12 +239,10 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   text: {
-    color: theme.colors.text.onPrimary,
     fontWeight: 'bold',
   },
   statusIndicator: {
     position: 'absolute',
-    borderColor: theme.colors.background.default,
   },
 });
 

@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { InterestCategory } from '../types';
-import { colors } from '@core/theme';
+import { InterestCategory } from '../types/user.types';
+import { colors } from '@theme/base/colors';
 
 interface InterestsListProps {
   interests: InterestCategory[];

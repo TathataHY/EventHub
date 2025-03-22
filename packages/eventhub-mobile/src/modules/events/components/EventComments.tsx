@@ -12,7 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '@core/context/ThemeContext';
 
 interface Comment {
   id: string;
@@ -119,7 +119,7 @@ export const EventComments: React.FC<EventCommentsProps> = ({
             <Ionicons
               name={star <= value ? 'star' : 'star-outline'}
               size={editable ? 28 : 16}
-              color={star <= value ? theme.colors.warning : theme.colors.secondaryText}
+              color={star <= value ? theme.colors.warning.main : theme.colors.text.secondary}
               style={{ marginRight: 2 }}
             />
           </TouchableOpacity>
@@ -134,12 +134,12 @@ export const EventComments: React.FC<EventCommentsProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
+        <Text style={[styles.title, { color: theme.colors.text.primary }]}>
           Comentarios
         </Text>
         {comments.length > 0 && (
           <TouchableOpacity onPress={viewAllComments}>
-            <Text style={[styles.viewAllText, { color: theme.colors.primary }]}>
+            <Text style={[styles.viewAllText, { color: theme.colors.primary.main }]}>
               Ver todos ({comments.length})
             </Text>
           </TouchableOpacity>
@@ -147,13 +147,13 @@ export const EventComments: React.FC<EventCommentsProps> = ({
       </View>
       
       {isAuthenticated && (
-        <View style={[styles.addCommentContainer, { backgroundColor: theme.colors.card }]}>
-          <Text style={[styles.addCommentTitle, { color: theme.colors.text }]}>
+        <View style={[styles.addCommentContainer, { backgroundColor: theme.colors.background.paper }]}>
+          <Text style={[styles.addCommentTitle, { color: theme.colors.text.primary }]}>
             Deja tu comentario
           </Text>
           
           <View style={styles.ratingRow}>
-            <Text style={[styles.ratingLabel, { color: theme.colors.secondaryText }]}>
+            <Text style={[styles.ratingLabel, { color: theme.colors.text.secondary }]}>
               Calificación:
             </Text>
             {renderRatingStars(rating, true)}
@@ -163,13 +163,13 @@ export const EventComments: React.FC<EventCommentsProps> = ({
             style={[
               styles.commentInput,
               { 
-                backgroundColor: theme.colors.background,
-                color: theme.colors.text,
-                borderColor: theme.colors.border
+                backgroundColor: theme.colors.background.default,
+                color: theme.colors.text.primary,
+                borderColor: theme.colors.divider
               }
             ]}
             placeholder="Escribe tu comentario..."
-            placeholderTextColor={theme.colors.secondaryText}
+            placeholderTextColor={theme.colors.text.secondary}
             value={commentText}
             onChangeText={setCommentText}
             multiline
@@ -179,7 +179,7 @@ export const EventComments: React.FC<EventCommentsProps> = ({
           <TouchableOpacity
             style={[
               styles.submitButton,
-              { backgroundColor: theme.colors.primary },
+              { backgroundColor: theme.colors.primary.main },
               (!commentText.trim() || isSubmitting) && { opacity: 0.7 }
             ]}
             onPress={handleAddComment}
@@ -199,7 +199,7 @@ export const EventComments: React.FC<EventCommentsProps> = ({
           {visibleComments.map((comment) => (
             <View 
               key={comment.id} 
-              style={[styles.commentItem, { backgroundColor: theme.colors.card }]}
+              style={[styles.commentItem, { backgroundColor: theme.colors.background.paper }]}
             >
               <View style={styles.commentHeader}>
                 <Image
@@ -207,10 +207,10 @@ export const EventComments: React.FC<EventCommentsProps> = ({
                   style={styles.avatar}
                 />
                 <View style={styles.commentInfo}>
-                  <Text style={[styles.userName, { color: theme.colors.text }]}>
+                  <Text style={[styles.userName, { color: theme.colors.text.primary }]}>
                     {comment.userName}
                   </Text>
-                  <Text style={[styles.commentDate, { color: theme.colors.secondaryText }]}>
+                  <Text style={[styles.commentDate, { color: theme.colors.text.secondary }]}>
                     {formatDate(comment.date)}
                   </Text>
                 </View>
@@ -220,7 +220,7 @@ export const EventComments: React.FC<EventCommentsProps> = ({
                   </View>
                 )}
               </View>
-              <Text style={[styles.commentText, { color: theme.colors.text }]}>
+              <Text style={[styles.commentText, { color: theme.colors.text.primary }]}>
                 {comment.text}
               </Text>
             </View>
@@ -228,34 +228,42 @@ export const EventComments: React.FC<EventCommentsProps> = ({
           
           {comments.length > maxComments && (
             <TouchableOpacity 
-              style={[styles.viewMoreButton, { borderColor: theme.colors.primary }]} 
+              style={[styles.viewMoreButton, { borderColor: theme.colors.primary.main }]} 
               onPress={viewAllComments}
             >
-              <Text style={[styles.viewMoreText, { color: theme.colors.primary }]}>
+              <Text style={[styles.viewMoreText, { color: theme.colors.primary.main }]}>
                 Ver más comentarios
               </Text>
               <Ionicons 
                 name="chevron-forward" 
                 size={16} 
-                color={theme.colors.primary}
+                color={theme.colors.primary.main}
               />
             </TouchableOpacity>
           )}
         </View>
       ) : (
-        <View style={[styles.emptyContainer, { backgroundColor: theme.colors.card }]}>
+        <View style={[styles.emptyContainer, { backgroundColor: theme.colors.background.paper }]}>
           <Ionicons
             name="chatbubble-ellipses-outline"
             size={48}
-            color={theme.colors.secondaryText}
+            color={theme.colors.text.secondary}
           />
-          <Text style={[styles.emptyText, { color: theme.colors.secondaryText }]}>
-            Aún no hay comentarios
-          </Text>
-          <Text style={[styles.emptySubText, { color: theme.colors.secondaryText }]}>
-            Sé el primero en comentar
+          <Text style={[styles.emptyText, { color: theme.colors.text.secondary }]}>
+            No hay comentarios aún. ¡Sé el primero en comentar!
           </Text>
         </View>
+      )}
+      
+      {!isAuthenticated && (
+        <TouchableOpacity 
+          style={[styles.loginButton, { borderColor: theme.colors.primary.main }]}
+          onPress={() => router.push('/auth/login')}
+        >
+          <Text style={[styles.loginButtonText, { color: theme.colors.primary.main }]}>
+            Inicia sesión para comentar
+          </Text>
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -377,8 +385,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 12,
   },
-  emptySubText: {
+  loginButton: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+  },
+  loginButtonText: {
     fontSize: 14,
-    marginTop: 4,
+    fontWeight: '500',
   },
 }); 

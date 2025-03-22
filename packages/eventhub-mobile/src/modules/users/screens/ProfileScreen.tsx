@@ -1,213 +1,460 @@
-import React, { useState, useCallback } from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  ScrollView, 
-  ActivityIndicator, 
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
   Text,
-  Alert,
+  TouchableOpacity,
+  ActivityIndicator,
+  Image,
+  useWindowDimensions,
   RefreshControl
 } from 'react-native';
-import { UserAvatar, UserStats, InterestsList, ProfileInfo } from '../components';
-import { useProfile } from '../hooks/useProfile';
-import { UpdateProfileParams } from '../types';
-import { colors } from '@theme';
-import * as ImagePicker from 'expo-image-picker';
+import { useNavigation } from '@react-navigation/native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { Card, TabView, Button } from '../../../shared/components';
+import { useUser } from '../hooks/useUser';
+import { UserProfile } from '../types';
+import { Event } from '../../events/types';
+import { EventCard } from '../../events/components/EventCard';
+import { typography, spacing } from '@theme/index';
+import { colors } from '@theme/base/colors';
 
-export const ProfileScreen: React.FC = () => {
-  const { user, isLoading, error, loadProfile, updateProfile, uploadProfilePhoto } = useProfile();
+/**
+ * Pantalla principal de perfil de usuario
+ */
+export function ProfileScreen() {
+  const navigation = useNavigation();
+  const { currentUser, getUserEvents, getUserAttendingEvents, loading, error } = useUser();
+  const layout = useWindowDimensions();
+  
   const [refreshing, setRefreshing] = useState(false);
-  const [photoUploading, setPhotoUploading] = useState(false);
-
-  // Refrescar datos de perfil
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadProfile();
-    setRefreshing(false);
-  }, [loadProfile]);
-
-  // Actualizar perfil
-  const handleProfileUpdate = useCallback(async (data: UpdateProfileParams) => {
-    return await updateProfile(data);
-  }, [updateProfile]);
-
-  // Seleccionar y subir foto de perfil
-  const handleSelectPhoto = useCallback(async () => {
-    try {
-      // Solicitar permisos
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (status !== 'granted') {
-        Alert.alert(
-          'Permisos necesarios', 
-          'Necesitamos permisos para acceder a tu galería'
-        );
-        return;
-      }
-      
-      // Seleccionar imagen
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-      
-      if (result.canceled || !result.assets || result.assets.length === 0) {
-        return;
-      }
-      
-      const selectedImageUri = result.assets[0].uri;
-      
-      // Subir la imagen
-      setPhotoUploading(true);
-      const uploadResult = await uploadProfilePhoto(selectedImageUri);
-      setPhotoUploading(false);
-      
-      if (!uploadResult.success) {
-        Alert.alert('Error', uploadResult.error || 'Error al subir la foto');
-      }
-    } catch (err) {
-      console.error('Error al seleccionar/subir foto:', err);
-      setPhotoUploading(false);
-      Alert.alert('Error', 'Ocurrió un error al procesar la imagen');
+  const [selectedTab, setSelectedTab] = useState(0);
+  const [createdEvents, setCreatedEvents] = useState<Event[]>([]);
+  const [attendingEvents, setAttendingEvents] = useState<Event[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  
+  // Cargar eventos creados y a los que asiste el usuario
+  useEffect(() => {
+    if (currentUser?.id) {
+      loadUserEvents();
     }
-  }, [uploadProfilePhoto]);
-
-  // Mostrar indicador de carga
-  if (isLoading && !user) {
+  }, [currentUser]);
+  
+  // Función para cargar eventos del usuario
+  const loadUserEvents = async () => {
+    if (!currentUser?.id) return;
+    
+    setLoadingEvents(true);
+    try {
+      // Cargar eventos creados
+      const eventsCreated = await getUserEvents(currentUser.id);
+      setCreatedEvents(eventsCreated.events);
+      
+      // Cargar eventos a los que asiste
+      const eventsAttending = await getUserAttendingEvents(currentUser.id);
+      setAttendingEvents(eventsAttending.events);
+    } catch (err) {
+      console.error('Error loading user events:', err);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+  
+  // Manejar refresco de la pantalla
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadUserEvents();
+    setRefreshing(false);
+  };
+  
+  // Navegar a la pantalla de edición de perfil
+  const handleEditProfile = () => {
+    navigation.navigate('ProfileEdit');
+  };
+  
+  // Mostrar indicador de carga mientras se cargan los datos del usuario
+  if (loading && !currentUser) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Cargando perfil...</Text>
       </View>
     );
   }
-
-  // Mostrar mensaje de error
-  if (error && !user) {
+  
+  // Mostrar mensaje de error si no se pudieron cargar los datos
+  if (error && !currentUser) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>
-          {error}
-        </Text>
-        <Text style={styles.errorSubtext}>
-          Desliza hacia abajo para intentar nuevamente
-        </Text>
+        <Ionicons name="warning-outline" size={48} color={colors.error} />
+        <Text style={styles.errorText}>No se pudo cargar el perfil</Text>
+        <Button 
+          title="Reintentar" 
+          onPress={handleRefresh}
+          containerStyle={styles.retryButton}
+        />
       </View>
     );
   }
-
-  // Si no hay usuario, no debería ocurrir pero por si acaso
-  if (!user) {
-    return null;
-  }
-
+  
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          colors={[colors.primary]}
-        />
-      }
-    >
-      {/* Header con avatar y nombre */}
-      <View style={styles.profileHeader}>
-        <UserAvatar 
-          photoURL={user.photoURL}
-          size={100}
-          showEditButton
-          onEditPress={handleSelectPhoto}
-        />
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
+        {/* Cabecera del perfil */}
+        <Card style={styles.profileCard}>
+          {/* Imagen de portada */}
+          <View style={styles.coverContainer}>
+            {currentUser?.coverImage ? (
+              <Image
+                source={{ uri: currentUser.coverImage }}
+                style={styles.coverImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.coverPlaceholder} />
+            )}
+          </View>
+          
+          {/* Avatar y detalles */}
+          <View style={styles.profileHeader}>
+            <View style={styles.avatarContainer}>
+              {currentUser?.avatar ? (
+                <Image
+                  source={{ uri: currentUser.avatar }}
+                  style={styles.avatar}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Ionicons name="person" size={40} color={colors.gray[300]} />
+                </View>
+              )}
+            </View>
+            
+            <View style={styles.profileInfo}>
+              <Text style={styles.name}>{currentUser?.name}</Text>
+              <Text style={styles.username}>@{currentUser?.username}</Text>
+              
+              {currentUser?.bio && (
+                <Text style={styles.bio}>{currentUser.bio}</Text>
+              )}
+              
+              <View style={styles.locationContainer}>
+                {currentUser?.location && (
+                  <View style={styles.infoItem}>
+                    <Ionicons name="location-outline" size={16} color={colors.gray[500]} />
+                    <Text style={styles.infoText}>{currentUser.location}</Text>
+                  </View>
+                )}
+                
+                {currentUser?.website && (
+                  <View style={styles.infoItem}>
+                    <Ionicons name="globe-outline" size={16} color={colors.gray[500]} />
+                    <Text 
+                      style={[styles.infoText, styles.websiteText]}
+                      numberOfLines={1}
+                    >
+                      {currentUser.website}
+                    </Text>
+                  </View>
+                )}
+                
+                {currentUser?.joinDate && (
+                  <View style={styles.infoItem}>
+                    <Ionicons name="calendar-outline" size={16} color={colors.gray[500]} />
+                    <Text style={styles.infoText}>
+                      Miembro desde {new Date(currentUser.joinDate).toLocaleDateString()}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+          
+          {/* Botón de editar perfil */}
+          <View style={styles.editButtonContainer}>
+            <Button
+              title="Editar perfil"
+              onPress={handleEditProfile}
+              type="outline"
+              containerStyle={styles.editButton}
+              icon={<Ionicons name="create-outline" size={18} color={colors.primary} />}
+            />
+          </View>
+          
+          {/* Estadísticas */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{currentUser?.eventsCreated || 0}</Text>
+              <Text style={styles.statLabel}>Creados</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{currentUser?.eventsAttending || 0}</Text>
+              <Text style={styles.statLabel}>Asistidos</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{currentUser?.followers || 0}</Text>
+              <Text style={styles.statLabel}>Seguidores</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{currentUser?.following || 0}</Text>
+              <Text style={styles.statLabel}>Siguiendo</Text>
+            </View>
+          </View>
+        </Card>
         
-        <View style={styles.nameContainer}>
-          <Text style={styles.fullName}>{user.fullName}</Text>
-          <Text style={styles.username}>@{user.username}</Text>
-        </View>
-      </View>
-      
-      {/* Estadísticas del usuario */}
-      <UserStats
-        followersCount={user.followersCount}
-        followingCount={user.followingCount}
-        eventsAttended={user.eventsAttended}
-        eventsOrganized={user.eventsOrganized}
-      />
-      
-      {/* Intereses del usuario */}
-      <InterestsList interests={user.interests} />
-      
-      {/* Información del perfil */}
-      <ProfileInfo 
-        user={user} 
-        isEditable={true}
-        onSave={handleProfileUpdate}
-      />
-      
-      {/* Espacio al final */}
-      <View style={styles.footer} />
-    </ScrollView>
+        {/* Pestañas para ver eventos */}
+        <Card style={styles.tabsCard}>
+          <TabView
+            selectedIndex={selectedTab}
+            onChange={setSelectedTab}
+            tabs={[
+              { title: 'Eventos creados' },
+              { title: 'Eventos asistidos' }
+            ]}
+          />
+          
+          <View style={styles.tabContent}>
+            {loadingEvents ? (
+              <View style={styles.loadingEventsContainer}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text style={styles.loadingEventsText}>Cargando eventos...</Text>
+              </View>
+            ) : (
+              selectedTab === 0 ? (
+                createdEvents.length > 0 ? (
+                  <View style={styles.eventsContainer}>
+                    {createdEvents.map((event) => (
+                      <EventCard key={event.id} event={event} style={styles.eventCard} />
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.emptyStateContainer}>
+                    <Ionicons name="calendar-outline" size={48} color={colors.gray[300]} />
+                    <Text style={styles.emptyStateText}>No has creado ningún evento aún</Text>
+                    <Button
+                      title="Crear evento"
+                      onPress={() => navigation.navigate('CreateEvent')}
+                      containerStyle={styles.createEventButton}
+                    />
+                  </View>
+                )
+              ) : (
+                attendingEvents.length > 0 ? (
+                  <View style={styles.eventsContainer}>
+                    {attendingEvents.map((event) => (
+                      <EventCard key={event.id} event={event} style={styles.eventCard} />
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.emptyStateContainer}>
+                    <Ionicons name="calendar-outline" size={48} color={colors.gray[300]} />
+                    <Text style={styles.emptyStateText}>No estás asistiendo a ningún evento</Text>
+                    <Button
+                      title="Explorar eventos"
+                      onPress={() => navigation.navigate('Events')}
+                      containerStyle={styles.exploreEventsButton}
+                    />
+                  </View>
+                )
+              )
+            )}
+          </View>
+        </Card>
+      </ScrollView>
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: colors.background,
+  },
+  scrollContainer: {
+    flex: 1,
+  },
+  contentContainer: {
+    padding: 16,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: colors.textDark,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-    backgroundColor: '#f8f9fa',
   },
   errorText: {
-    fontSize: 18,
-    color: colors.danger,
+    ...typography.h6,
+    color: colors.error,
     textAlign: 'center',
-    marginBottom: 8,
+    marginTop: 16,
+    marginBottom: 24,
   },
-  errorSubtext: {
-    fontSize: 14,
-    color: colors.textLight,
-    textAlign: 'center',
+  retryButton: {
+    width: 200,
+  },
+  profileCard: {
+    padding: 0,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  coverContainer: {
+    width: '100%',
+    height: 140,
+  },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+  },
+  coverPlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: colors.gray[200],
   },
   profileHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 24,
+    padding: 16,
   },
-  nameContainer: {
-    marginLeft: 16,
+  avatarContainer: {
+    marginTop: -50,
+    marginRight: 16,
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 4,
+    borderColor: colors.white,
+  },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.gray[100],
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,
+    borderColor: colors.white,
+  },
+  profileInfo: {
     flex: 1,
   },
-  fullName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.textDark,
+  name: {
+    ...typography.h6,
+    color: colors.text,
+    marginBottom: 4,
   },
   username: {
-    fontSize: 16,
-    color: colors.textLight,
-    marginTop: 4,
+    ...typography.subtitle2,
+    color: colors.gray[500],
+    marginBottom: 12,
   },
-  footer: {
-    height: 32,
+  bio: {
+    ...typography.body2,
+    color: colors.text,
+    marginBottom: 12,
+  },
+  locationContainer: {
+    marginTop: 8,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  infoText: {
+    ...typography.body2,
+    color: colors.gray[600],
+    marginLeft: 6,
+  },
+  websiteText: {
+    color: colors.primary,
+  },
+  editButtonContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  editButton: {
+    alignSelf: 'flex-start',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: colors.gray[200],
+    paddingVertical: 12,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statValue: {
+    ...typography.h6,
+    color: colors.text,
+  },
+  statLabel: {
+    ...typography.caption,
+    color: colors.gray[500],
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: colors.gray[200],
+    height: '70%',
+    alignSelf: 'center',
+  },
+  tabsCard: {
+    padding: 0,
+    overflow: 'hidden',
+  },
+  tabContent: {
+    minHeight: 200,
+    padding: 16,
+  },
+  loadingEventsContainer: {
+    paddingVertical: 24,
+    alignItems: 'center',
+  },
+  loadingEventsText: {
+    ...typography.body2,
+    color: colors.gray[500],
+    marginTop: 12,
+  },
+  eventsContainer: {
+    marginTop: 8,
+  },
+  eventCard: {
+    marginBottom: 16,
+  },
+  emptyStateContainer: {
+    alignItems: 'center',
+    padding: 32,
+  },
+  emptyStateText: {
+    ...typography.body1,
+    color: colors.gray[600],
+    textAlign: 'center',
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  createEventButton: {
+    width: 200,
+  },
+  exploreEventsButton: {
+    width: 200,
   },
 }); 

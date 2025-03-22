@@ -8,8 +8,8 @@ import {
   ScrollView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { User, UpdateProfileParams } from '../types';
-import { colors } from '@core/theme';
+import { User, UpdateProfileParams } from '../types/user.types';
+import { colors } from '@theme/base/colors';
 
 interface ProfileInfoProps {
   user: User;

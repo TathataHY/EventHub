@@ -1,53 +1,54 @@
 import React from 'react';
-import { View, ViewProps, StyleSheet } from 'react-native';
+import { 
+  View, 
+  StyleSheet, 
+  ViewStyle, 
+  StyleProp, 
+  TouchableOpacity,
+  TouchableOpacityProps 
+} from 'react-native';
+import { colors } from '@theme/base/colors';
 
-interface CardProps extends ViewProps {
-  variant?: 'elevated' | 'outlined' | 'filled';
+interface CardProps extends TouchableOpacityProps {
+  style?: StyleProp<ViewStyle>;
+  children: React.ReactNode;
+  onPress?: () => void;
 }
 
-export const Card: React.FC<CardProps> = ({
-  children,
-  variant = 'elevated',
-  style,
-  ...props
-}) => {
-  const cardStyles = [
-    styles.base,
-    styles[variant],
-    style,
-  ];
+/**
+ * Componente Card reutilizable para mostrar contenido en una tarjeta con sombras
+ */
+export function Card({ style, children, onPress, ...rest }: CardProps) {
+  // Si hay un onPress, renderizar como TouchableOpacity, de lo contrario como View
+  if (onPress) {
+    return (
+      <TouchableOpacity
+        style={[styles.container, style]}
+        onPress={onPress}
+        activeOpacity={0.7}
+        {...rest}
+      >
+        {children}
+      </TouchableOpacity>
+    );
+  }
 
   return (
-    <View style={cardStyles} {...props}>
+    <View style={[styles.container, style]}>
       {children}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  base: {
-    borderRadius: 12,
+  container: {
+    backgroundColor: colors.common.white,
+    borderRadius: 8,
     padding: 16,
+    shadowColor: colors.common.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  elevated: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  outlined: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  filled: {
-    backgroundColor: '#F5F5F5',
-  },
-});
-
-export default Card; 
+}); 

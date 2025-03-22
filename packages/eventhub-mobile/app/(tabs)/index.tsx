@@ -16,11 +16,11 @@ import { useRouter } from 'expo-router';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-import { eventService } from '../../src/services/event.service';
-import { EventsList } from '../../src/components/event/EventsList';
-import { NearbyEventsSection } from '../../src/components/home/NearbyEventsSection';
-import { RecommendedEventsSection } from '../../src/components/home/RecommendedEventsSection';
-import { HomeScreen } from '../../src/modules/home/screens';
+import { eventService } from '@modules/events/services/event.service';
+import { EventsList } from '@modules/events/components/EventsList';
+import { NearbyEventsSection } from '@modules/home/components/NearbyEventsSection';
+import { RecommendedEventsSection } from '@modules/home/components/RecommendedEventsSection';
+import HomeScreen from '@modules/home/components/HomeScreen';
 
 /**
  * Página de inicio (home) que utiliza la estructura modular

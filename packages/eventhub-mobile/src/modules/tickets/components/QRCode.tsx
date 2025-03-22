@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Image } from 'react-native';
-import { useTheme } from '../../context/ThemeContext';
-import { TicketStatus } from '../../services/ticket.service';
+import { useTheme } from '@core/context/ThemeContext';
+import { TicketStatus } from '@modules/tickets/types';
 
 interface TicketQRCodeProps {
   qrValue: string;
@@ -27,14 +27,14 @@ export const TicketQRCode: React.FC<TicketQRCodeProps> = ({
   const getStatusColor = () => {
     switch (status) {
       case TicketStatus.VALID:
-        return theme.colors.success;
+        return theme.colors.success.main;
       case TicketStatus.USED:
-        return theme.colors.warning;
+        return theme.colors.warning.main;
       case TicketStatus.EXPIRED:
       case TicketStatus.CANCELLED:
-        return theme.colors.error;
+        return theme.colors.error.main;
       default:
-        return theme.colors.primary;
+        return theme.colors.primary.main;
     }
   };
 
@@ -86,7 +86,7 @@ export const TicketQRCode: React.FC<TicketQRCodeProps> = ({
                   style={{ width: size, height: size }}
                   resizeMode="contain"
                 />
-                <View style={[styles.invalidOverlay, { backgroundColor: theme.colors.background + '99' }]}>
+                <View style={[styles.invalidOverlay, { backgroundColor: `${theme.colors.background.default}99` }]}>
                   <Text style={[styles.invalidText, { color: getStatusColor() }]}>
                     {getStatusText()}
                   </Text>
@@ -99,7 +99,7 @@ export const TicketQRCode: React.FC<TicketQRCodeProps> = ({
             <View 
               style={[
                 styles.statusContainer, 
-                { backgroundColor: getStatusColor() + '20' }
+                { backgroundColor: `${getStatusColor()}20` }
               ]}
             >
               <Text style={[styles.statusText, { color: getStatusColor() }]}>
@@ -109,7 +109,7 @@ export const TicketQRCode: React.FC<TicketQRCodeProps> = ({
           )}
         </>
       ) : (
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <ActivityIndicator size="large" color={theme.colors.primary.main} />
       )}
     </View>
   );

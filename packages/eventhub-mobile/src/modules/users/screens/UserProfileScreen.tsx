@@ -12,8 +12,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { UserAvatar, UserStats, InterestsList, FollowButton } from '../components';
 import { userService } from '../services';
-import { PublicUserProfile } from '../types';
-import { colors } from '@theme';
+import { PublicUserProfile } from '../types/user.types';
+import { colors } from '@theme/base/colors';
 import { useNavigation } from '@react-navigation/native';
 
 interface UserProfileScreenProps {
@@ -175,7 +175,7 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({ userId }) 
               );
             }}
           >
-            <Ionicons name="ellipsis-vertical" size={24} color={colors.textDark} />
+            <Ionicons name="ellipsis-vertical" size={24} color={colors.text} />
           </TouchableOpacity>
         )
       });
@@ -186,7 +186,7 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({ userId }) 
   if (loading && !user) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.primary.main} />
         <Text style={styles.loadingText}>Cargando perfil...</Text>
       </View>
     );
@@ -219,7 +219,7 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({ userId }) 
         <RefreshControl
           refreshing={refreshing}
           onRefresh={handleRefresh}
-          colors={[colors.primary]}
+          colors={[colors.primary.main]}
         />
       }
     >
@@ -269,7 +269,7 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({ userId }) 
         <View style={styles.locationContainer}>
           <Text style={styles.locationLabel}>Ubicación</Text>
           <View style={styles.locationRow}>
-            <Ionicons name="location" size={16} color={colors.textLight} style={styles.locationIcon} />
+            <Ionicons name="location" size={16} color={colors.text} style={styles.locationIcon} />
             <Text style={styles.locationText}>
               {[user.location.city, user.location.state, user.location.country]
                 .filter(Boolean)
@@ -303,22 +303,22 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: colors.textDark,
+    color: colors.text,
   },
   errorText: {
     fontSize: 16,
-    color: colors.danger,
+    color: colors.error.main,
     textAlign: 'center',
     marginBottom: 16,
   },
   retryButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary.main,
     borderRadius: 8,
   },
   retryButtonText: {
-    color: 'white',
+    color: colors.common.white,
     fontWeight: '500',
   },
   profileHeader: {
@@ -336,20 +336,20 @@ const styles = StyleSheet.create({
   fullName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.textDark,
+    color: colors.text,
   },
   username: {
     fontSize: 16,
-    color: colors.textLight,
+    color: colors.text,
     marginTop: 4,
   },
   bioContainer: {
-    backgroundColor: 'white',
+    backgroundColor: colors.common.white,
     borderRadius: 8,
     padding: 16,
     marginHorizontal: 16,
     marginVertical: 8,
-    shadowColor: '#000',
+    shadowColor: colors.common.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
@@ -358,21 +358,21 @@ const styles = StyleSheet.create({
   bioLabel: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: colors.textDark,
+    color: colors.text,
     marginBottom: 8,
   },
   bioText: {
     fontSize: 14,
     lineHeight: 20,
-    color: colors.textDark,
+    color: colors.text,
   },
   locationContainer: {
-    backgroundColor: 'white',
+    backgroundColor: colors.common.white,
     borderRadius: 8,
     padding: 16,
     marginHorizontal: 16,
     marginVertical: 8,
-    shadowColor: '#000',
+    shadowColor: colors.common.black,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   locationLabel: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: colors.textDark,
+    color: colors.text,
     marginBottom: 8,
   },
   locationRow: {
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 14,
-    color: colors.textDark,
+    color: colors.text,
   },
   footer: {
     height: 32,

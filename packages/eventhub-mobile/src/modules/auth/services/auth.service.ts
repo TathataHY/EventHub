@@ -1,7 +1,9 @@
-import { apiService } from './api.service';
+import { apiClient } from '@core/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { User as UserType, LoginCredentials as LoginCredentialsType, RegisterData as RegisterDataType, AuthResponse as AuthResponseType } from '../types';
 
-// Interfaces
-export interface User {
+// Interfaces para compatibilidad - Usar para migración gradual
+export interface User extends Partial<UserType> {
   id: string;
   name: string;
   email: string;
@@ -18,19 +20,19 @@ export interface UserProfile extends User {
   eventosAsistidos?: any[];
 }
 
-export interface LoginCredentials {
+export interface LoginCredentials extends Partial<LoginCredentialsType> {
   email: string;
   password: string;
 }
 
-export interface RegisterData {
+export interface RegisterData extends Partial<RegisterDataType> {
   name: string;
   email: string;
   password: string;
   confirmPassword: string;
 }
 
-export interface AuthResponse {
+export interface AuthResponse extends Partial<AuthResponseType> {
   user: User;
   accessToken: string;
   refreshToken: string;
@@ -40,7 +42,10 @@ class AuthService {
   // Iniciar sesión
   async login(credentials: LoginCredentials): Promise<User> {
     try {
-      return await apiService.login(credentials.email, credentials.password);
+      const response = await apiClient.post('/auth/login', credentials);
+      // Guardar token en AsyncStorage
+      await AsyncStorage.setItem('auth_token', response.data.accessToken);
+      return response.data.user;
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
       throw error;
@@ -50,7 +55,10 @@ class AuthService {
   // Registrarse
   async register(data: RegisterData): Promise<AuthResponse> {
     try {
-      return await apiService.register(data);
+      const response = await apiClient.post('/auth/register', data);
+      // Guardar token en AsyncStorage
+      await AsyncStorage.setItem('auth_token', response.data.accessToken);
+      return response.data;
     } catch (error) {
       console.error('Error al registrarse:', error);
       throw error;
@@ -60,7 +68,9 @@ class AuthService {
   // Cerrar sesión
   async logout(): Promise<void> {
     try {
-      await apiService.logout();
+      await apiClient.post('/auth/logout');
+      // Eliminar token de AsyncStorage
+      await AsyncStorage.removeItem('auth_token');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
       throw error;
@@ -69,12 +79,26 @@ class AuthService {
 
   // Verificar si el usuario está autenticado
   async isAuthenticated(): Promise<boolean> {
-    return await apiService.isAuthenticated();
+    try {
+      const token = await AsyncStorage.getItem('auth_token');
+      return !!token;
+    } catch (error) {
+      return false;
+    }
   }
 
   // Obtener el usuario actual
   async getCurrentUser(): Promise<User | null> {
-    return await apiService.getCurrentUser();
+    try {
+      const token = await AsyncStorage.getItem('auth_token');
+      if (!token) return null;
+      
+      const response = await apiClient.get('/auth/me');
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener usuario actual:', error);
+      return null;
+    }
   }
   
   // Obtener el perfil completo del usuario
@@ -87,7 +111,7 @@ class AuthService {
       }
       
       // Obtenemos datos adicionales del perfil del usuario
-      const profileData = await apiService.get(`/users/${user.id}/profile`);
+      const profileData = await apiClient.get(`/users/${user.id}/profile`);
       
       // Combinamos la información básica del usuario con los datos adicionales del perfil
       return {
@@ -115,7 +139,7 @@ class AuthService {
   // Actualizar perfil de usuario
   async updateProfile(data: Partial<User>): Promise<User> {
     try {
-      return await apiService.put('/users/me', data);
+      return await apiClient.put('/users/me', data);
     } catch (error) {
       console.error('Error al actualizar perfil:', error);
       throw error;
@@ -125,7 +149,7 @@ class AuthService {
   // Cambiar contraseña
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
     try {
-      await apiService.put('/users/me/password', {
+      await apiClient.put('/users/me/password', {
         currentPassword,
         newPassword,
       });
@@ -138,7 +162,7 @@ class AuthService {
   // Solicitar restablecimiento de contraseña
   async requestPasswordReset(email: string): Promise<void> {
     try {
-      await apiService.post('/auth/forgot-password', { email });
+      await apiClient.post('/auth/forgot-password', { email });
     } catch (error) {
       console.error('Error al solicitar restablecimiento de contraseña:', error);
       throw error;
@@ -148,7 +172,7 @@ class AuthService {
   // Restablecer contraseña
   async resetPassword(token: string, newPassword: string): Promise<void> {
     try {
-      await apiService.post('/auth/reset-password', {
+      await apiClient.post('/auth/reset-password', {
         token,
         newPassword,
       });

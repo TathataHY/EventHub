@@ -9,6 +9,26 @@ import {
 } from '../mocks/data';
 
 class MockService {
+  private mockStore: Record<string, any> = {};
+  
+  // Método para obtener datos del almacenamiento mock
+  getMockData(key: string, defaultValue?: any): any {
+    if (this.mockStore[key]) {
+      return this.mockStore[key];
+    }
+    // Si hay un valor por defecto, lo guardamos y devolvemos
+    if (defaultValue !== undefined) {
+      this.mockStore[key] = defaultValue;
+      return defaultValue;
+    }
+    return null;
+  }
+  
+  // Método para guardar datos en el almacenamiento mock
+  setMockData(key: string, data: any): void {
+    this.mockStore[key] = data;
+  }
+
   // Métodos para eventos
   async getEvents() {
     return [...mockEvents];

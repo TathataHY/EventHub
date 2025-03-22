@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, TouchableOpacity, Text, Alert, ActivityIndicator } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import theme from '../../theme';
-import { eventService } from '../../services/event.service';
-import { notificationService } from '../../services/notification.service';
+import { useTheme } from '@core/context/ThemeContext';
+import { eventService } from '@modules/events/services/event.service';
+import { notificationService } from '@modules/notifications/services/notification.service';
 
 interface EventJoinButtonProps {
   eventId: string;
@@ -20,6 +20,7 @@ export const EventJoinButton: React.FC<EventJoinButtonProps> = ({
   initialJoined = false,
   onJoinStatusChange
 }) => {
+  const { theme } = useTheme();
   const [isJoined, setIsJoined] = useState(initialJoined);
   const [loading, setLoading] = useState(false);
   const [permissionsRequested, setPermissionsRequested] = useState(false);
@@ -108,13 +109,22 @@ export const EventJoinButton: React.FC<EventJoinButtonProps> = ({
     <TouchableOpacity
       style={[
         styles.button,
-        isJoined ? styles.joinedButton : styles.joinButton
+        isJoined ? 
+          [styles.joinedButton, { borderColor: theme.colors.primary.main }] : 
+          [styles.joinButton, { 
+            backgroundColor: theme.colors.primary.main, 
+            borderColor: theme.colors.primary.main 
+          }],
+        { borderRadius: 8 }
       ]}
       onPress={handleJoinEvent}
       disabled={loading}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={isJoined ? theme.colors.primary.main : theme.colors.common.white} />
+        <ActivityIndicator 
+          size="small" 
+          color={isJoined ? theme.colors.primary.main : theme.colors.common.white} 
+        />
       ) : (
         <>
           <FontAwesome
@@ -126,7 +136,10 @@ export const EventJoinButton: React.FC<EventJoinButtonProps> = ({
           <Text
             style={[
               styles.buttonText,
-              isJoined ? styles.joinedButtonText : styles.joinButtonText
+              isJoined ? 
+                { color: theme.colors.primary.main } : 
+                { color: theme.colors.common.white },
+              { fontSize: 14 }
             ]}
           >
             {isJoined ? 'Asistirás' : 'Unirme'}
@@ -144,28 +157,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: theme.borderRadius.md,
     borderWidth: 1,
   },
   joinButton: {
-    backgroundColor: theme.colors.primary.main,
-    borderColor: theme.colors.primary.main,
+    // Los colores se pasan dinámicamente
   },
   joinedButton: {
-    backgroundColor: theme.colors.common.white,
-    borderColor: theme.colors.primary.main,
+    backgroundColor: 'white',
+    // borderColor se pasa dinámicamente
   },
   icon: {
     marginRight: 8,
   },
   buttonText: {
     fontWeight: 'bold',
-    fontSize: theme.typography.fontSize.sm,
-  },
-  joinButtonText: {
-    color: theme.colors.common.white,
-  },
-  joinedButtonText: {
-    color: theme.colors.primary.main,
-  },
+    // color se pasa dinámicamente
+  }
 }); 

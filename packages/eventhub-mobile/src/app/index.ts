@@ -17,8 +17,5 @@ export * from '../theme';
 // Exportar el proveedor principal
 export * from './AppProvider';
 
-// Exportar el layout principal
-export * from './AppLayout';
-
 // Exportar componentes específicos de la aplicación
 // export * from './components'; 

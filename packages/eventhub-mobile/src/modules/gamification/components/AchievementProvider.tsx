@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { View } from 'react-native';
-import { achievementService } from '../../services/achievement.service';
+import { achievementService } from '@modules/gamification/services/achievement.service';
 import { AchievementUnlocked } from './AchievementUnlocked';
+import { Achievement } from '@modules/gamification/types';
+import { useAuth } from '@modules/auth/hooks/useAuth';
 
 // Definición del contexto
 interface AchievementContextType {
@@ -22,9 +24,10 @@ export const useAchievements = () => {
 
 // Provider del contexto de logros
 export const AchievementProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentAchievement, setCurrentAchievement] = useState<any>(null);
+  const [currentAchievement, setCurrentAchievement] = useState<Achievement | null>(null);
   const [notificationQueue, setNotificationQueue] = useState<string[]>([]);
   const [isShowingNotification, setIsShowingNotification] = useState(false);
+  const { user } = useAuth();
 
   // Procesar la cola de notificaciones
   useEffect(() => {
@@ -62,8 +65,8 @@ export const AchievementProvider: React.FC<{ children: React.ReactNode }> = ({ c
   // Comprobar y disparar eventos de logro
   const checkAndTriggerAchievement = async (type: string, data?: any) => {
     try {
-      // Simula un ID de usuario (deberá ser reemplazado por el usuario autenticado)
-      const userId = "1"; 
+      // Usar el ID del usuario autenticado si está disponible
+      const userId = user?.id || "guest";
       
       // Obtener logros desbloqueados por esta acción
       const unlockedAchievements = await achievementService.checkAchievementProgress(userId, type, data);

@@ -1,8 +1,8 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { useTheme } from '@core/context/ThemeContext';
-import EventCard from './EventCard';
-import { Event } from '../types';
+import { EventCard } from './EventCard';
+import { Event } from '@modules/events/types';
 
 interface EventListProps {
   events: Event[];
@@ -12,9 +12,10 @@ interface EventListProps {
   emptyMessage?: string;
   headerComponent?: React.ReactElement;
   footerComponent?: React.ReactElement;
+  numColumns?: number;
 }
 
-const EventList: React.FC<EventListProps> = ({
+export const EventList: React.FC<EventListProps> = ({
   events,
   loading = false,
   error = null,
@@ -22,21 +23,22 @@ const EventList: React.FC<EventListProps> = ({
   emptyMessage = 'No hay eventos disponibles',
   headerComponent,
   footerComponent,
+  numColumns = 1
 }) => {
   const { theme } = useTheme();
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View style={[styles.centered, { backgroundColor: theme.colors.background.default }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary.main} />
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.centered}>
-        <Text style={[styles.message, { color: theme.colors.error }]}>
+      <View style={[styles.centered, { backgroundColor: theme.colors.background.default }]}>
+        <Text style={[styles.message, { color: theme.colors.error.main }]}>
           {error}
         </Text>
       </View>
@@ -45,8 +47,8 @@ const EventList: React.FC<EventListProps> = ({
 
   if (events.length === 0) {
     return (
-      <View style={styles.centered}>
-        <Text style={[styles.message, { color: theme.colors.secondaryText }]}>
+      <View style={[styles.centered, { backgroundColor: theme.colors.background.default }]}>
+        <Text style={[styles.message, { color: theme.colors.text.secondary }]}>
           {emptyMessage}
         </Text>
       </View>
@@ -63,7 +65,10 @@ const EventList: React.FC<EventListProps> = ({
           onPress={onEventPress ? () => onEventPress(item) : undefined}
         />
       )}
+      numColumns={numColumns}
+      key={numColumns.toString()} // Forzar rerenderizado cuando cambia numColumns
       contentContainerStyle={styles.list}
+      columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
       ListHeaderComponent={headerComponent}
       ListFooterComponent={footerComponent}
     />
@@ -73,6 +78,9 @@ const EventList: React.FC<EventListProps> = ({
 const styles = StyleSheet.create({
   list: {
     padding: 16,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
   },
   centered: {
     flex: 1,
@@ -84,6 +92,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
-});
-
-export default EventList; 
+}); 

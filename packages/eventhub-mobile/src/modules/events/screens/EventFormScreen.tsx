@@ -22,7 +22,7 @@ import {
   EventVisibility,
   CreateEventParams
 } from '../types';
-import { colors } from '@theme';
+import { colors } from '@theme/base/colors';
 
 interface EventFormScreenProps {
   event?: Event;

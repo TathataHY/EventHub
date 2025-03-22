@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { useTheme } from '../../src/context/ThemeContext';
+import { useTheme } from '@core/context/ThemeContext';
 
 /**
  * Pantalla de marcador para la pestaña de escaneo

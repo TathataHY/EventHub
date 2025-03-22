@@ -1,8 +1,8 @@
-import { apiService } from './api.service';
+import { apiClient } from '@core/api';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
-import { eventService } from './event.service';
+import { eventService } from '@modules/events/services/event.service';
 
 // Configurar el comportamiento de las notificaciones
 Notifications.setNotificationHandler({
@@ -54,7 +54,7 @@ class NotificationService {
    */
   async getNotifications(): Promise<NotificationResponse> {
     try {
-      const response = await apiService.get('/notifications');
+      const response = await apiClient.get('/notifications');
       return response.data;
     } catch (error) {
       console.error('Error al obtener notificaciones:', error);
@@ -64,6 +64,8 @@ class NotificationService {
         data: [
           {
             id: '1',
+            userId: '1',
+            type: 'event',
             title: '¡Tu evento está cerca!',
             message: 'El Festival de Música comienza mañana',
             createdAt: new Date().toISOString(),
@@ -72,6 +74,8 @@ class NotificationService {
           },
           {
             id: '2',
+            userId: '1',
+            type: 'event',
             title: '¡Tu evento comienza pronto!',
             message: 'La Conferencia de Tecnología comienza en 1 hora',
             createdAt: new Date(Date.now() - 3600000).toISOString(),
@@ -80,6 +84,8 @@ class NotificationService {
           },
           {
             id: '3',
+            userId: '1',
+            type: 'update',
             title: 'Actualización de evento',
             message: 'El horario del Taller de Programación ha cambiado',
             createdAt: new Date(Date.now() - 86400000).toISOString(),
@@ -98,7 +104,7 @@ class NotificationService {
    */
   async markAsRead(notificationId: string): Promise<boolean> {
     try {
-      await apiService.put(`/notifications/${notificationId}/read`);
+      await apiClient.put(`/notifications/${notificationId}/read`);
       return true;
     } catch (error) {
       console.error('Error al marcar notificación como leída:', error);
@@ -112,7 +118,7 @@ class NotificationService {
    */
   async markAllAsRead(): Promise<boolean> {
     try {
-      await apiService.put('/notifications/read-all');
+      await apiClient.put('/notifications/read-all');
       return true;
     } catch (error) {
       console.error('Error al marcar todas las notificaciones como leídas:', error);
@@ -126,7 +132,7 @@ class NotificationService {
    */
   async getUnreadCount(): Promise<number> {
     try {
-      const response = await apiService.get('/notifications/unread-count');
+      const response = await apiClient.get('/notifications/unread-count');
       return response.data.count;
     } catch (error) {
       console.error('Error al obtener conteo de notificaciones no leídas:', error);
@@ -139,7 +145,7 @@ class NotificationService {
   // Obtener preferencias de notificación
   async getNotificationPreferences() {
     try {
-      return await apiService.get('/notification-preferences');
+      return await apiClient.get('/notification-preferences');
     } catch (error) {
       console.error('Error al obtener preferencias de notificación:', error);
       throw error;
@@ -149,7 +155,7 @@ class NotificationService {
   // Actualizar preferencias de notificación
   async updateNotificationPreferences(preferences: any) {
     try {
-      return await apiService.put('/notification-preferences', preferences);
+      return await apiClient.put('/notification-preferences', preferences);
     } catch (error) {
       console.error('Error al actualizar preferencias de notificación:', error);
       throw error;
@@ -255,7 +261,7 @@ class NotificationService {
   async cancelEventNotifications(eventId: string) {
     const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
     const eventNotifications = scheduledNotifications.filter(
-      notification => notification.content.data?.eventId === eventId
+      (notification: any) => notification.content.data?.eventId === eventId
     );
 
     for (const notification of eventNotifications) {
@@ -289,14 +295,14 @@ class NotificationService {
    *  unsubscribe: () => void
    * }} Función para desuscribirse
    */
-  setupNotificationListeners(onNotificationReceived: (notification: Notifications.Notification) => void) {
+  setupNotificationListeners(onNotificationReceived: (notification: any) => void) {
     // Cuando la app está en primer plano
     const foregroundSubscription = Notifications.addNotificationReceivedListener(
-      onNotificationReceived
+      (notification: any) => onNotificationReceived(notification)
     );
     
     // Cuando el usuario interactúa con una notificación
-    const responseSubscription = Notifications.addNotificationResponseReceivedListener(response => {
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener((response: any) => {
       const { notification } = response;
       onNotificationReceived(notification);
     });

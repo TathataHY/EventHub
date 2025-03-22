@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { userService } from '../services';
-import { PublicUserProfile } from '../types';
+import { PublicUserProfile } from '../types/user.types';
 
 export const useUserRelations = (userId: string) => {
   const [followers, setFollowers] = useState<PublicUserProfile[]>([]);

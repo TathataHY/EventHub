@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { eventService } from './event.service';
-import { authService } from './auth.service';
+import { eventService } from '@modules/events/services/event.service';
+import { authService } from '@modules/auth/services/auth.service';
+import { MOCK_ACHIEVEMENTS } from '../../../core/mocks/achievements.mock';
 
 // Interfaces para la gestión de logros
 export interface Achievement {
@@ -376,4 +377,70 @@ class AchievementService {
   }
 }
 
-export const achievementService = new AchievementService(); 
+export const achievementService = new AchievementService();
+
+/**
+ * Servicio para manejar los logros del usuario
+ */
+export const achievementService = {
+  /**
+   * Obtener todos los logros del usuario
+   * @returns Lista de logros con información de si están desbloqueados
+   */
+  getUserAchievements: async () => {
+    // En producción, esto haría una llamada a la API
+    return new Promise((resolve) => {
+      // Simulamos un delay de red
+      setTimeout(() => {
+        resolve(MOCK_ACHIEVEMENTS);
+      }, 800);
+    });
+  },
+
+  /**
+   * Desbloquea un logro para el usuario actual
+   * @param achievementId ID del logro a desbloquear
+   * @returns Información sobre el desbloqueo
+   */
+  unlockAchievement: async (achievementId: string) => {
+    // En producción, esto haría una llamada POST a la API
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          achievement: MOCK_ACHIEVEMENTS.find(a => a.id === achievementId),
+          xpEarned: 50
+        });
+      }, 500);
+    });
+  },
+
+  /**
+   * Obtiene el progreso de un logro específico
+   * @param achievementId ID del logro
+   * @returns Información del progreso (porcentaje completado)
+   */
+  getAchievementProgress: async (achievementId: string) => {
+    // En producción, esto haría una llamada GET a la API
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const achievement = MOCK_ACHIEVEMENTS.find(a => a.id === achievementId);
+        if (achievement) {
+          resolve({
+            id: achievementId,
+            name: achievement.name,
+            progress: achievement.unlocked ? 100 : Math.floor(Math.random() * 80),
+            unlocked: achievement.unlocked
+          });
+        } else {
+          resolve({
+            id: achievementId,
+            name: 'Desconocido',
+            progress: 0,
+            unlocked: false
+          });
+        }
+      }, 300);
+    });
+  }
+}; 

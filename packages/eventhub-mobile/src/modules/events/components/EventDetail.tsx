@@ -12,8 +12,8 @@ import {
   Linking
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Event, EventTicketInfo, EventLocation, EventStatus } from '../types';
-import { colors } from '@theme';
+import { Event, EventTicketInfo, EventLocation, EventStatus } from '@modules/events/types';
+import { useTheme } from '@core/context/ThemeContext';
 
 interface EventDetailProps {
   event: Event;
@@ -32,6 +32,8 @@ export const EventDetail: React.FC<EventDetailProps> = ({
   onSharePress,
   onOrganizerPress
 }) => {
+  const { theme } = useTheme();
+  
   // Manejar compartir evento
   const handleShare = async () => {
     try {
@@ -130,24 +132,24 @@ export const EventDetail: React.FC<EventDetailProps> = ({
   const renderStatusBadge = () => {
     if (!event.status) return null;
     
-    let badgeColor = colors.success;
+    let badgeColor = theme.colors.success.main;
     let badgeText = 'Publicado';
     
     switch (event.status) {
       case EventStatus.DRAFT:
-        badgeColor = colors.warning;
+        badgeColor = theme.colors.warning.main;
         badgeText = 'Borrador';
         break;
       case EventStatus.CANCELLED:
-        badgeColor = colors.danger;
+        badgeColor = theme.colors.error.main;
         badgeText = 'Cancelado';
         break;
       case EventStatus.COMPLETED:
-        badgeColor = colors.gray;
+        badgeColor = theme.colors.text.disabled;
         badgeText = 'Finalizado';
         break;
       case EventStatus.POSTPONED:
-        badgeColor = colors.warning;
+        badgeColor = theme.colors.warning.main;
         badgeText = 'Pospuesto';
         break;
     }
@@ -162,15 +164,15 @@ export const EventDetail: React.FC<EventDetailProps> = ({
   // Si está cargando, mostrar indicador
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Cargando evento...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background.default }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary.main} />
+        <Text style={[styles.loadingText, { color: theme.colors.text.primary }]}>Cargando evento...</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background.default }]}>
       {/* Imagen del evento */}
       <View style={styles.imageContainer}>
         <Image
@@ -183,15 +185,15 @@ export const EventDetail: React.FC<EventDetailProps> = ({
       
       {/* Encabezado del evento */}
       <View style={styles.headerContainer}>
-        <Text style={styles.title}>{event.title}</Text>
-        <Text style={styles.date}>{getFormattedDateTime()}</Text>
+        <Text style={[styles.title, { color: theme.colors.text.primary }]}>{event.title}</Text>
+        <Text style={[styles.date, { color: theme.colors.text.secondary }]}>{getFormattedDateTime()}</Text>
         
         <View style={styles.locationContainer}>
-          <Ionicons name="location" size={16} color={colors.primary} />
-          <Text style={styles.location}>{getFormattedLocation()}</Text>
+          <Ionicons name="location" size={16} color={theme.colors.primary.main} />
+          <Text style={[styles.location, { color: theme.colors.text.secondary }]}>{getFormattedLocation()}</Text>
         </View>
         
-        <Text style={styles.price}>{getFormattedPrice()}</Text>
+        <Text style={[styles.price, { color: theme.colors.text.primary }]}>{getFormattedPrice()}</Text>
       </View>
       
       {/* Acciones */}
@@ -199,8 +201,9 @@ export const EventDetail: React.FC<EventDetailProps> = ({
         <TouchableOpacity 
           style={[
             styles.attendButton, 
-            isAttending ? styles.attendingButton : null,
-            !isEventActive() || isEventFull() ? styles.disabledButton : null
+            { backgroundColor: theme.colors.primary.main },
+            isAttending ? { backgroundColor: theme.colors.success.main } : null,
+            !isEventActive() || isEventFull() ? { backgroundColor: theme.colors.text.disabled } : null
           ]}
           onPress={onAttendPress}
           disabled={!isEventActive() || isEventFull()}
@@ -216,7 +219,7 @@ export const EventDetail: React.FC<EventDetailProps> = ({
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={styles.shareButton}
+          style={[styles.shareButton, { backgroundColor: theme.colors.secondary.main }]}
           onPress={handleShare}
         >
           <Ionicons name="share-social" size={20} color="white" />
@@ -226,13 +229,13 @@ export const EventDetail: React.FC<EventDetailProps> = ({
       
       {/* Descripción */}
       <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>Descripción</Text>
-        <Text style={styles.description}>{event.description}</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Descripción</Text>
+        <Text style={[styles.description, { color: theme.colors.text.secondary }]}>{event.description}</Text>
       </View>
       
       {/* Organizador */}
       <TouchableOpacity 
-        style={styles.organizerContainer}
+        style={[styles.organizerContainer, { backgroundColor: theme.colors.background.card }]}
         onPress={onOrganizerPress}
       >
         <View style={styles.organizerImageContainer}>
@@ -242,47 +245,78 @@ export const EventDetail: React.FC<EventDetailProps> = ({
               style={styles.organizerImage} 
             />
           ) : (
-            <View style={styles.organizerImagePlaceholder}>
-              <Ionicons name="person" size={24} color={colors.textLight} />
+            <View style={[styles.organizerImagePlaceholder, { backgroundColor: theme.colors.background.paper }]}>
+              <Ionicons name="person" size={24} color={theme.colors.text.secondary} />
             </View>
           )}
         </View>
         
         <View style={styles.organizerInfo}>
-          <Text style={styles.organizerTitle}>Organizado por:</Text>
-          <Text style={styles.organizerName}>{event.organizerName}</Text>
+          <Text style={[styles.organizerLabel, { color: theme.colors.text.secondary }]}>Organizado por</Text>
+          <Text style={[styles.organizerName, { color: theme.colors.text.primary }]}>{event.organizerName}</Text>
         </View>
         
-        <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
+        <Ionicons name="chevron-forward" size={20} color={theme.colors.text.secondary} />
       </TouchableOpacity>
       
-      {/* Sitio web y enlaces */}
+      {/* Detalles adicionales */}
       {event.websiteUrl && (
-        <TouchableOpacity 
-          style={styles.linkContainer}
-          onPress={() => Linking.openURL(event.websiteUrl || '')}
-        >
-          <Ionicons name="globe" size={20} color={colors.primary} />
-          <Text style={styles.linkText}>Visitar sitio web</Text>
-        </TouchableOpacity>
+        <View style={styles.sectionContainer}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Sitio web</Text>
+          <TouchableOpacity onPress={() => Linking.openURL(event.websiteUrl!)}>
+            <Text style={[styles.link, { color: theme.colors.primary.main }]}>{event.websiteUrl}</Text>
+          </TouchableOpacity>
+        </View>
       )}
       
       {/* Etiquetas */}
       {event.tags && event.tags.length > 0 && (
-        <View style={styles.tagsContainer}>
-          <Text style={styles.sectionTitle}>Etiquetas:</Text>
-          <View style={styles.tagsList}>
+        <View style={styles.sectionContainer}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>Etiquetas</Text>
+          <View style={styles.tagsContainer}>
             {event.tags.map((tag, index) => (
-              <View key={index} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
+              <View key={index} style={[styles.tag, { backgroundColor: theme.colors.primary.light }]}>
+                <Text style={[styles.tagText, { color: theme.colors.primary.main }]}>{tag}</Text>
               </View>
             ))}
           </View>
         </View>
       )}
       
-      {/* Espacio al final */}
-      <View style={styles.footer} />
+      {/* Métricas */}
+      {event.metrics && (
+        <View style={[styles.metricsContainer, { backgroundColor: theme.colors.background.card }]}>
+          <View style={styles.metricItem}>
+            <Ionicons name="eye-outline" size={20} color={theme.colors.primary.main} />
+            <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>{event.metrics.views}</Text>
+            <Text style={[styles.metricLabel, { color: theme.colors.text.secondary }]}>Vistas</Text>
+          </View>
+          
+          <View style={styles.metricItem}>
+            <Ionicons name="people-outline" size={20} color={theme.colors.primary.main} />
+            <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>
+              {event.metrics.attendees} {event.metrics.maxCapacity ? `/ ${event.metrics.maxCapacity}` : ''}
+            </Text>
+            <Text style={[styles.metricLabel, { color: theme.colors.text.secondary }]}>Asistentes</Text>
+          </View>
+          
+          {event.metrics.shares > 0 && (
+            <View style={styles.metricItem}>
+              <Ionicons name="share-social-outline" size={20} color={theme.colors.primary.main} />
+              <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>{event.metrics.shares}</Text>
+              <Text style={[styles.metricLabel, { color: theme.colors.text.secondary }]}>Compartidos</Text>
+            </View>
+          )}
+          
+          {event.metrics.favorites > 0 && (
+            <View style={styles.metricItem}>
+              <Ionicons name="heart-outline" size={20} color={theme.colors.primary.main} />
+              <Text style={[styles.metricValue, { color: theme.colors.text.primary }]}>{event.metrics.favorites}</Text>
+              <Text style={[styles.metricLabel, { color: theme.colors.text.secondary }]}>Favoritos</Text>
+            </View>
+          )}
+        </View>
+      )}
     </ScrollView>
   );
 };
@@ -292,7 +326,6 @@ const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   loadingContainer: {
     flex: 1,
@@ -303,12 +336,11 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: colors.textDark,
   },
   imageContainer: {
-    position: 'relative',
     width: '100%',
     height: 200,
+    position: 'relative',
   },
   image: {
     width: '100%',
@@ -323,24 +355,21 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   statusText: {
-    color: 'white',
+    color: '#FFF',
     fontSize: 12,
     fontWeight: 'bold',
   },
   headerContainer: {
     padding: 16,
-    backgroundColor: 'white',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.textDark,
     marginBottom: 8,
   },
   date: {
-    fontSize: 16,
-    color: colors.textDark,
-    marginBottom: 12,
+    fontSize: 14,
+    marginBottom: 8,
   },
   locationContainer: {
     flexDirection: 'row',
@@ -349,129 +378,105 @@ const styles = StyleSheet.create({
   },
   location: {
     fontSize: 14,
-    color: colors.textDark,
-    marginLeft: 8,
+    marginLeft: 4,
   },
   price: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: colors.primary,
+    marginTop: 8,
   },
   actionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 16,
+    paddingTop: 0,
   },
   attendButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    padding: 12,
     borderRadius: 8,
     flex: 1,
     marginRight: 8,
   },
   attendingButton: {
-    backgroundColor: colors.success,
+    backgroundColor: '#4CAF50',
   },
   disabledButton: {
-    backgroundColor: colors.gray,
+    opacity: 0.6,
   },
   shareButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.secondary,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    padding: 12,
     borderRadius: 8,
     flex: 1,
     marginLeft: 8,
   },
   buttonText: {
     color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 14,
+    fontWeight: 'bold',
     marginLeft: 8,
   },
   sectionContainer: {
     padding: 16,
-    backgroundColor: 'white',
-    marginTop: 8,
+    paddingTop: 0,
+    marginTop: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: colors.textDark,
     marginBottom: 8,
   },
   description: {
     fontSize: 16,
-    color: colors.textDark,
     lineHeight: 24,
   },
   organizerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'white',
-    marginTop: 8,
+    marginTop: 16,
+    marginHorizontal: 16,
+    padding: 12,
+    borderRadius: 8,
   },
   organizerImageContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    overflow: 'hidden',
-    marginRight: 16,
+    marginRight: 12,
   },
   organizerImage: {
-    width: '100%',
-    height: '100%',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   organizerImagePlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: colors.lightGray,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
   organizerInfo: {
     flex: 1,
   },
-  organizerTitle: {
-    fontSize: 14,
-    color: colors.textLight,
+  organizerLabel: {
+    fontSize: 12,
   },
   organizerName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.textDark,
+    fontWeight: '500',
   },
-  linkContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'white',
-    marginTop: 8,
-  },
-  linkText: {
+  link: {
     fontSize: 16,
-    color: colors.primary,
-    marginLeft: 8,
+    textDecorationLine: 'underline',
   },
   tagsContainer: {
-    padding: 16,
-    backgroundColor: 'white',
-    marginTop: 8,
-  },
-  tagsList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
   tag: {
-    backgroundColor: colors.lightGray,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
@@ -480,9 +485,26 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontSize: 12,
-    color: colors.textDark,
+    fontWeight: '500',
   },
-  footer: {
-    height: 32,
+  metricsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 24,
+    marginBottom: 24,
+    borderRadius: 8,
+  },
+  metricItem: {
+    alignItems: 'center',
+  },
+  metricValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  metricLabel: {
+    fontSize: 12,
   },
 }); 

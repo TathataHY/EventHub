@@ -10,46 +10,32 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { useTheme } from 'styled-components/native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@core/context/ThemeContext';
 
 // Componentes
-import NearbyEventsSection from '../components/home/NearbyEventsSection';
-import RecommendedEventsSection from '../components/home/RecommendedEventsSection';
+import { NearbyEventsSection } from '@modules/home/components/NearbyEventsSection';
+import { RecommendedEventsSection } from '@modules/home/components/RecommendedEventsSection';
 
-// Servicio mock
-import { mockService } from '../services/mock.service';
+// Servicios
+import { eventService } from '@modules/events/services/event.service';
+import { authService } from '@modules/auth/services/auth.service';
 
 // Tipos
-interface Event {
-  id: string;
-  title: string;
-  description: string;
-  date: string;
-  image: string;
-  location: {
-    name: string;
-    address: string;
-    coordinates: {
-      latitude: number;
-      longitude: number;
-    };
-  };
-  price: number;
-  currency: string;
-  category: string;
-}
+import { Event } from '@modules/events/types';
+import { Category } from '@modules/events/types';
+import { User } from '@modules/users/types';
 
 const HomeScreen = () => {
-  const theme = useTheme();
+  const { theme } = useTheme();
   const navigation = useNavigation();
   
   const [featuredEvents, setFeaturedEvents] = useState<Event[]>([]);
   const [nearbyEvents, setNearbyEvents] = useState<Event[]>([]);
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // Función para cargar datos
   const loadData = async () => {
@@ -57,19 +43,19 @@ const HomeScreen = () => {
       setLoading(true);
       
       // Cargar eventos destacados
-      const featured = await mockService.getFeaturedEvents();
+      const featured = await eventService.getFeaturedEvents();
       setFeaturedEvents(featured);
       
       // Cargar eventos cercanos
-      const nearby = await mockService.getNearbyEvents();
+      const nearby = await eventService.getNearbyEvents();
       setNearbyEvents(nearby);
       
       // Cargar categorías
-      const cats = await mockService.getCategories();
+      const cats = await eventService.getCategories();
       setCategories(cats);
       
       // Cargar usuario actual
-      const user = await mockService.getCurrentUser();
+      const user = await authService.getCurrentUser();
       setCurrentUser(user);
       
     } catch (error) {
@@ -95,8 +81,8 @@ const HomeScreen = () => {
   if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary.main} />
+        <Text style={[styles.loadingText, { color: theme.colors.text.primary }]}>
           Cargando eventos...
         </Text>
       </View>
@@ -104,24 +90,24 @@ const HomeScreen = () => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.default }]}>
       <ScrollView
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[theme.colors.primary]}
-            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary.main]}
+            tintColor={theme.colors.primary.main}
           />
         }
       >
         {/* Encabezado */}
         <View style={styles.header}>
           <View>
-            <Text style={[styles.greeting, { color: theme.colors.text }]}>
+            <Text style={[styles.greeting, { color: theme.colors.text.primary }]}>
               Hola, {currentUser?.name?.split(' ')[0] || 'Usuario'}
             </Text>
-            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+            <Text style={[styles.subtitle, { color: theme.colors.text.secondary }]}>
               ¿Qué evento te interesa hoy?
             </Text>
           </View>
@@ -129,28 +115,28 @@ const HomeScreen = () => {
           {/* Botones de notificaciones y perfil */}
           <View style={styles.headerButtons}>
             <TouchableOpacity 
-              style={[styles.iconButton, { backgroundColor: theme.colors.surface }]}
+              style={[styles.iconButton, { backgroundColor: theme.colors.background.paper }]}
               onPress={() => navigation.navigate('Profile')}
             >
-              <Ionicons name="person-outline" size={22} color={theme.colors.primary} />
+              <Ionicons name="person-outline" size={22} color={theme.colors.primary.main} />
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={[styles.iconButton, { backgroundColor: theme.colors.surface }]}
+              style={[styles.iconButton, { backgroundColor: theme.colors.background.paper }]}
               onPress={() => {/* Navegar a notificaciones */}}
             >
-              <Ionicons name="notifications-outline" size={22} color={theme.colors.primary} />
+              <Ionicons name="notifications-outline" size={22} color={theme.colors.primary.main} />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Barra de búsqueda */}
         <TouchableOpacity 
-          style={[styles.searchBar, { backgroundColor: theme.colors.surface }]}
+          style={[styles.searchBar, { backgroundColor: theme.colors.background.paper }]}
           onPress={() => navigation.navigate('Events')}
         >
-          <Ionicons name="search" size={18} color={theme.colors.textSecondary} />
-          <Text style={[styles.searchText, { color: theme.colors.textSecondary }]}>
+          <Ionicons name="search" size={18} color={theme.colors.text.secondary} />
+          <Text style={[styles.searchText, { color: theme.colors.text.secondary }]}>
             Buscar eventos...
           </Text>
         </TouchableOpacity>

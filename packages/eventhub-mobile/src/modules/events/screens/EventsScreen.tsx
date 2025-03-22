@@ -2,21 +2,36 @@ import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import { useEvents } from '../hooks/useEvents';
 import { EventsList, EventsSearchBar, EventFilters } from '../components';
-import { Event, EventCategory, EventType } from '../types';
-import { colors } from '@theme';
+import { Event, EventCategory } from '@modules/events/types';
+import { useTheme } from '@core/context/ThemeContext';
+
+// Definición de EventType para mantener compatibilidad con el componente EventFilters
+interface EventType {
+  id: string;
+  name: string;
+}
+
+interface FilterParams {
+  categories: EventCategory[];
+  types: EventType[];
+  isFree?: boolean;
+  dateRange?: {
+    from?: Date;
+    to?: Date;
+  };
+  location?: string;
+}
 
 interface EventsScreenProps {
   onEventPress?: (event: Event) => void;
 }
 
 export const EventsScreen: React.FC<EventsScreenProps> = ({ onEventPress }) => {
+  const { theme } = useTheme();
+  
   // Filtros de búsqueda
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterParams, setFilterParams] = useState<{
-    categories: EventCategory[];
-    types: EventType[];
-    isFree?: boolean;
-  }>({
+  const [filterParams, setFilterParams] = useState<FilterParams>({
     categories: [],
     types: [],
   });
@@ -44,11 +59,13 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onEventPress }) => {
   };
   
   // Manejar cambios en los filtros
-  const handleFilterChange = (filters: any) => {
+  const handleFilterChange = (filters: FilterParams) => {
     const newFilterParams = {
       categories: filters.categories || [],
       types: filters.types || [],
-      isFree: filters.isFree
+      isFree: filters.isFree,
+      dateRange: filters.dateRange,
+      location: filters.location
     };
     
     setFilterParams(newFilterParams);
@@ -73,10 +90,13 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onEventPress }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background} barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.default }]}>
+      <StatusBar 
+        backgroundColor={theme.colors.background.default} 
+        barStyle={theme.isDark ? "light-content" : "dark-content"} 
+      />
       
-      <View style={styles.searchContainer}>
+      <View style={[styles.searchContainer, { backgroundColor: theme.colors.background.card }]}>
         <EventsSearchBar
           onSearch={handleSearch}
           initialValue={searchQuery}
@@ -107,10 +127,8 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onEventPress }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   searchContainer: {
-    backgroundColor: colors.cardBackground,
     paddingBottom: 8,
   },
 }); 

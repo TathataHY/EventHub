@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { colors } from '@core/theme';
+import { colors } from '@theme/base/colors';
 
 interface FollowButtonProps {
   userId: string;

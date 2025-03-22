@@ -14,16 +14,21 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { getDistance } from 'geolib';
 
-import { useTheme } from '../../context/ThemeContext';
-import { EventCard } from '../event/EventCard';
-import { eventService } from '../../services/event.service';
+import { useTheme } from '@core/context/ThemeContext';
+import { EventCard } from '@modules/events/components/EventCard';
+import { eventService } from '@modules/events/services/event.service';
+import { Event } from '@modules/events/types';
 
 interface NearbyEventsSectionProps {
+  events?: Event[];
   maxEvents?: number;
+  onEventPress?: (event: Event) => void;
 }
 
 export const NearbyEventsSection: React.FC<NearbyEventsSectionProps> = ({
-  maxEvents = 3
+  events,
+  maxEvents = 3,
+  onEventPress
 }) => {
   const { theme } = useTheme();
   const router = useRouter();
@@ -31,11 +36,16 @@ export const NearbyEventsSection: React.FC<NearbyEventsSectionProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [nearbyEvents, setNearbyEvents] = useState<any[]>([]);
+  const [nearbyEvents, setNearbyEvents] = useState<Event[]>([]);
   
   useEffect(() => {
-    getLocationAndEvents();
-  }, []);
+    if (events && events.length > 0) {
+      setNearbyEvents(events.slice(0, maxEvents));
+      setIsLoading(false);
+    } else {
+      getLocationAndEvents();
+    }
+  }, [events, maxEvents]);
   
   // Solicitar permisos de ubicación y cargar eventos cercanos
   const getLocationAndEvents = async () => {
@@ -134,15 +144,24 @@ export const NearbyEventsSection: React.FC<NearbyEventsSectionProps> = ({
       return `${(meters / 1000).toFixed(1)} km`;
     }
   };
+
+  // Manejar la selección de un evento
+  const handleEventPress = (event: Event) => {
+    if (onEventPress) {
+      onEventPress(event);
+    } else {
+      router.push(`/events/${event.id}`);
+    }
+  };
   
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
           {hasLocationPermission ? 'Eventos cercanos' : 'Eventos destacados'}
         </Text>
         <TouchableOpacity onPress={navigateToMap}>
-          <Text style={[styles.viewAllText, { color: theme.colors.primary }]}>
+          <Text style={[styles.viewAllText, { color: theme.colors.primary.main }]}>
             Ver mapa
           </Text>
         </TouchableOpacity>
@@ -150,7 +169,7 @@ export const NearbyEventsSection: React.FC<NearbyEventsSectionProps> = ({
       
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <ActivityIndicator size="small" color={theme.colors.primary.main} />
         </View>
       ) : nearbyEvents.length > 0 ? (
         <FlatList
@@ -160,24 +179,27 @@ export const NearbyEventsSection: React.FC<NearbyEventsSectionProps> = ({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.eventsList}
           renderItem={({ item }) => (
-            <View style={styles.eventCardContainer}>
+            <TouchableOpacity 
+              style={styles.eventCardContainer}
+              onPress={() => handleEventPress(item)}
+            >
               <EventCard event={item} />
               
               {userLocation && item.distance && (
-                <View style={[styles.distanceBadge, { backgroundColor: theme.colors.card }]}>
-                  <Ionicons name="location" size={12} color={theme.colors.primary} />
-                  <Text style={[styles.distanceText, { color: theme.colors.secondaryText }]}>
+                <View style={[styles.distanceBadge, { backgroundColor: theme.colors.background.paper }]}>
+                  <Ionicons name="location" size={12} color={theme.colors.primary.main} />
+                  <Text style={[styles.distanceText, { color: theme.colors.text.secondary }]}>
                     {formatDistance(item.distance)}
                   </Text>
                 </View>
               )}
-            </View>
+            </TouchableOpacity>
           )}
         />
       ) : (
         <View style={styles.emptyContainer}>
-          <Ionicons name="location-outline" size={32} color={theme.colors.secondaryText} />
-          <Text style={[styles.emptyText, { color: theme.colors.secondaryText }]}>
+          <Ionicons name="location-outline" size={32} color={theme.colors.text.secondary} />
+          <Text style={[styles.emptyText, { color: theme.colors.text.secondary }]}>
             No hay eventos cercanos
           </Text>
         </View>
@@ -249,6 +271,5 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     marginTop: 8,
-    fontSize: 14,
-  },
+  }
 }); 

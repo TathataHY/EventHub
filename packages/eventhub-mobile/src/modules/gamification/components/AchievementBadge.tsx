@@ -6,9 +6,10 @@ import {
   Pressable
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle } from 'react-native-svg';
 
-import { useTheme } from '../../context/ThemeContext';
-import { Achievement } from '../../services/achievement.service';
+import { useTheme } from '@core/context/ThemeContext';
+import { Achievement } from '@modules/gamification/types';
 
 interface AchievementBadgeProps {
   achievement: Achievement;
@@ -61,15 +62,15 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
   const getColorByType = (type: string) => {
     switch (type) {
       case 'attendance':
-        return theme.colors.success;
+        return theme.colors.success.main;
       case 'creation':
-        return theme.colors.primary;
+        return theme.colors.primary.main;
       case 'social':
-        return theme.colors.info;
+        return theme.colors.info.main;
       case 'exploration':
-        return theme.colors.warning;
+        return theme.colors.warning.main;
       default:
-        return theme.colors.primary;
+        return theme.colors.primary.main;
     }
   };
   
@@ -90,8 +91,8 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
         <View style={[styles.progressBackground, { borderColor: badgeColor + '40', borderWidth: strokeWidth }]} />
         
         {progressPercent > 0 && (
-          <svg width={size} height={size} style={styles.progressSvg}>
-            <circle
+          <Svg width={size} height={size} style={styles.progressSvg}>
+            <Circle
               cx={size / 2}
               cy={size / 2}
               r={radius}
@@ -100,9 +101,10 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
               strokeDasharray={circumference}
               strokeDashoffset={strokeDashoffset}
               fill="transparent"
-              transform={`rotate(-90, ${size / 2}, ${size / 2})`}
+              rotation={-90}
+              origin={`${size / 2}, ${size / 2}`}
             />
-          </svg>
+          </Svg>
         )}
         
         {isUnlocked && (
@@ -130,7 +132,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
         {
           width: sizes.container,
           height: sizes.container,
-          backgroundColor: isUnlocked ? badgeColor + '20' : theme.colors.card
+          backgroundColor: isUnlocked ? badgeColor + '20' : theme.colors.background.paper
         }
       ]}>
         {renderProgressCircle()}
@@ -138,7 +140,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
         <Ionicons 
           name={isUnlocked ? achievement.iconName.replace('-outline', '') : achievement.iconName}
           size={sizes.icon}
-          color={isUnlocked ? badgeColor : theme.colors.secondaryText}
+          color={isUnlocked ? badgeColor : theme.colors.text.secondary}
         />
         
         {isUnlocked && size !== 'small' && (
@@ -153,7 +155,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
           style={[
             styles.title, 
             { 
-              color: isUnlocked ? theme.colors.text : theme.colors.secondaryText,
+              color: isUnlocked ? theme.colors.text.primary : theme.colors.text.secondary,
               fontSize: sizes.fontSize,
               maxWidth: sizes.container * 1.2
             }
@@ -165,7 +167,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
       )}
       
       {(size === 'large' && achievement.progress !== undefined) && (
-        <Text style={[styles.progress, { color: theme.colors.secondaryText, fontSize: sizes.fontSize * 0.9 }]}>
+        <Text style={[styles.progress, { color: theme.colors.text.secondary, fontSize: sizes.fontSize * 0.9 }]}>
           {achievement.progress}/{achievement.requiredCount}
         </Text>
       )}

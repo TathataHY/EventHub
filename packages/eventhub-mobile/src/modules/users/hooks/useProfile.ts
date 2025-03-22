@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { userService } from '../services';
-import { UserProfile, UpdateProfileParams } from '../types';
+import { userService } from '../services/user.service';
+import { UserProfile, UpdateProfileParams } from '../types/user.types';
 
 export const useProfile = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
