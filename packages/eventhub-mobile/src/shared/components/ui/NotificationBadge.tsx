@@ -1,68 +1,77 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { useTheme } from '@core/context/ThemeContext';
+import { StyleSheet, View, Text } from 'react-native';
+import { useTheme } from '../../../shared/hooks/useTheme';
+import { Badge } from './Badge';
 
-interface NotificationBadgeProps {
+export interface NotificationBadgeProps {
   count: number;
-  small?: boolean;
-  color?: string;
+  size?: 'small' | 'medium' | 'large';
+  maxCount?: number;
 }
 
 /**
- * Componente que muestra una insignia con el número de notificaciones no leídas
+ * Componente que muestra un contador de notificaciones
  */
-export function NotificationBadge({ count, small = false, color }: NotificationBadgeProps) {
+export const NotificationBadge = ({
+  count,
+  size = 'medium',
+  maxCount = 99,
+}: NotificationBadgeProps) => {
   const { theme } = useTheme();
   
   if (count <= 0) return null;
   
-  // El color por defecto es el accent del tema
-  const badgeColor = color || theme.colors.accent;
+  // Determinar el tamaño del componente basado en la prop
+  const getBadgeSize = () => {
+    switch (size) {
+      case 'small': return 16;
+      case 'large': return 24;
+      case 'medium':
+      default: return 20;
+    }
+  };
   
-  // Si el contador es mayor a 99, mostrar 99+
-  const displayCount = count > 99 ? '99+' : count.toString();
+  // Determinar el tamaño de fuente basado en la prop
+  const getFontSize = () => {
+    switch (size) {
+      case 'small': return 8;
+      case 'large': return 12;
+      case 'medium':
+      default: return 10;
+    }
+  };
+  
+  // Formatear el conteo
+  const getFormattedCount = () => {
+    if (count > maxCount) {
+      return `${maxCount}+`;
+    }
+    return `${count}`;
+  };
   
   return (
-    <View 
-      style={[
-        styles.badge,
-        { backgroundColor: badgeColor },
-        small ? styles.badgeSmall : null
-      ]}
-    >
-      <Text 
-        style={[
-          styles.badgeText,
-          small ? styles.badgeTextSmall : null
-        ]}
-      >
-        {displayCount}
-      </Text>
-    </View>
+    <Badge
+      content={getFormattedCount()}
+      color={theme.colors.error.main}
+      size={getBadgeSize()}
+      textColor="#FFFFFF"
+      max={maxCount}
+    />
   );
-}
+};
 
 const styles = StyleSheet.create({
   badge: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    justifyContent: 'center',
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    borderRadius: 50,
     alignItems: 'center',
-    paddingHorizontal: 6,
+    justifyContent: 'center',
+    backgroundColor: '#FF4848',
   },
-  badgeSmall: {
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    paddingHorizontal: 4,
-  },
-  badgeText: {
-    color: 'white',
-    fontSize: 12,
+  text: {
+    color: '#FFFFFF',
     fontWeight: 'bold',
   },
-  badgeTextSmall: {
-    fontSize: 10,
-  }
 }); 

@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 import { UserProfile } from '@modules/gamification/types';
 
 interface LevelProgressProps {
@@ -67,7 +67,7 @@ export const LevelProgress: React.FC<LevelProgressProps> = ({
               style={[
                 styles.progressBar, 
                 { 
-                  backgroundColor: theme.colors.divider,
+                  backgroundColor: theme.colors.grey[300],
                 }
               ]}
             >
@@ -103,7 +103,7 @@ export const LevelProgress: React.FC<LevelProgressProps> = ({
     <Pressable 
       style={[
         styles.container,
-        { backgroundColor: theme.colors.background.paper }
+        { backgroundColor: theme.colors.background.default }
       ]}
       onPress={onPress}
       disabled={!onPress}
@@ -136,7 +136,7 @@ export const LevelProgress: React.FC<LevelProgressProps> = ({
         <View 
           style={[
             styles.progressBackground, 
-            { backgroundColor: theme.colors.divider }
+            { backgroundColor: theme.colors.grey[300] }
           ]}
         >
           <View 

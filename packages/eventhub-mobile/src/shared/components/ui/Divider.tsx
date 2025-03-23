@@ -7,7 +7,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 interface DividerProps {
   text?: string;
@@ -32,8 +32,8 @@ export const Divider: React.FC<DividerProps> = ({
 }) => {
   const { theme } = useTheme();
   
-  // Asignar valores predeterminados con el tema
-  const dividerColor = color || theme.colors.divider;
+  // Usar el color proporcionado o el color divider del tema
+  const dividerColor = color || theme.colors.grey[300];
   const dividerSpacing = spacing || 16;
   
   // Estilos condicionales basados en la orientación

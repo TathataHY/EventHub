@@ -20,7 +20,7 @@
     "date-fns": "^3.3.1",
     "expo": "~50.0.8",
     "expo-barcode-scanner": "^13.0.1",
-    "expo-camera": "^16.0.18",
+    "expo-camera": "^16.1.0-canary-20250320-7a205d3",
     "expo-constants": "~15.4.5",
     "expo-font": "~11.10.3",
     "expo-image-picker": "~14.7.1",

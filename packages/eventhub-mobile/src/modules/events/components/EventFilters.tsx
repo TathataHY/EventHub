@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { EventCategory as EventCategoryEnum } from '@modules/events/types';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 // Definición de EventType para que coincida con los tipos utilizados en la aplicación
 interface EventType {
@@ -183,7 +183,7 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
       >
         {filters.categories.length > 0 && (
           <TouchableOpacity 
-            style={[styles.filterChip, { backgroundColor: theme.colors.primary.light }]}
+            style={[styles.filterChip, { backgroundColor: `${theme.colors.primary.main}20` }]}
             onPress={() => {
               setActiveFilterSection('categories');
               setModalVisible(true);
@@ -200,7 +200,7 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
         
         {filters.types.length > 0 && (
           <TouchableOpacity 
-            style={[styles.filterChip, { backgroundColor: theme.colors.info.light }]}
+            style={[styles.filterChip, { backgroundColor: `${theme.colors.info.main}20` }]}
             onPress={() => {
               setActiveFilterSection('types');
               setModalVisible(true);
@@ -217,7 +217,7 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
         
         {filters.isFree && (
           <TouchableOpacity 
-            style={[styles.filterChip, { backgroundColor: theme.colors.success.light }]}
+            style={[styles.filterChip, { backgroundColor: `${theme.colors.success.main}20` }]}
             onPress={handleFreeToggle}
           >
             <Text style={[styles.filterChipText, { color: theme.colors.success.main }]}>
@@ -428,7 +428,7 @@ export const EventFilters: React.FC<EventFiltersProps> = ({
               {renderPriceSection()}
             </ScrollView>
             
-            <View style={[styles.modalFooter, { borderTopColor: theme.colors.border.main }]}>
+            <View style={[styles.modalFooter, { borderTopColor: theme.colors.grey[300] }]}>
               <TouchableOpacity 
                 style={[styles.applyButton, { backgroundColor: theme.colors.primary.main }]}
                 onPress={() => setModalVisible(false)}

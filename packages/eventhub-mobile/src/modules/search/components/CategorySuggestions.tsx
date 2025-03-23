@@ -7,7 +7,7 @@ import {
   TouchableOpacity 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 // Importar tipos necesarios
 interface Category {
@@ -29,10 +29,10 @@ export function CategorySuggestions({
   
   const renderCategoryItem = ({ item }: { item: Category }) => (
     <TouchableOpacity
-      style={[styles.categoryItem, { backgroundColor: theme.colors.background.card }]}
+      style={[styles.categoryItem, { backgroundColor: theme.colors.background.default }]}
       onPress={() => onCategoryPress(item)}
     >
-      <View style={[styles.iconContainer, { backgroundColor: theme.colors.primary.light }]}>
+      <View style={[styles.iconContainer, { backgroundColor: `${theme.colors.primary.main}20` }]}>
         <Ionicons name={item.icon as any} size={22} color={theme.colors.primary.main} />
       </View>
       <Text style={[styles.categoryName, { color: theme.colors.text.primary }]}>

@@ -10,11 +10,14 @@ import { colors } from './base/colors';
 import { typography } from './base/typography';
 import { spacing } from './base/spacing';
 import { shadows } from './base/shadows';
-import { AppColors, AppTypography, AppSpacing } from './theme.types';
+import { AppColors, AppTypography, AppSpacing, getColorValue } from './theme.types';
 
 // Importar variantes de tema
 import { lightTheme } from './variants/light';
 import { darkTheme } from './variants/dark';
+
+// Importar helpers
+import { convertTypographyStyle, convertFontWeight } from './typography.helper';
 
 // Definimos los radios de borde comunes
 const borderRadius = {
@@ -120,4 +123,11 @@ export type {
   AppColors,
   AppTypography,
   AppSpacing
+};
+
+// Exportamos funciones de utilidad
+export { 
+  getColorValue,
+  convertTypographyStyle,
+  convertFontWeight
 }; 

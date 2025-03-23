@@ -1,25 +1,25 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'react-native';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 /**
  * Layout para las rutas de perfil
  * Configura el estilo común para todas las pantallas del perfil
  */
 export const ProfileLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   
   return (
     <>
       <StatusBar 
-        barStyle={isDark ? "light-content" : "dark-content"} 
+        barStyle="dark-content" 
         backgroundColor={theme.colors.background.default} 
       />
       <Stack
         screenOptions={{
           headerStyle: {
-            backgroundColor: theme.colors.background.paper,
+            backgroundColor: theme.colors.background.default,
           },
           headerShadowVisible: false,
           headerTintColor: theme.colors.text.primary,

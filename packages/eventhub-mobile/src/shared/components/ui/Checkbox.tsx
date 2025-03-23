@@ -1,6 +1,8 @@
 import React from 'react';
 import { TouchableOpacity, View, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { Text } from './Text';
+import { colors } from '@theme/base/colors';
+import { getColorValue } from '@theme/index';
 
 interface CheckboxProps {
   checked: boolean;
@@ -10,13 +12,49 @@ interface CheckboxProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export const Checkbox: React.FC<CheckboxProps> = ({
-  checked,
-  onChange,
-  label,
-  disabled = false,
-  style,
-}) => {
+// Define los estilos para el Checkbox
+const getStyles = () => StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: getColorValue(colors.grey[400]),
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+    backgroundColor: 'transparent',
+  },
+  checked: {
+    backgroundColor: getColorValue(colors.primary),
+    borderColor: getColorValue(colors.primary),
+  },
+  disabled: {
+    opacity: 0.5,
+  },
+  indicator: {
+    width: 12,
+    height: 12,
+    backgroundColor: getColorValue(colors.common.white),
+    borderRadius: 2,
+  },
+  label: {
+    fontSize: 16,
+    color: getColorValue(colors.text),
+  },
+  labelDisabled: {
+    opacity: 0.5,
+  },
+});
+
+export function Checkbox({ label, checked, disabled, onChange, style }: CheckboxProps) {
+  const styles = getStyles();
+
   const handlePress = () => {
     if (!disabled) {
       onChange(!checked);
@@ -51,45 +89,6 @@ export const Checkbox: React.FC<CheckboxProps> = ({
       )}
     </TouchableOpacity>
   );
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 4,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: '#007AFF',
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checked: {
-    backgroundColor: '#007AFF',
-  },
-  disabled: {
-    borderColor: '#CCCCCC',
-    backgroundColor: checked => checked ? '#CCCCCC' : 'transparent',
-  },
-  indicator: {
-    width: 10,
-    height: 10,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 2,
-  },
-  label: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#000000',
-  },
-  labelDisabled: {
-    color: '#999999',
-  },
-});
+}
 
 export default Checkbox; 

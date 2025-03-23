@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../../shared/hooks/useTheme';
 import { LoadingState } from '@shared/components/ui/LoadingState';
 import {
   SearchBar,

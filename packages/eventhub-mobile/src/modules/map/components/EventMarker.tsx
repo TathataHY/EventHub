@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Marker, Callout } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 import { Event } from '../hooks/useMapEvents';
 
 interface EventMarkerProps {
@@ -38,7 +38,7 @@ export function EventMarker({ event, getCategoryColor, onEventPress }: EventMark
       </View>
       
       <Callout tooltip onPress={() => onEventPress(event.id)}>
-        <View style={[styles.callout, { backgroundColor: theme.colors.background.paper }]}>
+        <View style={[styles.callout, { backgroundColor: theme.colors.background.default }]}>
           <Text style={[styles.calloutTitle, { color: theme.colors.text.primary }]}>
             {event.title}
           </Text>

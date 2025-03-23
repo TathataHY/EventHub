@@ -1,32 +1,46 @@
 import React from 'react';
-import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
-import { useTheme } from '@core/context/ThemeContext';
+import { View, Text, ActivityIndicator, StyleSheet, ViewStyle } from 'react-native';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
-interface LoadingStateProps {
+export interface LoadingStateProps {
   message?: string;
+  containerStyle?: ViewStyle;
 }
 
-export function LoadingState({ message = 'Cargando...' }: LoadingStateProps) {
+export const LoadingState = ({ 
+  message = 'Cargando...', 
+  containerStyle 
+}: LoadingStateProps) => {
   const { theme } = useTheme();
-  
+
   return (
-    <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color={theme.colors.primary.main} />
-      <Text style={[styles.loadingText, { color: theme.colors.text.secondary }]}>
-        {message}
-      </Text>
+    <View style={[styles.container, containerStyle]}>
+      <ActivityIndicator 
+        size="large" 
+        color={theme.colors.primary.main} 
+      />
+      {message && (
+        <Text style={[
+          styles.message, 
+          { color: theme.colors.text.secondary }
+        ]}>
+          {message}
+        </Text>
+      )}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  loadingContainer: {
+  container: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
   },
-  loadingText: {
-    marginTop: 16,
+  message: {
     fontSize: 16,
+    textAlign: 'center',
+    marginTop: 16,
   },
 }); 

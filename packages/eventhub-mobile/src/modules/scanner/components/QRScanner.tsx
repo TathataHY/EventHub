@@ -7,9 +7,12 @@ import {
   TouchableOpacity,
   Alert
 } from 'react-native';
-import { Camera } from 'expo-camera';
+// @ts-ignore
+import { CameraView } from 'expo-camera/next';
+import { BarCodeScannerResult } from 'expo-barcode-scanner';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { getColorValue } from '@theme/index';
 
 interface QRScannerProps {
   onScan: (data: string) => void;
@@ -28,7 +31,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
   // Solicitar permisos para usar la cámara
   useEffect(() => {
     (async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
+      const { status } = await CameraView.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
       
       if (status !== 'granted') {
@@ -42,11 +45,11 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
   }, []);
 
   // Manejar el escaneo de un código QR
-  const handleBarCodeScanned = ({ data }: { data: string }) => {
+  const handleBarCodeScanned = (scanResult: BarCodeScannerResult) => {
     if (scanned) return;
     
     setScanned(true);
-    onScan(data);
+    onScan(scanResult.data);
   };
 
   // Alternar la linterna
@@ -57,8 +60,8 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
   // Si no hay permisos, mostrar mensaje
   if (hasPermission === null) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.text, { color: theme.colors.text }]}>
+      <View style={[styles.container, { backgroundColor: getColorValue(theme.colors.background.default) }]}>
+        <Text style={[styles.text, { color: getColorValue(theme.colors.text) }]}>
           Solicitando permisos de cámara...
         </Text>
       </View>
@@ -68,12 +71,12 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
   // Si no se otorgaron permisos, mostrar mensaje
   if (hasPermission === false) {
     return (
-      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.text, { color: theme.colors.text }]}>
+      <View style={[styles.container, { backgroundColor: getColorValue(theme.colors.background.default) }]}>
+        <Text style={[styles.text, { color: getColorValue(theme.colors.text) }]}>
           Sin acceso a la cámara
         </Text>
         <TouchableOpacity
-          style={[styles.button, { backgroundColor: theme.colors.primary }]}
+          style={[styles.button, { backgroundColor: getColorValue(theme.colors.primary.main) }]}
           onPress={onClose}
         >
           <Text style={styles.buttonText}>Volver</Text>
@@ -84,14 +87,14 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
 
   return (
     <View style={styles.container}>
-      <Camera
+      <CameraView
         style={styles.camera}
-        type={Camera.Constants.Type.back}
-        barCodeScannerSettings={{
-          barCodeTypes: ['qr'],
+        facing="back"
+        enableTorch={torch}
+        barcodeScannerSettings={{
+          barcodeTypes: ["qr"],
         }}
-        onBarCodeScanned={handleBarCodeScanned}
-        flashMode={torch ? Camera.Constants.FlashMode.torch : Camera.Constants.FlashMode.off}
+        onBarcodeScanned={handleBarCodeScanned}
       >
         <View style={styles.overlay}>
           {/* Área de escaneo */}
@@ -123,7 +126,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
             </TouchableOpacity>
           </View>
         </View>
-      </Camera>
+      </CameraView>
     </View>
   );
 };

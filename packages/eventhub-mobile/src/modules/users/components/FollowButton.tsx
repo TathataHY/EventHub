@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { colors } from '@theme/base/colors';
+import { getColorValue } from '@theme/index';
 
 interface FollowButtonProps {
   userId: string;
@@ -73,22 +74,32 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    paddingHorizontal: 20,
     borderRadius: 20,
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
     minWidth: 120,
   },
   followButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: getColorValue(colors.primary),
   },
   unfollowButton: {
-    backgroundColor: colors.gray,
+    backgroundColor: getColorValue(colors.grey[500]),
   },
   buttonText: {
     color: 'white',
     fontWeight: '500',
     fontSize: 14,
+  },
+  buttonOutlined: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.grey[200],
+    borderWidth: 1,
+    borderColor: colors.grey[400],
   },
 }); 

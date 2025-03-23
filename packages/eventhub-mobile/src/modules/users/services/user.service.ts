@@ -466,6 +466,19 @@ class UserService {
       throw error;
     }
   }
+
+  /**
+   * Obtener el perfil del usuario actual
+   */
+  async getCurrentUser(): Promise<any> {
+    try {
+      // Implementación temporal usando getCurrentUserProfile
+      return this.getCurrentUserProfile();
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      throw error;
+    }
+  }
 }
 
 export const userService = new UserService();

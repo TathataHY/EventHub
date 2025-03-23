@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,11 +13,13 @@ import { useRouter } from 'expo-router';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { mockService } from '@core/services/mock.service';
-import { appColors, appTypography, appSpacing } from '@theme/index';
+import { appColors, appTypography, appSpacing, convertTypographyStyle } from '@theme/index';
 import { Card } from '@shared/components/ui';
 import { userService } from '../services/user.service';
+import { ticketService } from '@modules/tickets/services/ticket.service';
 
 // Definir la interfaz Ticket
 interface Ticket {
@@ -56,7 +58,7 @@ export const UserTicketsScreen = () => {
       // Obtener el perfil del usuario actual
       const currentUser = await userService.getCurrentUserProfile();
       // Obtener sus tickets
-      const userTickets = await userService.getUserTickets(currentUser.id);
+      const userTickets = await ticketService.getUserTickets(currentUser.id);
       // Añadir propiedades adicionales para cumplir con la interfaz Ticket
       const completeTickets = userTickets.map((ticket) => ({
         ...ticket,
@@ -211,9 +213,9 @@ const styles = StyleSheet.create({
     padding: appSpacing.md,
   },
   title: {
-    ...appTypography.h4,
+    ...convertTypographyStyle(appTypography.h4),
     color: appColors.text,
-    marginBottom: appSpacing.lg,
+    marginBottom: appSpacing.md,
   },
   loaderContainer: {
     flex: 1,
@@ -222,8 +224,8 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.background,
   },
   loaderText: {
-    ...appTypography.body1,
-    color: appColors.grey[600],
+    ...convertTypographyStyle(appTypography.body1),
+    color: appColors.text,
     marginTop: appSpacing.md,
   },
   listContainer: {
@@ -265,13 +267,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   eventName: {
-    ...appTypography.subtitle1,
+    ...convertTypographyStyle(appTypography.subtitle1),
     color: appColors.text,
     marginBottom: 2,
     fontWeight: "600" as const,
   },
   eventDate: {
-    ...appTypography.body2,
+    ...convertTypographyStyle(appTypography.body2),
     color: appColors.grey[600],
     marginBottom: 6,
     fontWeight: "normal" as const,
@@ -308,11 +310,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    ...appTypography.h6,
-    color: appColors.grey[600],
+    ...convertTypographyStyle(appTypography.body1),
+    color: appColors.grey[500],
     marginTop: appSpacing.md,
-    marginBottom: appSpacing.lg,
-    fontWeight: "bold" as const,
+    textAlign: 'center',
   },
   exploreButton: {
     backgroundColor: appColors.primary.main,
@@ -321,13 +322,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   exploreButtonText: {
-    ...appTypography.button1,
+    ...convertTypographyStyle(appTypography.button1),
     color: appColors.common.white,
     fontWeight: "600" as const,
-  },
-  ticketTitle: {
-    ...appTypography.subtitle1,
-    fontWeight: "600" as const,
-    marginBottom: appSpacing.xs,
   },
 }); 

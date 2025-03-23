@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Image } from 'react-native';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 import { TicketStatus } from '@modules/tickets/types';
+import QR from 'qrcode-svg';
 
 interface TicketQRCodeProps {
   qrValue: string;
@@ -26,12 +27,12 @@ export const TicketQRCode: React.FC<TicketQRCodeProps> = ({
   // Determinar el color según el estado del ticket
   const getStatusColor = () => {
     switch (status) {
-      case TicketStatus.VALID:
+      case 'valid':
         return theme.colors.success.main;
-      case TicketStatus.USED:
+      case 'used':
         return theme.colors.warning.main;
-      case TicketStatus.EXPIRED:
-      case TicketStatus.CANCELLED:
+      case 'expired':
+      case 'cancelled':
         return theme.colors.error.main;
       default:
         return theme.colors.primary.main;
@@ -41,13 +42,13 @@ export const TicketQRCode: React.FC<TicketQRCodeProps> = ({
   // Determinar el texto según el estado del ticket
   const getStatusText = () => {
     switch (status) {
-      case TicketStatus.VALID:
+      case 'valid':
         return 'Válido';
-      case TicketStatus.USED:
+      case 'used':
         return 'Utilizado';
-      case TicketStatus.EXPIRED:
+      case 'expired':
         return 'Expirado';
-      case TicketStatus.CANCELLED:
+      case 'cancelled':
         return 'Cancelado';
       default:
         return '';
@@ -55,7 +56,7 @@ export const TicketQRCode: React.FC<TicketQRCodeProps> = ({
   };
 
   // Determinar si el QR debe mostrarse o no según el estado
-  const shouldShowQR = status === TicketStatus.VALID;
+  const shouldShowQR = status === 'valid';
   
   // URL de una imagen de QR de muestra
   const sampleQRUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrValue);

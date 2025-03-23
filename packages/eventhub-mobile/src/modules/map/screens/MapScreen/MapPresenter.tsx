@@ -7,11 +7,11 @@ import {
 import MapView, { PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../../shared/hooks/useTheme';
 import { Divider } from '@shared/components/ui/Divider';
 import { LoadingState } from '@shared/components/ui/LoadingState';
 import { CategoryFilters, EventMarker } from '../../components';
-import { Event } from '../../services/types';
+import { Event } from '../../../events/types';
 
 interface MapPresenterProps {
   isLoading: boolean;

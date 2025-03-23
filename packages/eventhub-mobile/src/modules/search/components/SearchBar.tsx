@@ -6,7 +6,7 @@ import {
   TouchableOpacity 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 interface SearchBarProps {
   searchQuery: string;
@@ -24,7 +24,7 @@ export function SearchBar({
   const { theme } = useTheme();
   
   return (
-    <View style={[styles.searchBarContainer, { backgroundColor: theme.colors.background.card }]}>
+    <View style={[styles.searchBarContainer, { backgroundColor: theme.colors.background.default }]}>
       <Ionicons name="search" size={20} color={theme.colors.text.secondary} />
       <TextInput
         style={[styles.searchInput, { color: theme.colors.text.primary }]}

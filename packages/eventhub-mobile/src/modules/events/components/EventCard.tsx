@@ -10,10 +10,11 @@ import {
   ViewStyle
 } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
-import { Event, EventStatus } from '@modules/events/types';
-import { useTheme } from '@core/context/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../../../shared/hooks/useTheme';
 import { Card } from '@shared/components/ui/Card';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Icon } from '../../../shared/components/ui/Icon';
 
 // Constantes para tipos de eventos
 const EVENT_TYPES = {
@@ -22,210 +23,201 @@ const EVENT_TYPES = {
   HYBRID: 'hybrid'
 };
 
-interface EventCardProps {
-  event: Event;
-  style?: StyleProp<ViewStyle>;
-  onPress?: (event: Event) => void;
+// Tipo genérico para eventos de cualquier origen
+export interface EventCardProps {
+  event: {
+    id: string | number;
+    title: string;
+    description?: string;
+    imageUrl?: string;
+    image?: string;
+    location?: {
+      name?: string;
+      address?: string;
+      city?: string;
+    } | string;
+    startDate?: string | Date;
+    endDate?: string | Date;
+    date?: string | Date;
+    price?: number | string;
+    category?: string;
+    categories?: string[];
+    attendeesCount?: number;
+    organizerId?: string;
+    organizer?: string | { id: string; name: string };
+  };
+  style?: ViewStyle;
+  onPress?: (event: any) => void;
+  showDetails?: boolean;
+  compact?: boolean;
 }
 
 /**
- * Componente para mostrar la información resumida de un evento en una tarjeta
+ * Componente reutilizable para mostrar tarjetas de eventos
  */
-export const EventCard = ({ event, style, onPress }: EventCardProps) => {
-  const navigation = useNavigation();
-  const { theme } = useTheme();
+export const EventCard = ({
+  event,
+  style,
+  onPress,
+  showDetails = true,
+  compact = false
+}: EventCardProps) => {
+  const { theme, getColorValue } = useTheme();
   
-  // Función para navegar a la pantalla de detalles del evento
+  // Obtener imagen con fallback
+  const getImageUrl = () => {
+    if (event.imageUrl) return event.imageUrl;
+    if (event.image) return event.image;
+    return 'https://via.placeholder.com/300x150?text=EventHub';
+  };
+  
+  // Obtener ubicación formateada
+  const getLocation = () => {
+    if (!event.location) return 'Ubicación no especificada';
+    
+    if (typeof event.location === 'string') {
+      return event.location;
+    }
+    
+    if (event.location.name) return event.location.name;
+    if (event.location.city) return event.location.city;
+    if (event.location.address) return event.location.address;
+    
+    return 'Ubicación no especificada';
+  };
+  
+  // Obtener categoría principal
+  const getCategory = () => {
+    if (event.category) return event.category;
+    
+    if (event.categories && event.categories.length > 0) {
+      return event.categories[0];
+    }
+    
+    return null;
+  };
+  
+  // Formatear fecha
+  const getFormattedDate = () => {
+    try {
+      // Utilizar startDate o date si está disponible
+      const startDate = event.startDate 
+        ? new Date(event.startDate) 
+        : event.date 
+          ? new Date(event.date) 
+          : null;
+          
+      if (!startDate) return 'Fecha no especificada';
+      
+      // Si hay endDate, comprobar si es el mismo día
+      const endDate = event.endDate ? new Date(event.endDate) : startDate;
+      
+      // Si es el mismo día, mostrar solo fecha y horarios
+      if (startDate.toDateString() === endDate.toDateString()) {
+        return format(startDate, "d 'de' MMMM, yyyy", { locale: es });
+      }
+      
+      // Si son días diferentes, mostrar ambas fechas
+      return `${format(startDate, "d 'de' MMMM", { locale: es })} - ${format(endDate, "d 'de' MMMM, yyyy", { locale: es })}`;
+    } catch (error) {
+      return 'Fecha no disponible';
+    }
+  };
+  
   const handlePress = () => {
     if (onPress) {
       onPress(event);
-    } else {
-      // @ts-ignore - Ignorar error de tipado en navegación
-      navigation.navigate('EventDetail', { eventId: event.id });
     }
   };
   
-  // Función para formatear la fecha
-  const getFormattedDate = () => {
-    const formatDate = (dateString: string) => {
-      const date = new Date(dateString);
-      return date.toLocaleDateString();
-    };
-    
-    if (event.startDate === event.endDate) {
-      return formatDate(event.startDate);
-    } else {
-      return `${formatDate(event.startDate)} - ${formatDate(event.endDate)}`;
-    }
-  };
-  
-  // Función para formatear la ubicación
-  const getFormattedLocation = () => {
-    if (event.type === EVENT_TYPES.ONLINE) {
-      return 'Evento virtual';
-    } else if (event.location) {
-      return typeof event.location === 'string' 
-        ? event.location 
-        : (event.location.name || 'Ubicación no disponible');
-    } else {
-      return 'Ubicación no disponible';
-    }
-  };
-  
-  // Verificar si el evento está cancelado
-  const isCancelled = () => {
-    return event.status === EventStatus.CANCELLED;
-  };
-  
-  // Renderizar badge de estado
-  const renderStatusBadge = () => {
-    if (isCancelled()) {
-      return (
-        <View style={styles.cancellationBadge}>
-          <Text style={styles.cancellationText}>Cancelado</Text>
-        </View>
-      );
-    }
-    
-    if (event.featured) {
-      return (
-        <View style={[styles.featuredBadge, { backgroundColor: theme.colors.primary.main }]}>
-          <FontAwesome name="star" size={12} color="#FFF" />
-          <Text style={styles.featuredText}>Destacado</Text>
-        </View>
-      );
-    }
-    
-    const now = new Date();
-    const eventDate = new Date(event.startDate);
-    const daysUntilEvent = Math.ceil((eventDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (daysUntilEvent <= 3 && daysUntilEvent > 0) {
-      return (
-        <View style={[styles.soonBadge, { backgroundColor: theme.colors.warning.main }]}>
-          <Text style={styles.soonText}>Próximamente</Text>
-        </View>
-      );
-    }
-    
-    return null;
-  };
-  
-  // Renderizar indicador de precio
-  const renderPriceIndicator = () => {
-    if (event.isFree) {
-      return (
-        <View style={[styles.priceTag, { backgroundColor: theme.colors.success.main }]}>
-          <Text style={styles.priceText}>Gratis</Text>
-        </View>
-      );
-    } else if (event.price && event.price > 0) {
-      return (
-        <View style={[styles.priceTag, { backgroundColor: theme.colors.primary.main }]}>
-          <Text style={styles.priceText}>{event.price} €</Text>
-        </View>
-      );
-    }
-    
-    return null;
-  };
-  
-  return (
-    <Card style={[styles.card, style, isCancelled() && styles.cancelledCard]}>
+  // Diseño compacto
+  if (compact) {
+    return (
       <TouchableOpacity
-        style={styles.container}
+        style={[styles.compactContainer, style]}
         onPress={handlePress}
-        disabled={isCancelled()}
+        activeOpacity={0.7}
       >
-        {/* Imagen del evento */}
-        <View style={styles.imageContainer}>
-          <Image
-            source={
-              event.imageUrl
-                ? { uri: event.imageUrl }
-                : require('@assets/images/event-placeholder.jpg')
-            }
-            style={styles.image}
-            resizeMode="cover"
-          />
-          
-          {/* Badges e indicadores */}
-          <View style={styles.badgeContainer}>
-            {renderStatusBadge()}
-            {renderPriceIndicator()}
-          </View>
-          
-          {/* Tipo de evento (online/presencial) */}
-          <View style={[
-            styles.typeIndicator,
-            { backgroundColor: event.type === EVENT_TYPES.ONLINE ? 
-              theme.colors.info.main : theme.colors.success.main }
-          ]}>
-            <Ionicons
-              name={event.type === EVENT_TYPES.ONLINE ? 'globe-outline' : 'location-outline'}
-              size={14}
-              color="#FFF"
-            />
-            <Text style={styles.typeText}>
-              {event.type === EVENT_TYPES.ONLINE ? 'Online' : 'Presencial'}
-            </Text>
-          </View>
-        </View>
-        
-        {/* Detalles del evento */}
-        <View style={styles.detailsContainer}>
-          {/* Título */}
+        <Image 
+          source={{ uri: getImageUrl() }}
+          style={styles.compactImage}
+          resizeMode="cover"
+        />
+        <View style={styles.compactContent}>
           <Text 
-            style={[
-              styles.title, 
-              { color: theme.colors.text.primary },
-              isCancelled() && styles.cancelledText
-            ]}
+            style={[styles.compactTitle, { color: getColorValue(theme.colors.text.primary) }]}
             numberOfLines={2}
           >
             {event.title}
           </Text>
-          
-          {/* Fecha */}
-          <View style={styles.infoRow}>
-            <Ionicons
-              name="calendar-outline"
-              size={14}
-              color={theme.colors.text.secondary}
-              style={styles.infoIcon}
-            />
-            <Text style={[styles.infoText, { color: theme.colors.text.secondary }]}>
-              {getFormattedDate()}
-            </Text>
-          </View>
-          
-          {/* Ubicación */}
-          <View style={styles.infoRow}>
-            <Ionicons
-              name={event.type === EVENT_TYPES.ONLINE ? 'globe-outline' : 'location-outline'}
-              size={14}
-              color={theme.colors.text.secondary}
-              style={styles.infoIcon}
-            />
-            <Text 
-              style={[styles.infoText, { color: theme.colors.text.secondary }]}
-              numberOfLines={1}
-            >
-              {getFormattedLocation()}
-            </Text>
-          </View>
-          
-          {/* Categoría */}
-          {event.category && (
-            <View style={styles.categoryContainer}>
-              <Text style={[styles.category, { color: theme.colors.primary.main }]}>
-                {typeof event.category === 'string' ? event.category : event.category.name}
-              </Text>
-            </View>
-          )}
+          <Text 
+            style={[styles.compactInfo, { color: getColorValue(theme.colors.text.secondary) }]}
+            numberOfLines={1}
+          >
+            {getFormattedDate()}
+          </Text>
         </View>
       </TouchableOpacity>
-    </Card>
+    );
+  }
+  
+  // Diseño normal
+  return (
+    <TouchableOpacity
+      style={[styles.container, style]}
+      onPress={handlePress}
+      activeOpacity={0.7}
+    >
+      <Image 
+        source={{ uri: getImageUrl() }}
+        style={styles.image}
+        resizeMode="cover"
+      />
+      
+      <View style={styles.content}>
+        <Text 
+          style={[styles.title, { color: getColorValue(theme.colors.text.primary) }]}
+          numberOfLines={2}
+        >
+          {event.title}
+        </Text>
+        
+        {showDetails && (
+          <View style={styles.details}>
+            <View style={styles.detailRow}>
+              <Icon name="calendar-outline" size={16} color={getColorValue(theme.colors.text.secondary)} />
+              <Text style={[styles.detailText, { color: getColorValue(theme.colors.text.secondary) }]}>
+                {getFormattedDate()}
+              </Text>
+            </View>
+            
+            <View style={styles.detailRow}>
+              <Icon name="location-outline" size={16} color={getColorValue(theme.colors.text.secondary)} />
+              <Text 
+                style={[styles.detailText, { color: getColorValue(theme.colors.text.secondary) }]}
+                numberOfLines={1}
+              >
+                {getLocation()}
+              </Text>
+            </View>
+            
+            {getCategory() && (
+              <View style={[
+                styles.category, 
+                { backgroundColor: getColorValue(theme.colors.primary.light) }
+              ]}>
+                <Text style={[
+                  styles.categoryText, 
+                  { color: getColorValue(theme.colors.primary.main) }
+                ]}>
+                  {getCategory()}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
   );
 };
 
@@ -233,123 +225,82 @@ const { width } = Dimensions.get('window');
 const cardWidth = width / 2 - 24; // Para mostrar 2 por fila con margen
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 8,
-    overflow: 'hidden',
-    width: cardWidth,
-    margin: 8,
-  },
   container: {
-    flexDirection: 'column',
-  },
-  cancelledCard: {
-    opacity: 0.7,
-  },
-  imageContainer: {
-    position: 'relative',
-    width: '100%',
-    height: 120,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginBottom: 16,
   },
   image: {
     width: '100%',
-    height: '100%',
+    height: 150,
+    backgroundColor: '#e1e1e1',
   },
-  badgeContainer: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    flexDirection: 'column',
-  },
-  featuredBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginBottom: 4,
-  },
-  featuredText: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: 'bold',
-    marginLeft: 4,
-  },
-  soonBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginBottom: 4,
-  },
-  soonText: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  cancellationBadge: {
-    backgroundColor: '#F44336',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginBottom: 4,
-  },
-  cancellationText: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  priceTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  priceText: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  typeIndicator: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  typeText: {
-    color: '#FFF',
-    fontSize: 10,
-    fontWeight: 'bold',
-    marginLeft: 4,
-  },
-  detailsContainer: {
-    padding: 12,
+  content: {
+    padding: 16,
   },
   title: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
   },
-  cancelledText: {
-    textDecorationLine: 'line-through',
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  infoIcon: {
-    marginRight: 4,
-  },
-  infoText: {
-    fontSize: 12,
-  },
-  categoryContainer: {
+  details: {
     marginTop: 8,
   },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  detailText: {
+    fontSize: 14,
+    marginLeft: 8,
+  },
   category: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
+    marginTop: 4,
+  },
+  categoryText: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  compactContainer: {
+    flexDirection: 'row',
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    marginBottom: 12,
+    height: 80,
+  },
+  compactImage: {
+    width: 80,
+    height: 80,
+    backgroundColor: '#e1e1e1',
+  },
+  compactContent: {
+    flex: 1,
+    padding: 12,
+    justifyContent: 'center',
+  },
+  compactTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  compactInfo: {
+    fontSize: 12,
   },
 }); 

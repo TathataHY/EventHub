@@ -1,10 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { eventService } from '../services';
-import { Event } from '../types';
 import { Share } from 'react-native';
 
 export const useEventDetails = (eventId: string | number) => {
-  const [event, setEvent] = useState<Event | null>(null);
+  const [event, setEvent] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isAttending, setIsAttending] = useState<boolean>(false);
@@ -63,9 +62,10 @@ export const useEventDetails = (eventId: string | number) => {
     if (!event) return false;
     
     try {
+      const description = event.description || '';
       await Share.share({
         title: event.title,
-        message: `¡Mira este evento: ${event.title}!\n${event.description?.substring(0, 100)}...\n\nFecha: ${event.startDate}`
+        message: `¡Mira este evento: ${event.title}!\n${description.substring(0, 100)}...\n\nFecha: ${event.startDate}`
       });
       
       return true;

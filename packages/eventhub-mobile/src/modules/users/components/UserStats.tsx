@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { colors } from '@theme/base/colors';
+import { getColorValue } from '@theme/index';
 
 interface UserStatsProps {
   followersCount: number;
@@ -74,11 +75,11 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: colors.textDark,
+    color: getColorValue(colors.text),
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: colors.textLight,
+    color: getColorValue(colors.grey[500]),
   },
 }); 

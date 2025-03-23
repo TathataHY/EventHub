@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   StyleSheet, 
@@ -7,13 +7,13 @@ import {
   TouchableOpacity,
   Linking,
   ActivityIndicator,
-  Dimensions
+  Dimensions,
+  ColorValue
 } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
-
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 // Propiedades del componente
 interface EventLocationMapProps {
@@ -114,9 +114,12 @@ export const EventLocationMap: React.FC<EventLocationMapProps> = ({
   // Si está cargando, mostrar indicador
   if (isLoading) {
     return (
-      <View style={[styles.loadingContainer, { height, backgroundColor: theme.colors.card }]}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={[styles.loadingText, { color: theme.colors.secondaryText }]}>
+      <View style={[styles.loadingContainer, { 
+        height: typeof height === 'number' ? height : parseInt(height as string),
+        backgroundColor: theme.colors.background.default
+      }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary.main} />
+        <Text style={[styles.loadingText, { color: theme.colors.text.secondary }]}>
           Cargando mapa...
         </Text>
       </View>
@@ -124,7 +127,9 @@ export const EventLocationMap: React.FC<EventLocationMapProps> = ({
   }
 
   return (
-    <View style={[styles.container, { height }]}>
+    <View style={[styles.container, { 
+      height: typeof height === 'number' ? height : parseInt(height as string)
+    }]}>
       <MapView
         style={styles.map}
         initialRegion={initialRegion}
@@ -141,13 +146,13 @@ export const EventLocationMap: React.FC<EventLocationMapProps> = ({
           coordinate={{ latitude, longitude }}
           title={name}
           description={address}
-          pinColor={theme.colors.primary}
+          pinColor={theme.colors.primary.main}
         />
       </MapView>
       
       {/* Botón para ver direcciones */}
       <TouchableOpacity
-        style={[styles.directionsButton, { backgroundColor: theme.colors.primary }]}
+        style={[styles.directionsButton, { backgroundColor: theme.colors.primary.main }]}
         onPress={openMapsWithDirections}
       >
         <Ionicons name="navigate" size={20} color="#FFFFFF" />

@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ViewStyle, ColorValue } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { InterestCategory } from '../types/user.types';
 import { colors } from '@theme/base/colors';
+import { getColorValue } from '@theme/index';
 
 interface InterestsListProps {
   interests: InterestCategory[];
@@ -20,9 +21,9 @@ export const InterestsList: React.FC<InterestsListProps> = ({
   onRemovePress
 }) => {
   // Obtener un color basado en la categoría de interés
-  const getInterestColor = (interest: InterestCategory) => {
-    const colorMap = {
-      [InterestCategory.MUSIC]: colors.primary,
+  const getInterestColor = (interest: InterestCategory): ColorValue => {
+    const colorMap: Record<string, ColorValue> = {
+      [InterestCategory.MUSIC]: getColorValue(colors.primary),
       [InterestCategory.SPORTS]: '#4CAF50',
       [InterestCategory.TECHNOLOGY]: '#2196F3',
       [InterestCategory.ARTS]: '#9C27B0',
@@ -33,12 +34,12 @@ export const InterestsList: React.FC<InterestsListProps> = ({
       [InterestCategory.SOCIAL]: '#E91E63',
     };
     
-    return colorMap[interest] || colors.gray;
+    return colorMap[interest] || getColorValue(colors.grey[400]);
   };
 
   // Obtener un ícono basado en la categoría de interés
-  const getInterestIcon = (interest: InterestCategory) => {
-    const iconMap = {
+  const getInterestIcon = (interest: InterestCategory): string => {
+    const iconMap: Record<string, string> = {
       [InterestCategory.MUSIC]: 'musical-notes',
       [InterestCategory.SPORTS]: 'basketball',
       [InterestCategory.TECHNOLOGY]: 'hardware-chip',
@@ -54,8 +55,8 @@ export const InterestsList: React.FC<InterestsListProps> = ({
   };
 
   // Obtener etiqueta para mostrar en español
-  const getInterestLabel = (interest: InterestCategory) => {
-    const labelMap = {
+  const getInterestLabel = (interest: InterestCategory): string => {
+    const labelMap: Record<string, string> = {
       [InterestCategory.MUSIC]: 'Música',
       [InterestCategory.SPORTS]: 'Deportes',
       [InterestCategory.TECHNOLOGY]: 'Tecnología',
@@ -76,7 +77,7 @@ export const InterestsList: React.FC<InterestsListProps> = ({
         <Text style={styles.title}>Intereses</Text>
         {editable && onAddPress && (
           <TouchableOpacity onPress={onAddPress}>
-            <Ionicons name="add-circle" size={24} color={colors.primary} />
+            <Ionicons name="add-circle" size={24} color={getColorValue(colors.primary)} />
           </TouchableOpacity>
         )}
       </View>
@@ -96,7 +97,7 @@ export const InterestsList: React.FC<InterestsListProps> = ({
               ]}
             >
               <Ionicons 
-                name={getInterestIcon(interest)} 
+                name={getInterestIcon(interest) as any} 
                 size={16} 
                 color="white" 
                 style={styles.interestIcon}
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: colors.textDark,
+    color: colors.text,
   },
   scrollContent: {
     paddingVertical: 4,
@@ -163,7 +164,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   emptyText: {
-    color: colors.textLight,
+    color: colors.text,
     fontStyle: 'italic',
     padding: 8,
   },

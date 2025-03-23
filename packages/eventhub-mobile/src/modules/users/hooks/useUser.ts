@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { userService } from '../services/user.service';
 import { authService } from '../../auth/services/auth.service';
 import { User, UserProfile } from '../types';
@@ -6,29 +6,25 @@ import { User, UserProfile } from '../types';
 /**
  * Hook para gestionar operaciones relacionadas con usuarios
  */
-export function useUser() {
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+export const useUser = () => {
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Cargar información del usuario actual
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        setLoading(true);
-        // Si estamos usando mock data, podemos usar esto:
-        const userData = await userService.getCurrentUserProfile();
-        setCurrentUser(userData);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching user data:', err);
-        setError('No se pudo cargar la información del usuario');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCurrentUser();
+  // Cargar perfil del usuario actual
+  const loadCurrentUser = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const userData = await userService.getCurrentUser();
+      setCurrentUser(userData as any); // Forzar tipo para evitar errores
+    } catch (err) {
+      console.error('Error loading current user:', err);
+      setError('Error al cargar la información del usuario');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   /**
@@ -36,7 +32,7 @@ export function useUser() {
    */
   const getUserProfile = async (userId: string) => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       const userProfile = await userService.getUserProfile(userId);
       return userProfile;
     } catch (err) {
@@ -44,38 +40,40 @@ export function useUser() {
       setError('No se pudo cargar el perfil del usuario');
       throw err;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  /**
-   * Actualizar perfil de usuario
-   */
-  const updateProfile = async (userData: Partial<UserProfile>) => {
+  // Actualizar perfil de usuario
+  const updateUserProfile = useCallback(async (userData: any) => {
     try {
-      setLoading(true);
-      const updatedProfile = await userService.updateUserProfile(userData);
-      setCurrentUser((prev) => {
+      setIsLoading(true);
+      setError(null);
+      
+      const updatedProfile = await userService.updateUserProfile(userData as any);
+      
+      // Actualizar usuario en estado manteniendo campos que no se actualizaron
+      setCurrentUser((prev: any) => {
         if (!prev) return updatedProfile;
         return { ...prev, ...updatedProfile };
       });
-      setError(null);
-      return updatedProfile;
+      
+      return true;
     } catch (err) {
-      console.error('Error updating profile:', err);
-      setError('No se pudo actualizar el perfil');
-      throw err;
+      console.error('Error updating user profile:', err);
+      setError('Error al actualizar el perfil');
+      return false;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, []);
 
   /**
    * Obtener eventos creados por el usuario
    */
   const getUserEvents = async (userId?: string) => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       const targetUserId = userId || currentUser?.id;
       if (!targetUserId) throw new Error('User ID is required');
       
@@ -86,7 +84,7 @@ export function useUser() {
       setError('No se pudieron cargar los eventos del usuario');
       throw err;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -95,7 +93,7 @@ export function useUser() {
    */
   const getUserAttendingEvents = async (userId?: string) => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       const targetUserId = userId || currentUser?.id;
       if (!targetUserId) throw new Error('User ID is required');
       
@@ -106,7 +104,7 @@ export function useUser() {
       setError('No se pudieron cargar los eventos a los que asiste el usuario');
       throw err;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -115,7 +113,7 @@ export function useUser() {
    */
   const getSavedEvents = async () => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       if (!currentUser?.id) throw new Error('User is not authenticated');
       
       const events = await userService.getSavedEvents(currentUser.id);
@@ -125,7 +123,7 @@ export function useUser() {
       setError('No se pudieron cargar los eventos guardados');
       throw err;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -134,7 +132,7 @@ export function useUser() {
    */
   const toggleSaveEvent = async (eventId: string) => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       if (!currentUser?.id) throw new Error('User is not authenticated');
       
       const result = await userService.toggleSaveEvent(eventId);
@@ -144,19 +142,20 @@ export function useUser() {
       setError('No se pudo actualizar el evento guardado');
       throw err;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return {
     currentUser,
-    loading,
+    isLoading,
     error,
+    loadCurrentUser,
     getUserProfile,
-    updateProfile,
+    updateUserProfile,
     getUserEvents,
     getUserAttendingEvents,
     getSavedEvents,
     toggleSaveEvent,
   };
-} 
+}; 

@@ -15,7 +15,7 @@ export const useUserRelations = (userId: string) => {
     setFollowError(null);
     
     try {
-      const userFollowers = await userService.getFollowers(userId);
+      const userFollowers = await userService.getUserFollowers(userId);
       setFollowers(userFollowers);
     } catch (err) {
       setFollowError('Error al cargar seguidores');
@@ -31,7 +31,7 @@ export const useUserRelations = (userId: string) => {
     setFollowError(null);
     
     try {
-      const userFollowing = await userService.getFollowing(userId);
+      const userFollowing = await userService.getUserFollowing(userId);
       setFollowing(userFollowing);
     } catch (err) {
       setFollowError('Error al cargar usuarios seguidos');

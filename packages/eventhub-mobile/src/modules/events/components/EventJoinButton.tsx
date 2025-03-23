@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, TouchableOpacity, Text, Alert, ActivityIndicator } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 import { eventService } from '@modules/events/services/event.service';
 import { notificationService } from '@modules/notifications/services/notification.service';
 
@@ -123,14 +123,14 @@ export const EventJoinButton: React.FC<EventJoinButtonProps> = ({
       {loading ? (
         <ActivityIndicator 
           size="small" 
-          color={isJoined ? theme.colors.primary.main : theme.colors.common.white} 
+          color={isJoined ? theme.colors.primary.main : '#FFFFFF'} 
         />
       ) : (
         <>
           <FontAwesome
             name={isJoined ? 'check-circle' : 'calendar-plus-o'}
             size={16}
-            color={isJoined ? theme.colors.primary.main : theme.colors.common.white}
+            color={isJoined ? theme.colors.primary.main : '#FFFFFF'}
             style={styles.icon}
           />
           <Text
@@ -138,7 +138,7 @@ export const EventJoinButton: React.FC<EventJoinButtonProps> = ({
               styles.buttonText,
               isJoined ? 
                 { color: theme.colors.primary.main } : 
-                { color: theme.colors.common.white },
+                { color: '#FFFFFF' },
               { fontSize: 14 }
             ]}
           >

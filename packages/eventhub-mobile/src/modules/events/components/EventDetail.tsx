@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Event, EventTicketInfo, EventLocation, EventStatus } from '@modules/events/types';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 interface EventDetailProps {
   event: Event;

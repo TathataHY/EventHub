@@ -182,7 +182,8 @@ export const EventDetailsScreen = () => {
         <View style={styles.contentContainer}>
           <View style={styles.headerContainer}>
             <Text 
-              style={[styles.title, { color: theme.colors.text }]}
+              style={[styles.title, { color: theme.colors.text.primary }]}
+              numberOfLines={2}
             >
               {evento.titulo}
             </Text>
@@ -194,7 +195,7 @@ export const EventDetailsScreen = () => {
                 <Ionicons 
                   name={guardado ? "bookmark" : "bookmark-outline"} 
                   size={24} 
-                  color={guardado ? theme.colors.primary : theme.colors.text} 
+                  color={guardado ? theme.colors.primary : theme.colors.text.primary} 
                 />
               </TouchableOpacity>
               <TouchableOpacity 
@@ -204,7 +205,7 @@ export const EventDetailsScreen = () => {
                 <Ionicons 
                   name="share-social-outline" 
                   size={24} 
-                  color={theme.colors.text} 
+                  color={theme.colors.text.primary} 
                 />
               </TouchableOpacity>
             </View>
@@ -213,28 +214,28 @@ export const EventDetailsScreen = () => {
           <View style={styles.detailsContainer}>
             <View style={styles.detailItem}>
               <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
-              <Text style={[styles.detailText, { color: theme.colors.text }]}>
+              <Text style={[styles.detailText, { color: theme.colors.text.primary }]}>
                 {formatearFecha(evento.fecha)}
               </Text>
             </View>
             
             <TouchableOpacity style={styles.detailItem} onPress={handleOpenMaps}>
               <Ionicons name="location-outline" size={20} color={theme.colors.primary} />
-              <Text style={[styles.detailText, { color: theme.colors.text }]}>
+              <Text style={[styles.detailText, { color: theme.colors.text.primary }]}>
                 {evento.lugar}
               </Text>
             </TouchableOpacity>
             
             <View style={styles.detailItem}>
               <Ionicons name="ticket-outline" size={20} color={theme.colors.primary} />
-              <Text style={[styles.detailText, { color: theme.colors.text }]}>
+              <Text style={[styles.detailText, { color: theme.colors.text.primary }]}>
                 {evento.precio}
               </Text>
             </View>
 
             <View style={styles.detailItem}>
               <Ionicons name="people-outline" size={20} color={theme.colors.primary} />
-              <Text style={[styles.detailText, { color: theme.colors.text }]}>
+              <Text style={[styles.detailText, { color: theme.colors.text.primary }]}>
                 {evento.asistentes} / {evento.capacidad} asistentes
               </Text>
             </View>
@@ -247,10 +248,10 @@ export const EventDetailsScreen = () => {
           </TouchableOpacity>
           
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
               Descripción
             </Text>
-            <Text style={[styles.description, { color: theme.colors.text }]}>
+            <Text style={[styles.description, { color: theme.colors.text.secondary }]}>
               {evento.descripcion}
             </Text>
           </View>
@@ -259,11 +260,11 @@ export const EventDetailsScreen = () => {
           
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
                 Organizado por
               </Text>
             </View>
-            <Text style={[styles.organizerText, { color: theme.colors.text }]}>
+            <Text style={[styles.organizerText, { color: theme.colors.text.secondary }]}>
               {evento.organizador}
             </Text>
           </View>
@@ -272,7 +273,7 @@ export const EventDetailsScreen = () => {
           
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
                 Ubicación
               </Text>
               <TouchableOpacity onPress={handleViewLocation}>
@@ -299,7 +300,7 @@ export const EventDetailsScreen = () => {
           
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
                 Comentarios
               </Text>
               <TouchableOpacity onPress={handleViewAllComments}>
@@ -315,21 +316,21 @@ export const EventDetailsScreen = () => {
                   <View style={styles.commentHeader}>
                     <Image source={{ uri: comentario.usuario.avatar }} style={styles.commentAvatar} />
                     <View>
-                      <Text style={[styles.commentUser, { color: theme.colors.text }]}>
+                      <Text style={[styles.commentUser, { color: theme.colors.text.primary }]}>
                         {comentario.usuario.nombre}
                       </Text>
-                      <Text style={[styles.commentDate, { color: theme.colors.secondaryText }]}>
+                      <Text style={[styles.commentDate, { color: theme.colors.text.secondary }]}>
                         {format(new Date(comentario.fecha), "d MMM 'a las' HH:mm", { locale: es })}
                       </Text>
                     </View>
                   </View>
-                  <Text style={[styles.commentText, { color: theme.colors.text }]}>
+                  <Text style={[styles.commentText, { color: theme.colors.text.primary }]}>
                     {comentario.texto}
                   </Text>
                 </View>
               ))
             ) : (
-              <Text style={[styles.noCommentsText, { color: theme.colors.secondaryText }]}>
+              <Text style={[styles.noCommentsText, { color: theme.colors.text.secondary }]}>
                 No hay comentarios aún. ¡Sé el primero en comentar!
               </Text>
             )}
@@ -337,11 +338,11 @@ export const EventDetailsScreen = () => {
         </View>
       </ScrollView>
       
-      <View style={[styles.footer, { backgroundColor: theme.colors.card }]}>
+      <View style={[styles.footer, { backgroundColor: theme.colors.background.card }]}>
         <TouchableOpacity
           style={[
             styles.attendButton,
-            { backgroundColor: asistiendo ? theme.colors.success : theme.colors.primary }
+            { backgroundColor: asistiendo ? theme.colors.success.main : theme.colors.primary.main }
           ]}
           onPress={handleAttendEvent}
         >
@@ -351,7 +352,7 @@ export const EventDetailsScreen = () => {
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={[styles.buyButton, { backgroundColor: theme.colors.secondary }]}
+          style={[styles.buyButton, { backgroundColor: theme.colors.secondary.main }]}
           onPress={handleComprarTicket}
         >
           <Text style={styles.buyButtonText}>

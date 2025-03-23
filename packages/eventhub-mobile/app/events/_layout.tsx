@@ -1,10 +1,14 @@
 import React from 'react';
 import { EventsLayout } from '../../src/modules/events/components';
+import { Slot } from 'expo-router';
 
 /**
- * Layout para las rutas de eventos
- * Utiliza el componente modular EventsLayout del módulo de eventos
+ * Layout para la sección de eventos
  */
-export default function EventsLayoutRoute() {
-  return <EventsLayout />;
+export default function Layout() {
+  return (
+    <EventsLayout>
+      <Slot />
+    </EventsLayout>
+  );
 } 

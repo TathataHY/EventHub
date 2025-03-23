@@ -9,7 +9,7 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 import { SearchResult, SearchResultType } from '../types';
 import { EmptyState } from '@shared/components/ui/EmptyState';
 
@@ -31,7 +31,7 @@ export function SearchResults({
   // Renderizar ítem de resultado
   const renderResultItem = ({ item }: { item: SearchResult }) => (
     <TouchableOpacity
-      style={[styles.resultItem, { backgroundColor: theme.colors.background.card }]}
+      style={[styles.resultItem, { backgroundColor: theme.colors.background.default }]}
       onPress={() => onResultPress(item)}
     >
       <View style={styles.resultImageContainer}>
@@ -42,8 +42,8 @@ export function SearchResults({
             defaultSource={require('../../../../assets/placeholder.png')}
           />
         ) : (
-          <View style={[styles.iconContainer, { backgroundColor: theme.colors.border.light }]}>
-            <Ionicons name={getResultIcon(item.type)} size={20} color={theme.colors.text.primary} />
+          <View style={[styles.iconContainer, { backgroundColor: `${theme.colors.primary.main}10` }]}>
+            <Ionicons name={getResultIcon(item.type) as any} size={20} color={theme.colors.text.primary} />
           </View>
         )}
       </View>

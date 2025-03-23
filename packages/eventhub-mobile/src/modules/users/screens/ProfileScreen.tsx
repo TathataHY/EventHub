@@ -17,7 +17,7 @@ import { useUser } from '../hooks/useUser';
 import { UserProfile } from '../types';
 import { Event } from '../../events/types';
 import { EventCard } from '../../events/components/EventCard';
-import { typography, spacing } from '@theme/index';
+import { typography, spacing, getColorValue, convertTypographyStyle } from '@theme/index';
 import { colors } from '@theme/base/colors';
 
 /**
@@ -49,11 +49,11 @@ export function ProfileScreen() {
     try {
       // Cargar eventos creados
       const eventsCreated = await getUserEvents(currentUser.id);
-      setCreatedEvents(eventsCreated.events);
+      setCreatedEvents(eventsCreated.organized || []);
       
       // Cargar eventos a los que asiste
       const eventsAttending = await getUserAttendingEvents(currentUser.id);
-      setAttendingEvents(eventsAttending.events);
+      setAttendingEvents(eventsAttending.attending || []);
     } catch (err) {
       console.error('Error loading user events:', err);
     } finally {
@@ -77,7 +77,7 @@ export function ProfileScreen() {
   if (loading && !currentUser) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={getColorValue(colors.primary)} />
       </View>
     );
   }
@@ -86,7 +86,7 @@ export function ProfileScreen() {
   if (error && !currentUser) {
     return (
       <View style={styles.errorContainer}>
-        <Ionicons name="warning-outline" size={48} color={colors.error} />
+        <Ionicons name="warning-outline" size={48} color={getColorValue(colors.error)} />
         <Text style={styles.errorText}>No se pudo cargar el perfil</Text>
         <Button 
           title="Reintentar" 
@@ -133,7 +133,7 @@ export function ProfileScreen() {
                 />
               ) : (
                 <View style={styles.avatarPlaceholder}>
-                  <Ionicons name="person" size={40} color={colors.gray[300]} />
+                  <Ionicons name="person" size={40} color={getColorValue(colors.grey[300])} />
                 </View>
               )}
             </View>
@@ -149,14 +149,14 @@ export function ProfileScreen() {
               <View style={styles.locationContainer}>
                 {currentUser?.location && (
                   <View style={styles.infoItem}>
-                    <Ionicons name="location-outline" size={16} color={colors.gray[500]} />
+                    <Ionicons name="location-outline" size={16} color={getColorValue(colors.grey[500])} />
                     <Text style={styles.infoText}>{currentUser.location}</Text>
                   </View>
                 )}
                 
                 {currentUser?.website && (
                   <View style={styles.infoItem}>
-                    <Ionicons name="globe-outline" size={16} color={colors.gray[500]} />
+                    <Ionicons name="globe-outline" size={16} color={getColorValue(colors.grey[500])} />
                     <Text 
                       style={[styles.infoText, styles.websiteText]}
                       numberOfLines={1}
@@ -168,7 +168,7 @@ export function ProfileScreen() {
                 
                 {currentUser?.joinDate && (
                   <View style={styles.infoItem}>
-                    <Ionicons name="calendar-outline" size={16} color={colors.gray[500]} />
+                    <Ionicons name="calendar-outline" size={16} color={getColorValue(colors.grey[500])} />
                     <Text style={styles.infoText}>
                       Miembro desde {new Date(currentUser.joinDate).toLocaleDateString()}
                     </Text>
@@ -185,7 +185,7 @@ export function ProfileScreen() {
               onPress={handleEditProfile}
               type="outline"
               containerStyle={styles.editButton}
-              icon={<Ionicons name="create-outline" size={18} color={colors.primary} />}
+              icon={<Ionicons name="create-outline" size={18} color={getColorValue(colors.primary)} />}
             />
           </View>
           
@@ -216,18 +216,18 @@ export function ProfileScreen() {
         {/* Pestañas para ver eventos */}
         <Card style={styles.tabsCard}>
           <TabView
-            selectedIndex={selectedTab}
+            initialTab={selectedTab}
             onChange={setSelectedTab}
             tabs={[
-              { title: 'Eventos creados' },
-              { title: 'Eventos asistidos' }
+              'Eventos creados',
+              'Eventos asistidos'
             ]}
           />
           
           <View style={styles.tabContent}>
             {loadingEvents ? (
               <View style={styles.loadingEventsContainer}>
-                <ActivityIndicator size="small" color={colors.primary} />
+                <ActivityIndicator size="small" color={getColorValue(colors.primary)} />
                 <Text style={styles.loadingEventsText}>Cargando eventos...</Text>
               </View>
             ) : (
@@ -240,7 +240,7 @@ export function ProfileScreen() {
                   </View>
                 ) : (
                   <View style={styles.emptyStateContainer}>
-                    <Ionicons name="calendar-outline" size={48} color={colors.gray[300]} />
+                    <Ionicons name="calendar-outline" size={48} color={getColorValue(colors.grey[300])} />
                     <Text style={styles.emptyStateText}>No has creado ningún evento aún</Text>
                     <Button
                       title="Crear evento"
@@ -258,7 +258,7 @@ export function ProfileScreen() {
                   </View>
                 ) : (
                   <View style={styles.emptyStateContainer}>
-                    <Ionicons name="calendar-outline" size={48} color={colors.gray[300]} />
+                    <Ionicons name="calendar-outline" size={48} color={getColorValue(colors.grey[300])} />
                     <Text style={styles.emptyStateText}>No estás asistiendo a ningún evento</Text>
                     <Button
                       title="Explorar eventos"
@@ -279,7 +279,7 @@ export function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: getColorValue(colors.background),
   },
   scrollContainer: {
     flex: 1,
@@ -298,13 +298,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
   },
-  errorText: {
+  errorText: convertTypographyStyle({
     ...typography.h6,
-    color: colors.error,
+    color: getColorValue(colors.error),
     textAlign: 'center',
     marginTop: 16,
     marginBottom: 24,
-  },
+  }),
   retryButton: {
     width: 200,
   },
@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
   coverPlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: colors.gray[200],
+    backgroundColor: getColorValue(colors.grey[200]),
   },
   profileHeader: {
     flexDirection: 'row',
@@ -339,36 +339,36 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     borderWidth: 4,
-    borderColor: colors.white,
+    borderColor: getColorValue(colors.common.white),
   },
   avatarPlaceholder: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: colors.gray[100],
+    backgroundColor: getColorValue(colors.grey[100]),
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 4,
-    borderColor: colors.white,
+    borderColor: getColorValue(colors.common.white),
   },
   profileInfo: {
     flex: 1,
   },
-  name: {
+  name: convertTypographyStyle({
     ...typography.h6,
-    color: colors.text,
+    color: getColorValue(colors.text),
     marginBottom: 4,
-  },
-  username: {
+  }),
+  username: convertTypographyStyle({
     ...typography.subtitle2,
-    color: colors.gray[500],
+    color: getColorValue(colors.grey[500]),
     marginBottom: 12,
-  },
-  bio: {
+  }),
+  bio: convertTypographyStyle({
     ...typography.body2,
-    color: colors.text,
+    color: getColorValue(colors.text),
     marginBottom: 12,
-  },
+  }),
   locationContainer: {
     marginTop: 8,
   },
@@ -377,13 +377,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 6,
   },
-  infoText: {
+  infoText: convertTypographyStyle({
     ...typography.body2,
-    color: colors.gray[600],
+    color: getColorValue(colors.grey[600]),
     marginLeft: 6,
-  },
+  }),
   websiteText: {
-    color: colors.primary,
+    color: getColorValue(colors.primary.main),
   },
   editButtonContainer: {
     paddingHorizontal: 16,
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: colors.gray[200],
+    borderTopColor: getColorValue(colors.grey[200]),
     paddingVertical: 12,
   },
   statItem: {
@@ -403,17 +403,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  statValue: {
+  statValue: convertTypographyStyle({
     ...typography.h6,
-    color: colors.text,
-  },
-  statLabel: {
+    color: getColorValue(colors.text),
+  }),
+  statLabel: convertTypographyStyle({
     ...typography.caption,
-    color: colors.gray[500],
-  },
+    color: getColorValue(colors.grey[500]),
+  }),
   statDivider: {
     width: 1,
-    backgroundColor: colors.gray[200],
+    backgroundColor: getColorValue(colors.grey[200]),
     height: '70%',
     alignSelf: 'center',
   },
@@ -429,11 +429,11 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
     alignItems: 'center',
   },
-  loadingEventsText: {
+  loadingEventsText: convertTypographyStyle({
     ...typography.body2,
-    color: colors.gray[500],
+    color: getColorValue(colors.grey[500]),
     marginTop: 12,
-  },
+  }),
   eventsContainer: {
     marginTop: 8,
   },
@@ -444,13 +444,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 32,
   },
-  emptyStateText: {
+  emptyStateText: convertTypographyStyle({
     ...typography.body1,
-    color: colors.gray[600],
+    color: getColorValue(colors.grey[600]),
     textAlign: 'center',
     marginTop: 16,
     marginBottom: 24,
-  },
+  }),
   createEventButton: {
     width: 200,
   },

@@ -10,8 +10,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { appColors, appTypography, appSpacing } from '@theme/index';
+import { appColors, appTypography, appSpacing, convertTypographyStyle } from '@theme/index';
 import { Card } from '@shared/components/ui';
 import { achievementService } from '@modules/gamification/services/achievement.service';
 import { userService } from '../services/user.service';
@@ -182,20 +183,20 @@ const styles = StyleSheet.create({
     backgroundColor: appColors.background,
   },
   loaderText: {
-    ...appTypography.body1,
-    color: appColors.grey[600],
+    ...convertTypographyStyle(appTypography.body1),
+    color: appColors.text,
     marginTop: appSpacing.md,
   },
   header: {
     marginBottom: appSpacing.lg,
   },
   title: {
-    ...appTypography.h4,
+    ...convertTypographyStyle(appTypography.h4),
     color: appColors.text,
     marginBottom: appSpacing.xs,
   },
   subtitle: {
-    ...appTypography.body2,
+    ...convertTypographyStyle(appTypography.body2),
     color: appColors.grey[600],
   },
   levelCard: {
@@ -217,7 +218,7 @@ const styles = StyleSheet.create({
     marginRight: appSpacing.md,
   },
   levelText: {
-    ...appTypography.h4,
+    ...convertTypographyStyle(appTypography.h4),
     color: appColors.common.white,
     fontWeight: 'bold' as const,
   },
@@ -225,12 +226,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   levelTitle: {
-    ...appTypography.h6,
+    ...convertTypographyStyle(appTypography.h6),
     color: appColors.text,
     marginBottom: 2,
   },
   levelSubtitle: {
-    ...appTypography.body2,
+    ...convertTypographyStyle(appTypography.body2),
     color: appColors.grey[600],
     fontWeight: 'normal',
   },
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   levelTip: {
-    ...appTypography.caption,
+    ...convertTypographyStyle(appTypography.caption),
     color: appColors.grey[500],
     textAlign: 'center',
     fontWeight: 'normal',
@@ -264,12 +265,12 @@ const styles = StyleSheet.create({
     marginBottom: appSpacing.md,
   },
   sectionTitle: {
-    ...appTypography.h6,
+    ...convertTypographyStyle(appTypography.h6),
     color: appColors.text,
     fontWeight: 'bold',
   },
   sectionCount: {
-    ...appTypography.subtitle2,
+    ...convertTypographyStyle(appTypography.subtitle2),
     color: appColors.primary.main,
     fontWeight: '600',
   },
@@ -294,7 +295,7 @@ const styles = StyleSheet.create({
     marginBottom: appSpacing.xs,
   },
   badgeName: {
-    ...appTypography.caption,
+    ...convertTypographyStyle(appTypography.caption),
     color: appColors.text,
     textAlign: 'center',
     height: 32,
@@ -319,9 +320,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   infoText: {
-    ...appTypography.body2,
+    ...convertTypographyStyle(appTypography.body2),
     color: appColors.grey[700],
     marginLeft: appSpacing.sm,
     flex: 1,
+  },
+  categoryTitle: {
+    ...convertTypographyStyle(appTypography.h6),
+    color: appColors.text,
+    marginBottom: appSpacing.sm,
+  },
+  achievementName: {
+    ...convertTypographyStyle(appTypography.subtitle2),
+    color: appColors.text,
+  },
+  achievementDesc: {
+    ...convertTypographyStyle(appTypography.body2),
+    color: appColors.grey[600],
+  },
+  unlockText: {
+    ...convertTypographyStyle(appTypography.caption),
+    color: appColors.grey[500],
+  },
+  lockedText: {
+    ...convertTypographyStyle(appTypography.caption),
+    color: appColors.grey[400],
   },
 }); 

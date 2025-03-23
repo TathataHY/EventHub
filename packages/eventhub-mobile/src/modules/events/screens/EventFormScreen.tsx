@@ -28,6 +28,7 @@ interface EventFormScreenProps {
   event?: Event;
   onSave?: (eventId: string | number) => void;
   onCancel?: () => void;
+  isEditMode?: boolean;
 }
 
 export const EventFormScreen: React.FC<EventFormScreenProps> = ({
@@ -50,7 +51,7 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
   const [formData, setFormData] = useState<CreateEventParams>({
     title: '',
     description: '',
-    startDate: new Date(),
+    startDate: new Date().toISOString(),
     location: '',
     category: EventCategory.OTHER,
     type: EventType.IN_PERSON,
@@ -76,14 +77,12 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
       const eventData: CreateEventParams = {
         title: event.title,
         description: event.description,
-        startDate: event.startDate ? new Date(event.startDate) : new Date(),
-        endDate: event.endDate ? new Date(event.endDate) : undefined,
-        startTime: event.startTime,
-        endTime: event.endTime,
+        startDate: event.startDate ? new Date(event.startDate).toISOString() : new Date().toISOString(),
+        endDate: event.endDate ? new Date(event.endDate).toISOString() : undefined,
         location: event.location,
         category: event.category || EventCategory.OTHER,
-        type: event.type || EventType.IN_PERSON,
-        visibility: event.visibility || EventVisibility.PUBLIC,
+        type: event.type as EventType || EventType.IN_PERSON,
+        visibility: event.visibility as EventVisibility || EventVisibility.PUBLIC,
         ticketInfo: event.ticketInfo || {
           isFree: true,
           price: 0,
@@ -144,7 +143,7 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
     if (date) {
       setFormData(prev => ({
         ...prev,
-        [field]: date
+        [field]: date.toISOString()
       }));
     }
     
@@ -256,7 +255,7 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.primary.main} />
         <Text style={styles.loadingText}>
           {event ? 'Actualizando evento...' : 'Creando evento...'}
         </Text>
@@ -281,7 +280,7 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
             value={formData.title}
             onChangeText={(value) => handleChange('title', value)}
             placeholder="Título del evento"
-            placeholderTextColor={colors.textLight}
+            placeholderTextColor={colors.grey[400]}
             maxLength={100}
           />
           {validationErrors.title && (
@@ -299,7 +298,7 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
             value={formData.description}
             onChangeText={(value) => handleChange('description', value)}
             placeholder="Describe tu evento..."
-            placeholderTextColor={colors.textLight}
+            placeholderTextColor={colors.grey[400]}
             multiline
             numberOfLines={5}
             textAlignVertical="top"
@@ -311,19 +310,19 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
 
         <View style={styles.formGroup}>
           <Text style={styles.label}>Fecha de inicio *</Text>
-          <TouchableOpacity 
-            style={styles.dateButton}
+          <TouchableOpacity
+            style={[styles.dateButton, showStartDatePicker && styles.dateButtonSelected]}
             onPress={() => setShowStartDatePicker(true)}
           >
-            <Text style={styles.dateButtonText}>
-              {formatDate(formData.startDate)}
+            <Text style={[styles.dateText, showStartDatePicker && styles.dateTextSelected]}>
+              {formatDate(formData.startDate ? new Date(formData.startDate) : undefined)}
             </Text>
-            <Ionicons name="calendar" size={20} color={colors.primary} />
+            <Ionicons name="calendar-outline" size={20} color={colors.primary.main} />
           </TouchableOpacity>
           
           {showStartDatePicker && (
             <DateTimePicker
-              value={formData.startDate || new Date()}
+              value={formData.startDate ? new Date(formData.startDate) : new Date()}
               mode="date"
               display="default"
               onChange={(_, date) => handleDateChange('startDate', date)}
@@ -333,23 +332,23 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
         
         <View style={styles.formGroup}>
           <Text style={styles.label}>Fecha de finalización (opcional)</Text>
-          <TouchableOpacity 
-            style={styles.dateButton}
+          <TouchableOpacity
+            style={[styles.dateButton, showEndDatePicker && styles.dateButtonSelected]}
             onPress={() => setShowEndDatePicker(true)}
           >
-            <Text style={styles.dateButtonText}>
-              {formData.endDate ? formatDate(formData.endDate) : 'Seleccionar fecha'}
+            <Text style={[styles.dateText, showEndDatePicker && styles.dateTextSelected]}>
+              {formData.endDate ? formatDate(formData.endDate ? new Date(formData.endDate) : undefined) : 'Seleccionar fecha'}
             </Text>
-            <Ionicons name="calendar" size={20} color={colors.primary} />
+            <Ionicons name="calendar-outline" size={20} color={colors.primary.main} />
           </TouchableOpacity>
           
           {showEndDatePicker && (
             <DateTimePicker
-              value={formData.endDate || new Date()}
+              value={formData.endDate ? new Date(formData.endDate) : new Date()}
               mode="date"
               display="default"
               onChange={(_, date) => handleDateChange('endDate', date)}
-              minimumDate={formData.startDate}
+              minimumDate={formData.startDate ? new Date(formData.startDate) : undefined}
             />
           )}
         </View>
@@ -364,7 +363,7 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
             value={typeof formData.location === 'string' ? formData.location : ''}
             onChangeText={(value) => handleChange('location', value)}
             placeholder="Dirección o ubicación del evento"
-            placeholderTextColor={colors.textLight}
+            placeholderTextColor={colors.grey[400]}
           />
           {validationErrors.location && (
             <Text style={styles.errorText}>{validationErrors.location}</Text>
@@ -403,7 +402,7 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
           <View style={styles.pickerContainer}>
             {Object.values(EventType).map((type) => (
               <TouchableOpacity
-                key={type}
+                key={type.toString()}
                 style={[
                   styles.typeButton,
                   formData.type === type && styles.typeSelected
@@ -430,8 +429,8 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
             <Switch
               value={formData.ticketInfo?.isFree}
               onValueChange={handleFreeToggle}
-              trackColor={{ false: colors.grayLight, true: colors.primaryLight }}
-              thumbColor={formData.ticketInfo?.isFree ? colors.primary : colors.gray}
+              trackColor={{ false: colors.grey[200], true: colors.primary.light }}
+              thumbColor={formData.ticketInfo?.isFree ? colors.primary.main : colors.grey[300]}
             />
           </View>
           
@@ -445,7 +444,7 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
                 }
                 keyboardType="numeric"
                 placeholder="0.00"
-                placeholderTextColor={colors.textLight}
+                placeholderTextColor={colors.grey[400]}
               />
               
               <TextInput
@@ -455,7 +454,7 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
                   handleNestedChange('ticketInfo', 'currency', value)
                 }
                 placeholder="EUR"
-                placeholderTextColor={colors.textLight}
+                placeholderTextColor={colors.grey[400]}
                 maxLength={3}
               />
             </View>
@@ -467,7 +466,7 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
           <View style={styles.pickerContainer}>
             {Object.values(EventVisibility).map((visibility) => (
               <TouchableOpacity
-                key={visibility}
+                key={visibility.toString()}
                 style={[
                   styles.visibilityButton,
                   formData.visibility === visibility && styles.visibilitySelected
@@ -494,7 +493,7 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
             value={formData.websiteUrl || ''}
             onChangeText={(value) => handleChange('websiteUrl', value)}
             placeholder="https://www.ejemplo.com"
-            placeholderTextColor={colors.textLight}
+            placeholderTextColor={colors.grey[400]}
             keyboardType="url"
             autoCapitalize="none"
           />
@@ -509,7 +508,7 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
               handleChange('capacity', value ? parseInt(value, 10) : undefined)
             }
             placeholder="Número de asistentes permitidos"
-            placeholderTextColor={colors.textLight}
+            placeholderTextColor={colors.grey[400]}
             keyboardType="numeric"
           />
         </View>
@@ -603,132 +602,146 @@ const getVisibilityLabel = (visibility: EventVisibility): string => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#f9f9f9',
+    padding: 16,
   },
   scrollContent: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 80,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
   },
   loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: colors.textDark,
+    marginTop: 10,
+    color: '#333333',
   },
   formGroup: {
     marginBottom: 20,
   },
   label: {
     fontSize: 16,
-    fontWeight: '500',
-    color: colors.textDark,
     marginBottom: 8,
+    color: '#333333',
   },
   input: {
-    backgroundColor: colors.cardBackground,
-    borderRadius: 8,
+    height: 50,
     borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 16,
+    backgroundColor: '#f9f9f9',
+    borderColor: colors.grey[300],
     fontSize: 16,
-    color: colors.textDark,
+    color: '#333333',
   },
   inputError: {
-    borderColor: colors.danger,
+    borderColor: colors.error.main,
   },
   errorText: {
-    color: colors.danger,
-    fontSize: 14,
-    marginTop: 4,
+    color: colors.error.main,
+    marginBottom: 16,
   },
   textArea: {
-    backgroundColor: colors.cardBackground,
-    borderRadius: 8,
+    height: 120,
     borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingTop: 10,
+    marginBottom: 16,
+    backgroundColor: '#f9f9f9',
+    borderColor: colors.grey[300],
     fontSize: 16,
-    color: colors.textDark,
-    minHeight: 120,
+    textAlignVertical: 'top',
+    color: '#333333',
   },
   dateButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.cardBackground,
-    borderRadius: 8,
+    height: 50,
     borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 16,
+    borderColor: colors.grey[300],
+    backgroundColor: '#f9f9f9',
+    justifyContent: 'space-between',
   },
-  dateButtonText: {
+  dateButtonSelected: {
+    borderColor: colors.primary.main,
+  },
+  dateText: {
     fontSize: 16,
-    color: colors.textDark,
+    color: '#333333',
+  },
+  dateTextSelected: {
+    color: colors.primary.main,
   },
   pickerContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    height: 200,
+    marginTop: 10,
   },
   categoryButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 50,
     borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: 10,
-    marginBottom: 8,
-    backgroundColor: colors.cardBackground,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 16,
+    backgroundColor: '#f9f9f9',
+    borderColor: colors.grey[300],
   },
   categorySelected: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primary,
+    borderColor: colors.primary.main,
   },
   categoryText: {
-    color: colors.textDark,
+    fontSize: 16,
+    color: '#333333',
   },
   categoryTextSelected: {
-    color: colors.primary,
-    fontWeight: '500',
+    color: colors.primary.main,
   },
   typeButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: 10,
-    marginBottom: 8,
-    backgroundColor: colors.cardBackground,
+    borderRadius: 8,
+    padding: 12,
+    marginHorizontal: 4,
+    marginBottom: 16,
+    flex: 1,
+    backgroundColor: '#f9f9f9',
+    borderColor: colors.grey[300],
   },
   typeSelected: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primary,
+    borderColor: colors.primary.main,
   },
   typeText: {
-    color: colors.textDark,
+    fontSize: 14,
+    textAlign: 'center',
+    color: '#333333',
   },
   typeTextSelected: {
-    color: colors.primary,
-    fontWeight: '500',
+    color: colors.primary.main,
   },
   switchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.cardBackground,
+    backgroundColor: '#ffffff',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#dddddd',
     padding: 12,
   },
   switchLabel: {
     fontSize: 16,
-    color: colors.textDark,
+    color: '#333333',
   },
   priceContainer: {
     flexDirection: 'row',
@@ -737,45 +750,51 @@ const styles = StyleSheet.create({
   },
   priceInput: {
     flex: 2,
-    backgroundColor: colors.cardBackground,
+    backgroundColor: '#ffffff',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#dddddd',
     padding: 12,
     fontSize: 16,
-    color: colors.textDark,
+    color: '#333333',
     marginRight: 8,
   },
   currencyInput: {
     flex: 1,
-    backgroundColor: colors.cardBackground,
+    backgroundColor: '#ffffff',
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: '#dddddd',
     padding: 12,
     fontSize: 16,
-    color: colors.textDark,
+    color: '#333333',
+  },
+  visibilityContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
   },
   visibilityButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: 10,
-    marginBottom: 8,
-    backgroundColor: colors.cardBackground,
+    borderRadius: 8,
+    padding: 12,
+    marginHorizontal: 4,
+    flex: 1,
+    backgroundColor: '#f9f9f9',
+    borderColor: colors.grey[300],
   },
   visibilitySelected: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primary,
+    borderColor: colors.primary.main,
   },
   visibilityText: {
-    color: colors.textDark,
+    fontSize: 14,
+    textAlign: 'center',
+    color: colors.text.primary,
   },
   visibilityTextSelected: {
-    color: colors.primary,
-    fontWeight: '500',
+    color: colors.primary.main,
   },
   buttonGroup: {
     flexDirection: 'row',
@@ -783,10 +802,12 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   saveButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    backgroundColor: colors.primary.main,
     borderRadius: 8,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
   },
   saveButtonText: {
     color: 'white',
@@ -794,21 +815,21 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   cancelButton: {
-    backgroundColor: colors.grayLight,
+    backgroundColor: colors.grey[200],
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
     marginRight: 10,
   },
   cancelButtonText: {
-    color: colors.textDark,
+    color: colors.text.primary,
     fontSize: 16,
     fontWeight: '500',
   },
   deleteButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.danger,
+    backgroundColor: colors.error.main,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -819,5 +840,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginLeft: 8,
+  },
+  imagePreview: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginBottom: 16,
+    backgroundColor: colors.grey[200],
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imagePreviewImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
   },
 }); 

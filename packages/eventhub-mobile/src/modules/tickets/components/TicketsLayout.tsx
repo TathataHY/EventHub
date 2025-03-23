@@ -1,14 +1,16 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'react-native';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 /**
  * Layout para las rutas de tickets
  * Encapsula todas las pantallas de tickets y su configuración
  */
 export const TicketsLayout: React.FC = () => {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
+  // Simular el modo oscuro (en una implementación real esto sería determinado por el tema)
+  const isDark = false;
 
   return (
     <>

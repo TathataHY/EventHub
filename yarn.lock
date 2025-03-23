@@ -6428,10 +6428,10 @@ expo-barcode-scanner@^13.0.1:
   dependencies:
     expo-image-loader "~4.7.0"
 
-expo-camera@^16.0.18:
-  version "16.0.18"
-  resolved "https://registry.yarnpkg.com/expo-camera/-/expo-camera-16.0.18.tgz#5b54dc1a929c12732c585b137b04cef2b01dee3b"
-  integrity sha512-NP5u2yyc+wZc9GdUXH+jcEytyXZwBnHxItMwXoZQQxi4wgltwvs4XfSWjBtRZe1LngnhpBfPyPJV0aShjWlLDg==
+expo-camera@^16.1.0-canary-20250320-7a205d3:
+  version "16.1.0-canary-20250320-7a205d3"
+  resolved "https://registry.yarnpkg.com/expo-camera/-/expo-camera-16.1.0-canary-20250320-7a205d3.tgz#46bbe981731b6da2a17e01f450698e4ac3fa34eb"
+  integrity sha512-VeGKp3nV4is5qLZ6IXzWumOeTNzQkPrhXoqyobuvyfSUbk17ofm9sd6Ihhbejr/xWw6kHizsqa04eNAFJVjH9A==
   dependencies:
     invariant "^2.2.4"
 

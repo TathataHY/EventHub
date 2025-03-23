@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Image, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 interface UserAvatarProps {
   photoURL?: string | null;
@@ -44,7 +44,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
               width: size, 
               height: size, 
               borderRadius,
-              backgroundColor: theme.colors.gray.main 
+              backgroundColor: theme.colors.grey[400]
             }
           ]}
         >

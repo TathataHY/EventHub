@@ -1,19 +1,19 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'react-native';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 /**
  * Layout para las rutas de autenticación
  * Encapsula todas las pantallas de autenticación y su configuración
  */
 export const AuthLayout: React.FC = () => {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
 
   return (
     <>
       <StatusBar 
-        barStyle={isDark ? "light-content" : "dark-content"} 
+        barStyle="dark-content" 
         backgroundColor={theme.colors.background.default} 
       />
       <Stack

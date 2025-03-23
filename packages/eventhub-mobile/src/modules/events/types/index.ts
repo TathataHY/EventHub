@@ -23,6 +23,21 @@ export interface Event {
   virtualUrl?: string;
   latitude?: number;
   longitude?: number;
+  type?: EventType;
+  visibility?: EventVisibility;
+  ticketInfo?: {
+    price: number;
+    availableTickets: number;
+    ticketTypes?: { name: string; price: number; availableCount: number }[];
+  };
+  websiteUrl?: string;
+  metrics?: {
+    maxCapacity?: number;
+    attendees?: number;
+    views?: number;
+    shares?: number;
+    favorites?: number;
+  };
 }
 
 /**
@@ -44,7 +59,26 @@ export enum EventCategory {
   ART = 'art',
   FOOD = 'food',
   EDUCATION = 'education',
-  OTHER = 'other'
+  OTHER = 'other',
+  TECHNOLOGY = 'technology'
+}
+
+/**
+ * Tipos de eventos
+ */
+export enum EventType {
+  IN_PERSON = 'in_person',
+  VIRTUAL = 'virtual',
+  HYBRID = 'hybrid'
+}
+
+/**
+ * Visibilidad de eventos
+ */
+export enum EventVisibility {
+  PUBLIC = 'public',
+  PRIVATE = 'private',
+  UNLISTED = 'unlisted'
 }
 
 /**
@@ -65,7 +99,20 @@ export interface CreateEventData {
   virtualUrl?: string;
   latitude?: number;
   longitude?: number;
+  type?: EventType;
+  visibility?: EventVisibility;
+  ticketInfo?: {
+    price: number;
+    availableTickets: number;
+    ticketTypes?: { name: string; price: number; availableCount: number }[];
+    isFree?: boolean;
+    currency?: string;
+  };
+  websiteUrl?: string;
 }
+
+// Alias para compatibilidad
+export type CreateEventParams = CreateEventData;
 
 /**
  * Datos para la actualización de un evento

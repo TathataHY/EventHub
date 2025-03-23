@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Event } from '@modules/events/types';
 import { EventCard } from './EventCard';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 interface EventsListProps {
   events: Event[];

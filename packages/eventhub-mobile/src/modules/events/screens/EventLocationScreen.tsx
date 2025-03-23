@@ -7,9 +7,10 @@ import {
   Linking, 
   Alert,
   ActivityIndicator,
-  Dimensions
+  Dimensions,
+  Platform
 } from 'react-native';
-import { useTheme } from '../../../core/theme';
+import { useTheme } from '../../../shared/hooks/useTheme';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker } from 'react-native-maps';
@@ -21,7 +22,7 @@ const { width, height } = Dimensions.get('window');
  * Pantalla de ubicación de un evento
  */
 export const EventLocationScreen = () => {
-  const { colors } = useTheme();
+  const { theme } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [event, setEvent] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,9 +85,9 @@ export const EventLocationScreen = () => {
   
   if (isLoading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.text }]}>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background.default }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary.main} />
+        <Text style={[styles.loadingText, { color: theme.colors.text.primary }]}>
           Cargando ubicación...
         </Text>
       </View>
@@ -112,20 +113,20 @@ export const EventLocationScreen = () => {
         />
       </MapView>
       
-      <View style={[styles.infoPanel, { backgroundColor: colors.card }]}>
-        <Text style={[styles.eventTitle, { color: colors.text }]}>
+      <View style={[styles.infoPanel, { backgroundColor: theme.colors.background.default }]}>
+        <Text style={[styles.eventTitle, { color: theme.colors.text.primary }]}>
           {event?.title || 'Evento'}
         </Text>
         
         <View style={styles.locationRow}>
-          <Ionicons name="location" size={20} color={colors.primary} />
-          <Text style={[styles.locationText, { color: colors.text }]}>
+          <Ionicons name="location" size={20} color={theme.colors.primary.main} />
+          <Text style={[styles.locationText, { color: theme.colors.text.secondary }]}>
             {event?.location?.name || event?.location || 'Ubicación no disponible'}
           </Text>
         </View>
         
         <TouchableOpacity 
-          style={[styles.directionsButton, { backgroundColor: colors.primary }]}
+          style={[styles.directionsButton, { backgroundColor: theme.colors.primary.main }]}
           onPress={openInMaps}
         >
           <Ionicons name="navigate" size={20} color="#FFFFFF" />

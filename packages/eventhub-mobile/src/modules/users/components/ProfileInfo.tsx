@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { User, UpdateProfileParams } from '../types/user.types';
 import { colors } from '@theme/base/colors';
+import { getColorValue } from '@theme/index';
 
 interface ProfileInfoProps {
   user: User;
@@ -119,7 +120,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({
         <Text style={styles.title}>Información de Perfil</Text>
         {isEditable && !isEditing && (
           <TouchableOpacity onPress={handleEdit}>
-            <Ionicons name="create-outline" size={24} color={colors.primary} />
+            <Ionicons name="create-outline" size={24} color={getColorValue(colors.primary)} />
           </TouchableOpacity>
         )}
       </View>
@@ -210,35 +211,35 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: colors.textDark,
+    color: colors.text,
   },
   fieldContainer: {
     marginBottom: 16,
   },
   fieldLabel: {
     fontSize: 14,
-    color: colors.textLight,
+    color: colors.text,
     marginBottom: 4,
   },
   fieldValue: {
     fontSize: 16,
-    color: colors.textDark,
+    color: colors.text,
   },
   input: {
     borderWidth: 1,
-    borderColor: colors.lightGray,
+    borderColor: colors.grey[200],
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 16,
-    color: colors.textDark,
+    color: colors.text,
   },
   textArea: {
     minHeight: 100,
     textAlignVertical: 'top',
   },
   errorText: {
-    color: colors.danger,
+    color: colors.error.main,
     marginBottom: 16,
   },
   actionContainer: {
@@ -253,10 +254,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   cancelButton: {
-    backgroundColor: colors.lightGray,
+    backgroundColor: colors.grey[200],
   },
   saveButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: getColorValue(colors.primary),
   },
   buttonText: {
     color: 'white',

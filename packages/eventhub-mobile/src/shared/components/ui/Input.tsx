@@ -14,9 +14,9 @@ import {
   TextInputFocusEventData,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { appColors as colors } from '@theme';
+import { appColors as colors, convertTypographyStyle } from '@theme/index';
 import { typography } from '@theme/base/typography';
-import { appSpacing as spacing } from '@theme';
+import { spacing } from '@theme/base/spacing';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -95,8 +95,8 @@ export function Input({
         <TextInput
           style={[
             styles.input,
-            leftIcon && styles.inputWithLeftIcon,
-            (rightIcon || secureTextEntry) && styles.inputWithRightIcon,
+            leftIcon ? { paddingLeft: 8 } : null,
+            (rightIcon || secureTextEntry) ? { paddingRight: 8 } : null,
             inputStyle,
           ]}
           placeholderTextColor={colors.grey[400]}
@@ -136,10 +136,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    ...typography.subtitle2,
+    ...convertTypographyStyle(typography.subtitle2),
     color: colors.grey[700],
     marginBottom: 8,
-    fontWeight: "600" as const,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -157,11 +156,10 @@ const styles = StyleSheet.create({
     borderColor: colors.error.main,
   },
   input: {
-    ...typography.body1,
+    ...convertTypographyStyle(typography.body1),
     flex: 1,
     color: colors.text,
     padding: spacing.xs,
-    fontWeight: "normal" as const,
   },
   inputWithLeftIcon: {
     paddingLeft: 8,
@@ -175,9 +173,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    ...typography.caption,
+    ...convertTypographyStyle(typography.caption),
     color: colors.error.main,
     marginTop: 4,
-    fontWeight: "normal" as const,
   },
 }); 

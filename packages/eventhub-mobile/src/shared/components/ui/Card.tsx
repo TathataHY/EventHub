@@ -1,54 +1,48 @@
-import React from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  ViewStyle, 
-  StyleProp, 
-  TouchableOpacity,
-  TouchableOpacityProps 
-} from 'react-native';
-import { colors } from '@theme/base/colors';
+import React, { ReactNode } from 'react';
+import { View, StyleSheet, ViewStyle } from 'react-native';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
-interface CardProps extends TouchableOpacityProps {
-  style?: StyleProp<ViewStyle>;
-  children: React.ReactNode;
-  onPress?: () => void;
+export interface CardProps {
+  children: ReactNode;
+  style?: ViewStyle;
+  elevation?: number;
+  outlined?: boolean;
 }
 
 /**
- * Componente Card reutilizable para mostrar contenido en una tarjeta con sombras
+ * Componente Card para mostrar contenido en una tarjeta con sombra
  */
-export function Card({ style, children, onPress, ...rest }: CardProps) {
-  // Si hay un onPress, renderizar como TouchableOpacity, de lo contrario como View
-  if (onPress) {
-    return (
-      <TouchableOpacity
-        style={[styles.container, style]}
-        onPress={onPress}
-        activeOpacity={0.7}
-        {...rest}
-      >
-        {children}
-      </TouchableOpacity>
-    );
-  }
-
+export const Card = ({
+  children,
+  style,
+  elevation = 2,
+  outlined = false
+}: CardProps) => {
+  const { theme, getColorValue } = useTheme();
+  
+  const cardStyle = {
+    backgroundColor: getColorValue(theme.colors.background.default),
+    borderColor: outlined ? getColorValue(theme.colors.grey[300]) : 'transparent',
+    shadowOpacity: outlined ? 0 : 0.1,
+    elevation: outlined ? 0 : elevation,
+  };
+  
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.card, cardStyle, style]}>
       {children}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.common.white,
+  card: {
     borderRadius: 8,
-    padding: 16,
-    shadowColor: colors.common.black,
+    overflow: 'hidden',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: '#FFFFFF',
+    marginVertical: 8,
+    borderWidth: 1,
   },
 }); 

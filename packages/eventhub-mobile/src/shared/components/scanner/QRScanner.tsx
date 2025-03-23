@@ -8,12 +8,16 @@ import {
   Platform,
   ActivityIndicator
 } from 'react-native';
-import { Camera } from 'expo-camera';
-import { BarCodeScanner } from 'expo-barcode-scanner';
+// @ts-ignore
+import { CameraView } from 'expo-camera/next';
+import { BarCodeScannerResult } from 'expo-barcode-scanner';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Camera } from 'expo-camera';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
-import { useTheme } from '@core/context/ThemeContext';
+import { getColorValue } from '@theme/index';
+import { colors } from '@theme/base/colors';
 
 interface QRScannerProps {
   /**
@@ -46,35 +50,35 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   title = 'Escanear Código QR',
   instructionText = 'Coloca el código QR dentro del marco para escanearlo'
 }) => {
-  const { colors } = useTheme();
+  const { theme } = useTheme();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   
   // Solicitar permisos de cámara al montar el componente
   useEffect(() => {
     (async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
+      const { status } = await CameraView.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
     })();
   }, []);
   
   // Manejar el escaneo de un código de barras
-  const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
+  const handleBarCodeScanned = (scanningResult: BarCodeScannerResult) => {
     if (scanned) return;
     
     // Sólo procesar códigos QR
-    if (type === BarCodeScanner.Constants.BarCodeType.qr) {
+    if (scanningResult.type === 'qr') {
       setScanned(true);
-      onScan(data);
+      onScan(scanningResult.data);
     }
   };
   
   // Renderizar según el estado de los permisos
   if (hasPermission === null) {
     return (
-      <View style={[styles.permissionContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.permissionText, { color: colors.secondaryText }]}>
+      <View style={[styles.permissionContainer, { backgroundColor: '#FFFFFF' }]}>
+        <ActivityIndicator size="large" color={getColorValue(colors.primary)} />
+        <Text style={[styles.permissionText, { color: '#000000' }]}>
           Solicitando permisos de cámara...
         </Text>
       </View>
@@ -83,16 +87,16 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   
   if (hasPermission === false) {
     return (
-      <View style={[styles.permissionContainer, { backgroundColor: colors.background }]}>
-        <Ionicons name="camera-off-outline" size={64} color={colors.error} />
-        <Text style={[styles.permissionTitle, { color: colors.text }]}>
+      <View style={[styles.permissionContainer, { backgroundColor: '#FFFFFF' }]}>
+        <Ionicons name="camera-outline" size={64} color={getColorValue(colors.error)} />
+        <Text style={[styles.permissionTitle, { color: '#000000' }]}>
           No hay acceso a la cámara
         </Text>
-        <Text style={[styles.permissionText, { color: colors.secondaryText }]}>
+        <Text style={[styles.permissionText, { color: '#000000' }]}>
           Para escanear códigos QR, debes permitir el acceso a la cámara en la configuración de tu dispositivo.
         </Text>
         <TouchableOpacity
-          style={[styles.closeButton, { backgroundColor: colors.primary }]}
+          style={[styles.closeButton, { backgroundColor: getColorValue(colors.primary) }]}
           onPress={onClose}
         >
           <Text style={styles.closeButtonText}>Cerrar</Text>
@@ -104,13 +108,13 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       {/* Cámara */}
-      <Camera
+      <CameraView
         style={styles.camera}
-        type={Camera.Constants.Type.back}
-        barCodeScannerSettings={{
-          barCodeTypes: [BarCodeScanner.Constants.BarCodeType.qr],
+        facing="back"
+        barcodeScannerSettings={{
+          barcodeTypes: ["qr"],
         }}
-        onBarCodeScanned={handleBarCodeScanned}
+        onBarcodeScanned={handleBarCodeScanned}
       >
         {/* Overlay */}
         <View style={styles.overlay}>
@@ -126,10 +130,10 @@ export const QRScanner: React.FC<QRScannerProps> = ({
             
             <View style={styles.scannerContainer}>
               {/* Esquinas del marco */}
-              <View style={[styles.corner, styles.topLeftCorner, { borderColor: colors.primary }]} />
-              <View style={[styles.corner, styles.topRightCorner, { borderColor: colors.primary }]} />
-              <View style={[styles.corner, styles.bottomLeftCorner, { borderColor: colors.primary }]} />
-              <View style={[styles.corner, styles.bottomRightCorner, { borderColor: colors.primary }]} />
+              <View style={[styles.corner, styles.topLeftCorner, { borderColor: getColorValue(colors.primary) }]} />
+              <View style={[styles.corner, styles.topRightCorner, { borderColor: getColorValue(colors.primary) }]} />
+              <View style={[styles.corner, styles.bottomLeftCorner, { borderColor: getColorValue(colors.primary) }]} />
+              <View style={[styles.corner, styles.bottomRightCorner, { borderColor: getColorValue(colors.primary) }]} />
             </View>
             
             <View style={[styles.sideSection, { backgroundColor: 'rgba(0, 0, 0, 0.7)' }]} />
@@ -142,7 +146,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
             </TouchableOpacity>
           </View>
         </View>
-      </Camera>
+      </CameraView>
     </SafeAreaView>
   );
 };

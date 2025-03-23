@@ -89,35 +89,74 @@ export interface EventContact {
 
 // Interfaz principal para un evento
 export interface Event {
-  id: number | string;
+  id: string;
   title: string;
   description: string;
   shortDescription?: string;
-  location: string | EventLocation;
-  startDate: string;
-  endDate?: string;
+  location: {
+    address: string;
+    city: string;
+    state?: string;
+    country?: string;
+    postalCode?: string;
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
+    venue?: string;
+  };
+  startDate: string | Date;
+  endDate: string | Date;
   startTime?: string;
   endTime?: string;
   timeZone?: string;
-  category: string | EventCategory;
+  categories: Array<{
+    id: string;
+    name: string;
+    description?: string;
+    color?: string;
+    iconName?: string;
+  }>;
   type?: EventType;
   tags?: string[];
   imageUrl?: string;
   imageUrls?: string[];
-  status?: EventStatus;
-  visibility?: EventVisibility;
+  status: 'draft' | 'published' | 'cancelled' | 'completed';
+  visibility: 'public' | 'private' | 'unlisted';
   isAttending?: boolean;
   isFavorite?: boolean;
-  ticketInfo?: EventTicketInfo;
-  metrics?: EventMetrics;
-  organizerId: number | string;
+  ticketTypes?: Array<{
+    id: string;
+    name: string;
+    price: number;
+    quantity: number;
+    description?: string;
+  }>;
+  capacity: number;
+  attendeeCount?: number;
+  organizerId: string;
   organizerName?: string;
   organizerLogo?: string;
   contact?: EventContact;
-  websiteUrl?: string;
-  socialLinks?: Record<string, string>;
-  createdAt?: string;
-  updatedAt?: string;
+  website?: string;
+  socialLinks?: {
+    facebook?: string;
+    twitter?: string;
+    instagram?: string;
+    linkedin?: string;
+  };
+  isOnline: boolean;
+  streamUrl?: string;
+  isRecurring?: boolean;
+  recurringPattern?: {
+    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    interval: number;
+    endDate?: string | Date;
+    count?: number;
+    weekDays?: ('MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'SU')[];
+  };
+  createdAt: string | Date;
+  updatedAt: string | Date;
 }
 
 // Parámetros para búsqueda de eventos

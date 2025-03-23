@@ -2,11 +2,15 @@ import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import { useEvents } from '../hooks/useEvents';
 import { EventsList, EventsSearchBar, EventFilters } from '../components';
-import { Event, EventCategory } from '@modules/events/types';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 // Definición de EventType para mantener compatibilidad con el componente EventFilters
 interface EventType {
+  id: string;
+  name: string;
+}
+
+interface EventCategory {
   id: string;
   name: string;
 }
@@ -23,7 +27,7 @@ interface FilterParams {
 }
 
 interface EventsScreenProps {
-  onEventPress?: (event: Event) => void;
+  onEventPress?: (event: any) => void;
 }
 
 export const EventsScreen: React.FC<EventsScreenProps> = ({ onEventPress }) => {
@@ -59,7 +63,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onEventPress }) => {
   };
   
   // Manejar cambios en los filtros
-  const handleFilterChange = (filters: FilterParams) => {
+  const handleFilterChange = (filters: any) => {
     const newFilterParams = {
       categories: filters.categories || [],
       types: filters.types || [],
@@ -83,7 +87,7 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onEventPress }) => {
   };
   
   // Manejar el press en un evento
-  const handleEventPress = (event: Event) => {
+  const handleEventPress = (event: any) => {
     if (onEventPress) {
       onEventPress(event);
     }
@@ -93,10 +97,10 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onEventPress }) => {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.default }]}>
       <StatusBar 
         backgroundColor={theme.colors.background.default} 
-        barStyle={theme.isDark ? "light-content" : "dark-content"} 
+        barStyle="dark-content" 
       />
       
-      <View style={[styles.searchContainer, { backgroundColor: theme.colors.background.card }]}>
+      <View style={[styles.searchContainer, { backgroundColor: theme.colors.background.default }]}>
         <EventsSearchBar
           onSearch={handleSearch}
           initialValue={searchQuery}

@@ -5,20 +5,21 @@
  */
 
 // Componentes
-export { Card } from './Card';
-export { Button } from './Button';
-export { Input } from './Input';
-export { TabView } from './TabView';
-export { LoadingState } from './LoadingState';
-export { EmptyState } from './EmptyState';
-export { NotificationBadge } from './NotificationBadge';
+export * from './Button';
+export * from './Card';
+export * from './EmptyState';
+export * from './Input';
+export * from './Avatar';
+export * from './Badge';
+export * from './Loading';
+export * from './SearchBar';
 
 // Configuraciones
 export * from './config';
 
 export * from './Text';
 export * from './View';
-export * from './Avatar';
-export * from './Badge';
+export * from './TabView';
+export * from './NotificationBadge';
 export * from './Checkbox';
 export * from './Divider'; 

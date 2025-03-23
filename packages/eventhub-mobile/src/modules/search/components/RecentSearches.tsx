@@ -7,7 +7,7 @@ import {
   StyleSheet 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 interface RecentSearchesProps {
   searches: string[];
@@ -26,7 +26,7 @@ export function RecentSearches({
   
   const renderSearchItem = ({ item }: { item: string }) => (
     <TouchableOpacity
-      style={[styles.searchItem, { backgroundColor: theme.colors.background.card }]}
+      style={[styles.searchItem, { backgroundColor: theme.colors.background.default }]}
       onPress={() => onSearchPress(item)}
     >
       <Ionicons name="time-outline" size={20} color={theme.colors.text.secondary} />

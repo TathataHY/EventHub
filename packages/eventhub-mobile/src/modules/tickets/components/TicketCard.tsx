@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 import { Ticket, TicketStatus } from '@modules/tickets/types';
 
 interface TicketCardProps {
@@ -38,33 +38,33 @@ export const TicketCard: React.FC<TicketCardProps> = ({
   // Determinar icono y color según el estado del ticket
   const getStatusInfo = () => {
     switch (ticket.status) {
-      case TicketStatus.VALID:
+      case 'valid':
         return {
-          icon: 'checkmark-circle',
+          icon: 'checkmark-circle' as const,
           color: theme.colors.success.main,
           text: 'Válido'
         };
-      case TicketStatus.USED:
+      case 'used':
         return {
-          icon: 'time',
+          icon: 'time' as const,
           color: theme.colors.warning.main,
           text: 'Utilizado'
         };
-      case TicketStatus.EXPIRED:
+      case 'expired':
         return {
-          icon: 'close-circle',
+          icon: 'close-circle' as const,
           color: theme.colors.error.main,
           text: 'Expirado'
         };
-      case TicketStatus.CANCELLED:
+      case 'cancelled':
         return {
-          icon: 'ban',
+          icon: 'ban' as const,
           color: theme.colors.error.main,
           text: 'Cancelado'
         };
       default:
         return {
-          icon: 'help-circle',
+          icon: 'help-circle' as const,
           color: theme.colors.text.secondary,
           text: 'Desconocido'
         };
@@ -75,7 +75,7 @@ export const TicketCard: React.FC<TicketCardProps> = ({
   
   return (
     <TouchableOpacity
-      style={[styles.container, { backgroundColor: theme.colors.background.paper }]}
+      style={[styles.container, { backgroundColor: theme.colors.background.default }]}
       onPress={() => onPress(ticket.id)}
       activeOpacity={0.7}
     >

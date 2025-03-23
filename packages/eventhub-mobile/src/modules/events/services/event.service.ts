@@ -5,21 +5,32 @@ import { authService } from '@modules/auth/services/auth.service';
 import { Event as EventType, EventSearchParams as EventSearchParamsType } from '../types/event.types';
 
 // Interfaces para compatibilidad - Usar para migración gradual
-export interface Event extends Partial<EventType> {
+export interface Event {
   id: number | string;
   title: string;
   description: string;
-  location: string | any;
+  location: any;
   startDate: string;
   endDate?: string;
   category: string;
   imageUrl?: string;
-  capacity?: number;
-  attendees?: number;
   organizerId: number | string;
   organizerName?: string;
+  price?: number;
+  capacity?: number;
+  attendees?: number;
+  status?: string;
   isAttending?: boolean;
+  isFavorite?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  tags?: string[];
+  isVirtual?: boolean;
+  virtualUrl?: string;
+  latitude?: number;
+  longitude?: number;
   recommendationScore?: number;
+  distance?: number;
 }
 
 export interface EventSearchParams extends Partial<EventSearchParamsType> {

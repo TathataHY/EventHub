@@ -5,7 +5,7 @@ import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { Ionicons } from '@expo/vector-icons';
 
-import { appColors, appTypography, appSpacing } from '../../../theme';
+import { appColors, appTypography, appSpacing, convertTypographyStyle } from '../../../theme';
 import { Button, Input, Card } from '../../../shared/components/ui';
 import { authService } from '../services/auth.service';
 
@@ -24,30 +24,43 @@ const PasswordSchema = Yup.object().shape({
     .required('Confirmación de contraseña requerida'),
 });
 
+// Definir tipado para los valores del formulario
+interface PasswordFormValues {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 /**
  * Pantalla para cambiar la contraseña del usuario actual
  */
 export const ChangePasswordScreen = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [changeSuccess, setChangeSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Función para cambiar la contraseña
-  const handleChangePassword = async (values) => {
+  const handleChangePassword = async (values: PasswordFormValues) => {
     try {
       setLoading(true);
-      await authService.changePassword(values.currentPassword, values.newPassword);
-      Alert.alert(
-        'Éxito', 
-        'Contraseña actualizada correctamente',
-        [{ text: 'OK', onPress: () => router.back() }]
-      );
-    } catch (error) {
-      console.error('Error al cambiar contraseña:', error);
       
-      if (error.response?.status === 401) {
-        Alert.alert('Error', 'La contraseña actual es incorrecta');
+      await authService.changePassword(
+        values.currentPassword,
+        values.newPassword
+      );
+      
+      setChangeSuccess(true);
+      // Actualizar interfaz de usuario para mostrar éxito
+    } catch (error) {
+      console.error('Error changing password:', error);
+      
+      // Manejar tipos específicos de errores
+      const errorObj = error as any;
+      if (errorObj.response?.status === 401) {
+        setErrorMessage('La contraseña actual es incorrecta');
       } else {
-        Alert.alert('Error', 'No se pudo actualizar la contraseña. Inténtalo de nuevo más tarde.');
+        setErrorMessage('No se pudo actualizar la contraseña. Inténtalo de nuevo más tarde.');
       }
     } finally {
       setLoading(false);
@@ -81,11 +94,11 @@ export const ChangePasswordScreen = () => {
                   label="Contraseña actual"
                   placeholder="Ingresa tu contraseña actual"
                   secureTextEntry
-                  leftIcon={<Ionicons name="lock-closed-outline" size={20} color={appColors.gray[500]} />}
+                  leftIcon={<Ionicons name="lock-closed-outline" size={20} color={appColors.grey[500]} />}
                   onChangeText={handleChange('currentPassword')}
                   onBlur={handleBlur('currentPassword')}
                   value={values.currentPassword}
-                  error={touched.currentPassword && errors.currentPassword}
+                  error={touched.currentPassword && errors.currentPassword ? errors.currentPassword : undefined}
                   style={styles.inputField}
                 />
                 
@@ -93,11 +106,11 @@ export const ChangePasswordScreen = () => {
                   label="Nueva contraseña"
                   placeholder="Ingresa tu nueva contraseña"
                   secureTextEntry
-                  leftIcon={<Ionicons name="key-outline" size={20} color={appColors.gray[500]} />}
+                  leftIcon={<Ionicons name="key-outline" size={20} color={appColors.grey[500]} />}
                   onChangeText={handleChange('newPassword')}
                   onBlur={handleBlur('newPassword')}
                   value={values.newPassword}
-                  error={touched.newPassword && errors.newPassword}
+                  error={touched.newPassword && errors.newPassword ? errors.newPassword : undefined}
                   style={styles.inputField}
                 />
                 
@@ -105,11 +118,11 @@ export const ChangePasswordScreen = () => {
                   label="Confirmar nueva contraseña"
                   placeholder="Confirma tu nueva contraseña"
                   secureTextEntry
-                  leftIcon={<Ionicons name="checkmark-circle-outline" size={20} color={appColors.gray[500]} />}
+                  leftIcon={<Ionicons name="checkmark-circle-outline" size={20} color={appColors.grey[500]} />}
                   onChangeText={handleChange('confirmPassword')}
                   onBlur={handleBlur('confirmPassword')}
                   value={values.confirmPassword}
-                  error={touched.confirmPassword && errors.confirmPassword}
+                  error={touched.confirmPassword && errors.confirmPassword ? errors.confirmPassword : undefined}
                   style={styles.inputField}
                 />
                 
@@ -119,7 +132,7 @@ export const ChangePasswordScreen = () => {
                     <Ionicons
                       name={values.newPassword.length >= 6 ? "checkmark-circle" : "ellipse-outline"}
                       size={16}
-                      color={values.newPassword.length >= 6 ? appColors.success : appColors.gray[400]}
+                      color={values.newPassword.length >= 6 ? appColors.success.main : appColors.grey[400]}
                     />
                     <Text style={styles.hintText}>Al menos 6 caracteres</Text>
                   </View>
@@ -127,7 +140,7 @@ export const ChangePasswordScreen = () => {
                     <Ionicons
                       name={/[A-Z]/.test(values.newPassword) ? "checkmark-circle" : "ellipse-outline"}
                       size={16}
-                      color={/[A-Z]/.test(values.newPassword) ? appColors.success : appColors.gray[400]}
+                      color={/[A-Z]/.test(values.newPassword) ? appColors.success.main : appColors.grey[400]}
                     />
                     <Text style={styles.hintText}>Al menos una letra mayúscula</Text>
                   </View>
@@ -135,7 +148,7 @@ export const ChangePasswordScreen = () => {
                     <Ionicons
                       name={/[a-z]/.test(values.newPassword) ? "checkmark-circle" : "ellipse-outline"}
                       size={16}
-                      color={/[a-z]/.test(values.newPassword) ? appColors.success : appColors.gray[400]}
+                      color={/[a-z]/.test(values.newPassword) ? appColors.success.main : appColors.grey[400]}
                     />
                     <Text style={styles.hintText}>Al menos una letra minúscula</Text>
                   </View>
@@ -143,7 +156,7 @@ export const ChangePasswordScreen = () => {
                     <Ionicons
                       name={/\d/.test(values.newPassword) ? "checkmark-circle" : "ellipse-outline"}
                       size={16}
-                      color={/\d/.test(values.newPassword) ? appColors.success : appColors.gray[400]}
+                      color={/\d/.test(values.newPassword) ? appColors.success.main : appColors.grey[400]}
                     />
                     <Text style={styles.hintText}>Al menos un número</Text>
                   </View>
@@ -152,7 +165,7 @@ export const ChangePasswordScreen = () => {
                 <View style={styles.buttonsContainer}>
                   <Button
                     title="Cancelar"
-                    variant="outline"
+                    type="outline"
                     onPress={() => router.back()}
                     style={styles.cancelButton}
                   />
@@ -177,24 +190,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: appColors.background,
+    padding: appSpacing.md,
   },
   scrollContainer: {
     flexGrow: 1,
-    padding: appSpacing.md,
     justifyContent: 'center',
+    padding: appSpacing.md,
   },
   card: {
     padding: appSpacing.lg,
+    borderRadius: 12,
+    backgroundColor: appColors.common.white,
+    shadowColor: appColors.common.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   title: {
-    ...appTypography.h4,
+    ...convertTypographyStyle(appTypography.h4),
     color: appColors.text,
     marginBottom: appSpacing.xs,
     textAlign: 'center',
   },
   subtitle: {
-    ...appTypography.body2,
-    color: appColors.gray[600],
+    ...convertTypographyStyle(appTypography.body2),
+    color: appColors.grey[600],
     marginBottom: appSpacing.lg,
     textAlign: 'center',
   },
@@ -205,14 +226,14 @@ const styles = StyleSheet.create({
     marginBottom: appSpacing.md,
   },
   passwordHints: {
-    backgroundColor: appColors.gray[50],
+    backgroundColor: appColors.grey[50],
     borderRadius: 8,
     padding: appSpacing.md,
     marginBottom: appSpacing.lg,
   },
   hintTitle: {
-    ...appTypography.subtitle2,
-    color: appColors.gray[700],
+    ...convertTypographyStyle(appTypography.subtitle2),
+    color: appColors.grey[700],
     marginBottom: appSpacing.xs,
   },
   hintItem: {
@@ -221,8 +242,8 @@ const styles = StyleSheet.create({
     marginTop: appSpacing.xs,
   },
   hintText: {
-    ...appTypography.body2,
-    color: appColors.gray[700],
+    ...convertTypographyStyle(appTypography.body2),
+    color: appColors.grey[700],
     marginLeft: appSpacing.xs,
   },
   buttonsContainer: {
