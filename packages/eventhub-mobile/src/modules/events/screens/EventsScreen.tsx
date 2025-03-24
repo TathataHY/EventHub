@@ -2,21 +2,40 @@ import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, SafeAreaView, StatusBar } from 'react-native';
 import { useEvents } from '../hooks/useEvents';
 import { EventsList, EventsSearchBar, EventFilters } from '../components';
-import { Event, EventCategory, EventType } from '../types';
-import { colors } from '@theme';
+import { useTheme } from '../../../shared/hooks/useTheme';
+
+// Definición de EventType para mantener compatibilidad con el componente EventFilters
+interface EventType {
+  id: string;
+  name: string;
+}
+
+interface EventCategory {
+  id: string;
+  name: string;
+}
+
+interface FilterParams {
+  categories: EventCategory[];
+  types: EventType[];
+  isFree?: boolean;
+  dateRange?: {
+    from?: Date;
+    to?: Date;
+  };
+  location?: string;
+}
 
 interface EventsScreenProps {
-  onEventPress?: (event: Event) => void;
+  onEventPress?: (event: any) => void;
 }
 
 export const EventsScreen: React.FC<EventsScreenProps> = ({ onEventPress }) => {
+  const { theme } = useTheme();
+  
   // Filtros de búsqueda
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterParams, setFilterParams] = useState<{
-    categories: EventCategory[];
-    types: EventType[];
-    isFree?: boolean;
-  }>({
+  const [filterParams, setFilterParams] = useState<FilterParams>({
     categories: [],
     types: [],
   });
@@ -48,7 +67,9 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onEventPress }) => {
     const newFilterParams = {
       categories: filters.categories || [],
       types: filters.types || [],
-      isFree: filters.isFree
+      isFree: filters.isFree,
+      dateRange: filters.dateRange,
+      location: filters.location
     };
     
     setFilterParams(newFilterParams);
@@ -66,17 +87,20 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onEventPress }) => {
   };
   
   // Manejar el press en un evento
-  const handleEventPress = (event: Event) => {
+  const handleEventPress = (event: any) => {
     if (onEventPress) {
       onEventPress(event);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar backgroundColor={colors.background} barStyle="dark-content" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background.default }]}>
+      <StatusBar 
+        backgroundColor={theme.colors.background.default} 
+        barStyle="dark-content" 
+      />
       
-      <View style={styles.searchContainer}>
+      <View style={[styles.searchContainer, { backgroundColor: theme.colors.background.default }]}>
         <EventsSearchBar
           onSearch={handleSearch}
           initialValue={searchQuery}
@@ -107,10 +131,8 @@ export const EventsScreen: React.FC<EventsScreenProps> = ({ onEventPress }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   searchContainer: {
-    backgroundColor: colors.cardBackground,
     paddingBottom: 8,
   },
 }); 

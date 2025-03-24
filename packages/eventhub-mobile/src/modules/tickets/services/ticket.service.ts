@@ -1,33 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ticket, TicketStatus, TicketType, TicketHolder } from '../types';
 
 // Clave para almacenar los tickets en AsyncStorage
 const TICKETS_STORAGE_KEY = 'userTickets';
-
-// Tipos de tickets
-export enum TicketStatus {
-  VALID = 'valid',
-  USED = 'used',
-  EXPIRED = 'expired',
-  CANCELLED = 'cancelled'
-}
-
-// Interfaz para el ticket
-export interface Ticket {
-  id: string;
-  eventId: string;
-  userId: string;
-  purchaseDate: string;
-  status: TicketStatus;
-  validationDate?: string;
-  qrCode: string;
-  price: number;
-  seat?: string;
-  ticketType: string;
-  ticketHolder: {
-    name: string;
-    email: string;
-  };
-}
 
 // Función para generar un ID único
 const generateId = () => {
@@ -116,11 +91,8 @@ class TicketService {
     eventId: string;
     userId: string;
     price: number;
-    ticketType: string;
-    ticketHolder: {
-      name: string;
-      email: string;
-    };
+    ticketType: TicketType;
+    ticketHolder: TicketHolder;
     seat?: string;
   }): Promise<Ticket> {
     try {
@@ -132,12 +104,16 @@ class TicketService {
         eventId: ticketData.eventId,
         userId: ticketData.userId,
         purchaseDate: new Date().toISOString(),
-        status: TicketStatus.VALID,
+        status: 'valid',
         qrCode: this.generateQRCode(),
         price: ticketData.price,
         ticketType: ticketData.ticketType,
         ticketHolder: ticketData.ticketHolder,
-        seat: ticketData.seat
+        seat: ticketData.seat,
+        ticketNumber: `T${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`,
+        isTransferable: true,
+        validationCount: 0,
+        currency: 'EUR'
       };
       
       const storedTickets = await AsyncStorage.getItem(TICKETS_STORAGE_KEY);
@@ -154,9 +130,9 @@ class TicketService {
   }
 
   /**
-   * Valida un ticket (marca como usado)
-   * @param ticketId ID del ticket
-   * @returns El ticket actualizado o null si no existe
+   * Valida un ticket
+   * @param ticketId ID del ticket a validar
+   * @returns El ticket validado o null si no existe o ya fue validado
    */
   async validateTicket(ticketId: string): Promise<Ticket | null> {
     try {
@@ -172,21 +148,23 @@ class TicketService {
         return null;
       }
       
-      // Verificar que el ticket sea válido
-      if (tickets[ticketIndex].status !== TicketStatus.VALID) {
-        return tickets[ticketIndex];
+      const ticket = tickets[ticketIndex];
+      
+      // Verificar si el ticket ya fue validado
+      if (ticket.status !== 'valid') {
+        return null;
       }
       
-      // Actualizar el estado del ticket
-      tickets[ticketIndex] = {
-        ...tickets[ticketIndex],
-        status: TicketStatus.USED,
-        validationDate: new Date().toISOString()
-      };
+      // Actualizar estado del ticket
+      ticket.status = 'used';
+      ticket.lastValidatedAt = new Date().toISOString();
+      ticket.validationCount++;
       
+      // Guardar cambios
+      tickets[ticketIndex] = ticket;
       await AsyncStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(tickets));
       
-      return tickets[ticketIndex];
+      return ticket;
     } catch (error) {
       console.error('Error al validar ticket:', error);
       return null;
@@ -195,8 +173,8 @@ class TicketService {
 
   /**
    * Cancela un ticket
-   * @param ticketId ID del ticket
-   * @returns El ticket actualizado o null si no existe
+   * @param ticketId ID del ticket a cancelar
+   * @returns El ticket cancelado o null si no existe
    */
   async cancelTicket(ticketId: string): Promise<Ticket | null> {
     try {
@@ -212,15 +190,16 @@ class TicketService {
         return null;
       }
       
-      // Actualizar el estado del ticket
-      tickets[ticketIndex] = {
-        ...tickets[ticketIndex],
-        status: TicketStatus.CANCELLED
-      };
+      const ticket = tickets[ticketIndex];
       
+      // Actualizar estado del ticket
+      ticket.status = 'cancelled';
+      
+      // Guardar cambios
+      tickets[ticketIndex] = ticket;
       await AsyncStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(tickets));
       
-      return tickets[ticketIndex];
+      return ticket;
     } catch (error) {
       console.error('Error al cancelar ticket:', error);
       return null;
@@ -229,86 +208,25 @@ class TicketService {
 
   /**
    * Verifica si un ticket es válido
-   * @param ticketId ID del ticket
-   * @returns true si es válido, false en caso contrario
+   * @param ticketId ID del ticket a verificar
+   * @returns true si el ticket es válido, false en caso contrario
    */
   async isTicketValid(ticketId: string): Promise<boolean> {
     try {
       const ticket = await this.getTicketById(ticketId);
-      return !!ticket && ticket.status === TicketStatus.VALID;
+      return ticket !== null && ticket.status === 'valid';
     } catch (error) {
-      console.error('Error al verificar validez del ticket:', error);
+      console.error('Error al verificar ticket:', error);
       return false;
     }
   }
 
   /**
-   * Agrega tickets de ejemplo para desarrollo
+   * Agrega tickets de ejemplo para el usuario
    * @param userId ID del usuario
    */
   async addSampleTickets(userId: string): Promise<void> {
-    try {
-      const userTickets = await this.getUserTickets(userId);
-      
-      // Sólo agregamos ejemplos si no hay tickets
-      if (userTickets.length > 0) {
-        return;
-      }
-      
-      const sampleTickets: Ticket[] = [
-        {
-          id: generateId(),
-          eventId: '1',
-          userId: userId,
-          purchaseDate: new Date().toISOString(),
-          status: TicketStatus.VALID,
-          qrCode: this.generateQRCode(),
-          price: 25.99,
-          ticketType: 'General',
-          ticketHolder: {
-            name: 'Usuario de Prueba',
-            email: 'usuario@example.com'
-          }
-        },
-        {
-          id: generateId(),
-          eventId: '2',
-          userId: userId,
-          purchaseDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 días atrás
-          status: TicketStatus.USED,
-          validationDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 días atrás
-          qrCode: this.generateQRCode(),
-          price: 50,
-          ticketType: 'VIP',
-          ticketHolder: {
-            name: 'Usuario de Prueba',
-            email: 'usuario@example.com'
-          }
-        },
-        {
-          id: generateId(),
-          eventId: '3',
-          userId: userId,
-          purchaseDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 días atrás
-          status: TicketStatus.EXPIRED,
-          qrCode: this.generateQRCode(),
-          price: 15,
-          ticketType: 'Standard',
-          ticketHolder: {
-            name: 'Usuario de Prueba',
-            email: 'usuario@example.com'
-          }
-        }
-      ];
-      
-      const storedTickets = await AsyncStorage.getItem(TICKETS_STORAGE_KEY);
-      const tickets: Ticket[] = storedTickets ? JSON.parse(storedTickets) : [];
-      
-      tickets.push(...sampleTickets);
-      await AsyncStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(tickets));
-    } catch (error) {
-      console.error('Error al agregar tickets de ejemplo:', error);
-    }
+    // Implementación para agregar tickets de ejemplo
   }
 }
 

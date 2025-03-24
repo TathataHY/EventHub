@@ -4,4 +4,5 @@
 
 export { TicketValidationScreen } from './TicketValidationScreen';
 export { UserTicketsScreen } from './UserTicketsScreen';
-export { TicketDetailsScreen } from './TicketDetailsScreen'; 
+export { TicketDetailsScreen } from './TicketDetailsScreen';
+export { TicketDetailScreen } from './TicketDetailScreen'; 

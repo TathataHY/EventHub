@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import theme from '../../theme';
-import { notificationService } from '../../services/notification.service';
+import { useTheme } from '../../../shared/hooks/useTheme';
+import { notificationService } from '@modules/notifications/services';
 
 interface NotificationBadgeProps {
   onPressNotification?: () => void;
@@ -14,6 +14,7 @@ export const NotificationBadge: React.FC<NotificationBadgeProps> = ({
 }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const router = useRouter();
+  const { theme } = useTheme();
 
   useEffect(() => {
     loadUnreadCount();
@@ -49,7 +50,7 @@ export const NotificationBadge: React.FC<NotificationBadgeProps> = ({
       <FontAwesome name="bell-o" size={24} color={theme.colors.text.primary} />
       
       {unreadCount > 0 && (
-        <View style={styles.badge}>
+        <View style={[styles.badge, { backgroundColor: theme.colors.error.main }]}>
           <Text style={styles.badgeText}>
             {unreadCount > 99 ? '99+' : unreadCount}
           </Text>
@@ -72,7 +73,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -5,
     right: -5,
-    backgroundColor: theme.colors.error.main,
     borderRadius: 10,
     minWidth: 20,
     height: 20,

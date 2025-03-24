@@ -12,16 +12,24 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { UserAvatar, UserStats, InterestsList, FollowButton } from '../components';
 import { userService } from '../services';
-import { PublicUserProfile } from '../types';
-import { colors } from '@theme';
-import { useNavigation } from '@react-navigation/native';
+import { PublicUserProfile, UserProfile } from '../types';
+import { colors } from '@theme/base/colors';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useTheme } from '@shared/hooks/useTheme';
+import { getColorValue } from '@theme/theme.types';
+import { ProfileHeader } from '@modules/users/components/ProfileHeader';
+import { EventList } from '@modules/events/components/EventList';
 
-interface UserProfileScreenProps {
+// Tipo para los parámetros de la ruta
+type UserProfileRouteParams = {
   userId: string;
-}
+};
 
-export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({ userId }) => {
+export const UserProfileScreen: React.FC = () => {
+  const route = useRoute<RouteProp<Record<string, UserProfileRouteParams>, string>>();
+  const { userId } = route.params || {};
   const navigation = useNavigation();
+  const { theme } = useTheme();
   const [user, setUser] = useState<PublicUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,10 +40,25 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({ userId }) 
     try {
       setError(null);
       const profile = await userService.getUserProfile(userId);
-      setUser(profile);
+      // Convertir el perfil recibido a PublicUserProfile usando un objeto temporal
+      const publicProfile: PublicUserProfile = {
+        id: profile.id,
+        username: profile.username || '',
+        fullName: profile.fullName || profile.name || '',
+        photoURL: profile.photoURL || profile.profilePicture,
+        bio: profile.bio,
+        location: profile.location,
+        interests: profile.interests || [],
+        followersCount: typeof profile.followers === 'object' && profile.followers ? profile.followers.length : 0,
+        followingCount: typeof profile.following === 'object' && profile.following ? profile.following.length : 0,
+        eventsAttended: profile.stats?.eventsAttended || 0,
+        eventsOrganized: profile.stats?.eventsCreated || 0,
+        createdAt: profile.createdAt
+      };
+      setUser(publicProfile);
     } catch (err) {
-      console.error('Error al cargar perfil de usuario:', err);
-      setError('No se pudo cargar el perfil del usuario');
+      console.error('Error al cargar perfil:', err);
+      setError('No se pudo cargar el perfil de usuario');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -175,19 +198,18 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({ userId }) 
               );
             }}
           >
-            <Ionicons name="ellipsis-vertical" size={24} color={colors.textDark} />
+            <Ionicons name="ellipsis-vertical" size={24} color={getColorValue(theme.colors.text.primary)} />
           </TouchableOpacity>
         )
       });
     }
-  }, [user, navigation, handleReport, handleBlock]);
+  }, [user, navigation, handleReport, handleBlock, theme]);
 
   // Mostrar indicador de carga
   if (loading && !user) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Cargando perfil...</Text>
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color={getColorValue(theme.colors.primary.main)} />
       </View>
     );
   }
@@ -195,8 +217,10 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({ userId }) 
   // Mostrar mensaje de error
   if (error && !user) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>{error}</Text>
+      <View style={[styles.container, styles.centered]}>
+        <Text style={[styles.errorText, { color: getColorValue(theme.colors.error.main) }]}>
+          {error}
+        </Text>
         <TouchableOpacity
           style={styles.retryButton}
           onPress={loadUserProfile}
@@ -212,90 +236,83 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({ userId }) 
     return null;
   }
 
+  // Extraer la ubicación formateada
+  const getFormattedLocation = () => {
+    if (!user.location) return '';
+    
+    if (typeof user.location === 'string') {
+      return user.location;
+    }
+    
+    // Si es un objeto de ubicación
+    const parts = [];
+    if (user.location.city) parts.push(user.location.city);
+    if (user.location.state) parts.push(user.location.state);
+    if (user.location.country) parts.push(user.location.country);
+    
+    return parts.join(', ');
+  };
+
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          colors={[colors.primary]}
+    <View style={styles.container}>
+      <ScrollView>
+        <ProfileHeader
+          user={user}
+          name={user.fullName || ''}
+          username={user.username || ''}
+          bio={user.bio}
+          location={getFormattedLocation()}
         />
-      }
-    >
-      {/* Header con avatar y nombre */}
-      <View style={styles.profileHeader}>
-        <View style={styles.userInfo}>
-          <UserAvatar 
-            photoURL={user.photoURL}
-            size={100}
-          />
-          
-          <View style={styles.nameContainer}>
-            <Text style={styles.fullName}>{user.fullName}</Text>
-            <Text style={styles.username}>@{user.username}</Text>
-          </View>
+        
+        <View style={styles.actionContainer}>
+          <FollowButton userId={user.id} isFollowing={user.isFollowing} />
         </View>
         
-        <FollowButton 
-          userId={user.id}
-          isFollowing={user.isFollowing || false}
-          onFollowPress={handleFollow}
-          onUnfollowPress={handleUnfollow}
+        <UserStats
+          eventsCreated={user.eventsOrganized}
+          eventsAttended={user.eventsAttended}
+          followersCount={user.followersCount}
+          followingCount={user.followingCount}
         />
-      </View>
-      
-      {/* Estadísticas del usuario */}
-      <UserStats
-        followersCount={user.followersCount}
-        followingCount={user.followingCount}
-        eventsAttended={user.eventsAttended}
-        eventsOrganized={user.eventsOrganized}
-      />
-      
-      {/* Intereses del usuario */}
-      <InterestsList interests={user.interests} />
-      
-      {/* Bio */}
-      {user.bio && (
-        <View style={styles.bioContainer}>
-          <Text style={styles.bioLabel}>Acerca de</Text>
-          <Text style={styles.bioText}>{user.bio}</Text>
-        </View>
-      )}
-      
-      {/* Ubicación */}
-      {user.location && (Object.values(user.location).some(val => val)) && (
-        <View style={styles.locationContainer}>
-          <Text style={styles.locationLabel}>Ubicación</Text>
-          <View style={styles.locationRow}>
-            <Ionicons name="location" size={16} color={colors.textLight} style={styles.locationIcon} />
-            <Text style={styles.locationText}>
-              {[user.location.city, user.location.state, user.location.country]
-                .filter(Boolean)
-                .join(', ')}
+        
+        {user.interests && user.interests.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: getColorValue(theme.colors.text.primary) }]}>
+              Intereses
             </Text>
+            <InterestsList 
+              interests={
+                // Asegurar que interests es un array de strings
+                Array.isArray(user.interests) 
+                  ? user.interests.map(i => typeof i === 'string' ? i : String(i))
+                  : []
+              } 
+            />
           </View>
+        )}
+        
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: getColorValue(theme.colors.text.primary) }]}>
+            Eventos creados
+          </Text>
+          <EventList 
+            events={[]} // Aquí deberías cargar los eventos del usuario
+            loading={false}
+            emptyMessage="Este usuario aún no ha creado eventos"
+          />
         </View>
-      )}
-      
-      {/* Espacio al final */}
-      <View style={styles.footer} />
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
-  centerContainer: {
-    flex: 1,
+  centered: {
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f8f9fa',
   },
   headerButton: {
     padding: 8,
@@ -303,99 +320,35 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: colors.textDark,
+    color: colors.text,
   },
   errorText: {
     fontSize: 16,
-    color: colors.danger,
+    color: colors.error.main,
     textAlign: 'center',
     marginBottom: 16,
   },
   retryButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primary.main,
     borderRadius: 8,
   },
   retryButtonText: {
-    color: 'white',
+    color: colors.common.white,
     fontWeight: '500',
   },
-  profileHeader: {
-    padding: 20,
-  },
-  userInfo: {
+  actionContainer: {
+    padding: 16,
     flexDirection: 'row',
-    marginBottom: 16,
-  },
-  nameContainer: {
-    marginLeft: 16,
-    flex: 1,
     justifyContent: 'center',
   },
-  fullName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.textDark,
-  },
-  username: {
-    fontSize: 16,
-    color: colors.textLight,
-    marginTop: 4,
-  },
-  bioContainer: {
-    backgroundColor: 'white',
-    borderRadius: 8,
+  section: {
     padding: 16,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
   },
-  bioLabel: {
-    fontSize: 16,
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: colors.textDark,
-    marginBottom: 8,
-  },
-  bioText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textDark,
-  },
-  locationContainer: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 16,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
-  },
-  locationLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.textDark,
-    marginBottom: 8,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  locationIcon: {
-    marginRight: 8,
-  },
-  locationText: {
-    fontSize: 14,
-    color: colors.textDark,
-  },
-  footer: {
-    height: 32,
+    marginBottom: 12,
   },
 });

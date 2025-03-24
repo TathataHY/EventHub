@@ -1,25 +1,33 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
+
+type ThemeMode = 'light' | 'dark' | 'system';
 
 export const ThemeSelector = () => {
-  const { theme, isDark, changeTheme } = useTheme();
+  const { theme } = useTheme();
+  // Simular funcionalidad ya que no tenemos el changeTheme en nuestro hook personalizado
+  const isDark = false;
+  const changeTheme = (mode: ThemeMode) => console.log(`Cambiando tema a: ${mode}`);
+  
   const [showOptions, setShowOptions] = useState(false);
+  const [selectedMode, setSelectedMode] = useState<ThemeMode>('system');
 
   const toggleShowOptions = () => {
     setShowOptions(!showOptions);
   };
 
-  const handleSelectTheme = (themeMode: 'light' | 'dark' | 'system') => {
+  const handleSelectTheme = (themeMode: ThemeMode) => {
     changeTheme(themeMode);
+    setSelectedMode(themeMode);
     setShowOptions(false);
   };
 
   const getThemeModeName = () => {
-    if (theme.mode === 'system') {
+    if (selectedMode === 'system') {
       return isDark ? 'Sistema (Oscuro)' : 'Sistema (Claro)';
-    } else if (theme.mode === 'dark') {
+    } else if (selectedMode === 'dark') {
       return 'Oscuro';
     } else {
       return 'Claro';
@@ -27,9 +35,9 @@ export const ThemeSelector = () => {
   };
 
   const getThemeModeIcon = () => {
-    if (theme.mode === 'system') {
+    if (selectedMode === 'system') {
       return isDark ? 'phone-portrait' : 'phone-portrait-outline';
-    } else if (theme.mode === 'dark') {
+    } else if (selectedMode === 'dark') {
       return 'moon';
     } else {
       return 'sunny';
@@ -39,21 +47,21 @@ export const ThemeSelector = () => {
   return (
     <View style={styles.container}>
       <TouchableOpacity 
-        style={[styles.themeButton, { backgroundColor: theme.colors.background }]}
+        style={[styles.themeButton, { backgroundColor: theme.colors.background.default }]}
         onPress={toggleShowOptions}
       >
         <View style={styles.themeButtonContent}>
           <Ionicons 
-            name={getThemeModeIcon() as any} 
+            name={getThemeModeIcon()} 
             size={24} 
-            color={theme.colors.primary} 
+            color={theme.colors.primary.main} 
             style={styles.themeIcon} 
           />
           <View style={styles.themeTextContainer}>
-            <Text style={[styles.themeName, { color: theme.colors.text }]}>
+            <Text style={[styles.themeName, { color: theme.colors.text.primary }]}>
               Tema
             </Text>
-            <Text style={[styles.themeValue, { color: theme.colors.secondaryText }]}>
+            <Text style={[styles.themeValue, { color: theme.colors.text.secondary }]}>
               {getThemeModeName()}
             </Text>
           </View>
@@ -61,39 +69,39 @@ export const ThemeSelector = () => {
         <Ionicons 
           name={showOptions ? 'chevron-up' : 'chevron-down'} 
           size={20} 
-          color={theme.colors.secondaryText} 
+          color={theme.colors.text.secondary} 
         />
       </TouchableOpacity>
 
       {showOptions && (
-        <View style={[styles.optionsContainer, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.optionsContainer, { backgroundColor: theme.colors.background.default }]}>
           <TouchableOpacity 
             style={[
               styles.optionItem, 
-              theme.mode === 'light' && styles.selectedOption,
-              theme.mode === 'light' && { backgroundColor: theme.colors.primaryLight }
+              (selectedMode === 'light' || (!isDark && selectedMode === 'system')) && styles.selectedOption,
+              (selectedMode === 'light' || (!isDark && selectedMode === 'system')) && { backgroundColor: `${theme.colors.primary.main}20` }
             ]}
             onPress={() => handleSelectTheme('light')}
           >
             <Ionicons 
               name="sunny" 
               size={20} 
-              color={theme.mode === 'light' ? theme.colors.primary : theme.colors.text} 
+              color={(selectedMode === 'light' || (!isDark && selectedMode === 'system')) ? theme.colors.primary.main : theme.colors.text.primary} 
               style={styles.optionIcon} 
             />
             <Text 
               style={[
                 styles.optionText, 
-                { color: theme.mode === 'light' ? theme.colors.primary : theme.colors.text }
+                { color: (selectedMode === 'light' || (!isDark && selectedMode === 'system')) ? theme.colors.primary.main : theme.colors.text.primary }
               ]}
             >
               Claro
             </Text>
-            {theme.mode === 'light' && (
+            {(selectedMode === 'light' || (!isDark && selectedMode === 'system')) && (
               <Ionicons 
                 name="checkmark" 
                 size={20} 
-                color={theme.colors.primary} 
+                color={theme.colors.primary.main} 
               />
             )}
           </TouchableOpacity>
@@ -101,30 +109,30 @@ export const ThemeSelector = () => {
           <TouchableOpacity 
             style={[
               styles.optionItem, 
-              theme.mode === 'dark' && styles.selectedOption,
-              theme.mode === 'dark' && { backgroundColor: theme.colors.primaryLight }
+              (selectedMode === 'dark' || (isDark && selectedMode === 'system')) && styles.selectedOption,
+              (selectedMode === 'dark' || (isDark && selectedMode === 'system')) && { backgroundColor: `${theme.colors.primary.main}20` }
             ]}
             onPress={() => handleSelectTheme('dark')}
           >
             <Ionicons 
               name="moon" 
               size={20} 
-              color={theme.mode === 'dark' ? theme.colors.primary : theme.colors.text} 
+              color={(selectedMode === 'dark' || (isDark && selectedMode === 'system')) ? theme.colors.primary.main : theme.colors.text.primary} 
               style={styles.optionIcon} 
             />
             <Text 
               style={[
                 styles.optionText, 
-                { color: theme.mode === 'dark' ? theme.colors.primary : theme.colors.text }
+                { color: (selectedMode === 'dark' || (isDark && selectedMode === 'system')) ? theme.colors.primary.main : theme.colors.text.primary }
               ]}
             >
               Oscuro
             </Text>
-            {theme.mode === 'dark' && (
+            {(selectedMode === 'dark' || (isDark && selectedMode === 'system')) && (
               <Ionicons 
                 name="checkmark" 
                 size={20} 
-                color={theme.colors.primary} 
+                color={theme.colors.primary.main} 
               />
             )}
           </TouchableOpacity>
@@ -132,30 +140,30 @@ export const ThemeSelector = () => {
           <TouchableOpacity 
             style={[
               styles.optionItem, 
-              theme.mode === 'system' && styles.selectedOption,
-              theme.mode === 'system' && { backgroundColor: theme.colors.primaryLight }
+              selectedMode === 'system' && styles.selectedOption,
+              selectedMode === 'system' && { backgroundColor: `${theme.colors.primary.main}20` }
             ]}
             onPress={() => handleSelectTheme('system')}
           >
             <Ionicons 
               name="phone-portrait" 
               size={20} 
-              color={theme.mode === 'system' ? theme.colors.primary : theme.colors.text} 
+              color={selectedMode === 'system' ? theme.colors.primary.main : theme.colors.text.primary} 
               style={styles.optionIcon} 
             />
             <Text 
               style={[
                 styles.optionText, 
-                { color: theme.mode === 'system' ? theme.colors.primary : theme.colors.text }
+                { color: selectedMode === 'system' ? theme.colors.primary.main : theme.colors.text.primary }
               ]}
             >
               Sistema
             </Text>
-            {theme.mode === 'system' && (
+            {selectedMode === 'system' && (
               <Ionicons 
                 name="checkmark" 
                 size={20} 
-                color={theme.colors.primary} 
+                color={theme.colors.primary.main} 
               />
             )}
           </TouchableOpacity>

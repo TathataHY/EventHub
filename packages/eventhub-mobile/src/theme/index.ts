@@ -10,10 +10,14 @@ import { colors } from './base/colors';
 import { typography } from './base/typography';
 import { spacing } from './base/spacing';
 import { shadows } from './base/shadows';
+import { AppColors, AppTypography, AppSpacing, getColorValue } from './theme.types';
 
 // Importar variantes de tema
 import { lightTheme } from './variants/light';
 import { darkTheme } from './variants/dark';
+
+// Importar helpers
+import { convertTypographyStyle, convertFontWeight } from './typography.helper';
 
 // Definimos los radios de borde comunes
 const borderRadius = {
@@ -59,4 +63,71 @@ export {
 };
 
 // Exportar tema predeterminado (claro)
-export default theme; 
+export default theme;
+
+// Aliases para compatibilidad con código existente
+export const appColors = colors;
+export const appTypography = typography;
+export const appSpacing = spacing;
+
+// Tamaños de borde
+export const appBorderRadius = {
+  xs: 2,
+  sm: 4,
+  md: 8,
+  lg: 12,
+  xl: 16,
+  full: 9999,
+};
+
+// Sombras
+export const appShadows = {
+  sm: {
+    shadowColor: appColors.common.black,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  md: {
+    shadowColor: appColors.common.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  lg: {
+    shadowColor: appColors.common.black,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+};
+
+// Exportamos elementos UI adicionales
+export const appTheme = {
+  colors: {
+    ...appColors,
+    divider: appColors.grey[300],
+    accent: appColors.primary.main
+  },
+  typography: appTypography,
+  spacing: appSpacing,
+  borderRadius: appBorderRadius,
+  shadows: appShadows,
+};
+
+// Exportamos tipos
+export type {
+  AppColors,
+  AppTypography,
+  AppSpacing
+};
+
+// Exportamos funciones de utilidad
+export { 
+  getColorValue,
+  convertTypographyStyle,
+  convertFontWeight
+}; 

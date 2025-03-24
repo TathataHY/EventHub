@@ -15,48 +15,31 @@ import { useRouter } from 'expo-router';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-import { useTheme } from '../../../core/theme';
+// Importamos las utilidades del core
+import { useTheme } from '@core/context/ThemeContext';
 import { ticketService } from '../services';
-import { authService } from '../../../core/services';
+import { useAuth } from '@modules/auth/hooks/useAuth';
 import { Divider } from '../../../shared/components';
-
-type Ticket = {
-  id: string;
-  eventId: string;
-  userId: string;
-  ticketNumber: string;
-  ticketType: string;
-  seat?: string;
-  price: number;
-  status: 'valid' | 'used' | 'expired' | 'cancelled';
-  purchaseDate: string;
-  qrCode: string;
-  event: {
-    id: string;
-    title: string;
-    startDate: string;
-    endDate: string;
-    location: string;
-    image?: string;
-  };
-};
+import { Ticket, TicketStatus } from '../types';
 
 /**
  * Pantalla para mostrar los tickets del usuario actual
  */
 export const UserTicketsScreen = () => {
-  const { colors } = useTheme();
+  const { theme } = useTheme();
   const router = useRouter();
+  const { currentUser } = useAuth();
   
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('upcoming');
+  const [error, setError] = useState<string | null>(null);
   
   // Cargar tickets del usuario
   useEffect(() => {
     loadUserTickets();
-  }, []);
+  }, [currentUser]);
   
   // Cargar tickets del usuario
   const loadUserTickets = async () => {
@@ -64,18 +47,17 @@ export const UserTicketsScreen = () => {
       setIsLoading(true);
       
       // Verificar si el usuario está autenticado
-      const user = await authService.getCurrentUser();
-      if (!user) {
+      if (!currentUser) {
         router.replace('/auth/login');
         return;
       }
       
       // Obtener tickets del usuario
-      const userTickets = await ticketService.getUserTickets(user.id);
+      const userTickets = await ticketService.getUserTickets((currentUser as any).id);
       setTickets(userTickets);
-    } catch (error) {
-      console.error('Error al cargar tickets:', error);
-      Alert.alert('Error', 'No se pudieron cargar tus tickets');
+    } catch (error: any) {
+      console.error('Error loading user tickets:', error);
+      setError(error.message || 'No se pudieron cargar los tickets');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -95,12 +77,12 @@ export const UserTicketsScreen = () => {
     switch (filter) {
       case 'upcoming':
         return tickets.filter(ticket => 
-          new Date(ticket.event.startDate) > now && 
+          ticket.event?.startDate && new Date(ticket.event.startDate) > now && 
           ticket.status !== 'cancelled'
         );
       case 'past':
         return tickets.filter(ticket => 
-          new Date(ticket.event.endDate) < now || 
+          (ticket.event?.endDate && new Date(ticket.event.endDate) < now) || 
           ticket.status === 'used'
         );
       default:
@@ -133,98 +115,109 @@ export const UserTicketsScreen = () => {
     router.push(`/tickets/${ticketId}`);
   };
   
+  // Obtener texto de estado
+  const getStatusText = (status: TicketStatus): string => {
+    switch (status) {
+      case 'valid':
+        return 'Válido';
+      case 'used':
+        return 'Utilizado';
+      case 'cancelled':
+        return 'Cancelado';
+      case 'expired':
+        return 'Expirado';
+      default:
+        return 'Desconocido';
+    }
+  };
+  
+  // Obtener color de estado
+  const getStatusColor = (status: string): string => {
+    switch (status) {
+      case 'valid':
+        return theme.colors.success.main;
+      case 'pending':
+        return theme.colors.warning.main;
+      case 'used':
+        return theme.colors.error.main;
+      case 'expired':
+        return theme.colors.error.main;
+      default:
+        return theme.colors.text.secondary;
+    }
+  };
+  
   // Renderizar un ticket
   const renderTicket = ({ item }: { item: Ticket }) => (
     <TouchableOpacity
-      style={[styles.ticketItem, { backgroundColor: colors.card }]}
+      style={[styles.ticketItem, {
+        backgroundColor: theme.colors.background.paper,
+        borderColor: theme.colors.grey[300]
+      }]}
       onPress={() => openTicketDetails(item.id)}
     >
       {/* Imagen del evento */}
       <View style={styles.ticketImageContainer}>
-        {item.event.image ? (
+        {item.event?.image ? (
           <Image
             source={{ uri: item.event.image }}
             style={styles.ticketImage}
             resizeMode="cover"
           />
         ) : (
-          <View style={[styles.placeholderImage, { backgroundColor: colors.border }]}>
-            <Ionicons name="calendar-outline" size={32} color={colors.secondaryText} />
+          <View style={[
+            styles.ticketImagePlaceholder, 
+            { backgroundColor: theme.colors.primary.light }
+          ]}>
+            <Ionicons name="ticket-outline" size={32} color={theme.colors.primary.main} />
           </View>
         )}
       </View>
       
       {/* Detalles del ticket */}
       <View style={styles.ticketDetails}>
-        {/* Título y estado */}
-        <View style={styles.titleRow}>
-          <Text
-            style={[styles.eventTitle, { color: colors.text }]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {item.event.title}
-          </Text>
+        {/* Información del evento */}
+        <Text style={[styles.eventTitle, { color: theme.colors.text.primary }]} numberOfLines={1}>
+          {item.event?.title || 'Evento sin título'}
+        </Text>
+        
+        <View style={styles.ticketMeta}>
+          {/* Fecha */}
+          <View style={styles.metaItem}>
+            <Ionicons name="calendar-outline" size={14} color={theme.colors.primary.main} />
+            <Text style={[styles.metaText, { color: theme.colors.text.secondary }]}>
+              {item.event?.startDate ? formatDate(item.event.startDate) : 'Fecha no disponible'}
+            </Text>
+          </View>
           
-          {/* Indicador de estado */}
-          <View style={styles.statusContainer}>
-            {item.status === 'valid' && (
-              <View style={[styles.statusBadge, { backgroundColor: colors.success + '20' }]}>
-                <Text style={[styles.statusText, { color: colors.success }]}>Válido</Text>
-              </View>
-            )}
-            
-            {item.status === 'used' && (
-              <View style={[styles.statusBadge, { backgroundColor: colors.secondaryText + '20' }]}>
-                <Text style={[styles.statusText, { color: colors.secondaryText }]}>Usado</Text>
-              </View>
-            )}
-            
-            {item.status === 'expired' && (
-              <View style={[styles.statusBadge, { backgroundColor: colors.error + '20' }]}>
-                <Text style={[styles.statusText, { color: colors.error }]}>Expirado</Text>
-              </View>
-            )}
-            
-            {item.status === 'cancelled' && (
-              <View style={[styles.statusBadge, { backgroundColor: colors.error + '20' }]}>
-                <Text style={[styles.statusText, { color: colors.error }]}>Cancelado</Text>
-              </View>
-            )}
+          {/* Ubicación */}
+          {item.event?.location && (
+            <View style={styles.metaItem}>
+              <Ionicons name="location-outline" size={14} color={theme.colors.primary.main} />
+              <Text style={[styles.metaText, { color: theme.colors.text.secondary }]} numberOfLines={1}>
+                {item.event.location}
+              </Text>
+            </View>
+          )}
+          
+          {/* Tipo de ticket */}
+          <View style={styles.metaItem}>
+            <Ionicons name="pricetag-outline" size={14} color={theme.colors.primary.main} />
+            <Text style={[styles.metaText, { color: theme.colors.text.secondary }]}>
+              {item.ticketType}{item.seat ? ` · Asiento: ${item.seat}` : ''}
+            </Text>
           </View>
         </View>
         
-        {/* Fecha y hora */}
-        <View style={styles.detailRow}>
-          <Ionicons name="calendar-outline" size={16} color={colors.secondaryText} />
-          <Text style={[styles.detailText, { color: colors.secondaryText }]}>
-            {formatDate(item.event.startDate)} · {formatTime(item.event.startDate)}
+        {/* Estado del ticket */}
+        <View style={[
+          styles.statusBadge, 
+          { backgroundColor: getStatusColor(item.status) + '20' }
+        ]}>
+          <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
+            {getStatusText(item.status)}
           </Text>
         </View>
-        
-        {/* Ubicación */}
-        <View style={styles.detailRow}>
-          <Ionicons name="location-outline" size={16} color={colors.secondaryText} />
-          <Text 
-            style={[styles.detailText, { color: colors.secondaryText }]}
-            numberOfLines={1}
-          >
-            {item.event.location}
-          </Text>
-        </View>
-        
-        {/* Tipo de ticket */}
-        <View style={styles.detailRow}>
-          <Ionicons name="pricetag-outline" size={16} color={colors.secondaryText} />
-          <Text style={[styles.detailText, { color: colors.secondaryText }]}>
-            {item.ticketType}{item.seat ? ` · Asiento: ${item.seat}` : ''}
-          </Text>
-        </View>
-      </View>
-      
-      {/* Icono de flecha */}
-      <View style={styles.arrowContainer}>
-        <Ionicons name="chevron-forward" size={20} color={colors.secondaryText} />
       </View>
     </TouchableOpacity>
   );
@@ -237,11 +230,11 @@ export const UserTicketsScreen = () => {
   // Renderizar mensaje cuando no hay tickets
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="ticket-outline" size={64} color={colors.secondaryText} />
-      <Text style={[styles.emptyTitle, { color: colors.text }]}>
+      <Ionicons name="ticket-outline" size={64} color={theme.colors.text.secondary} />
+      <Text style={[styles.emptyTitle, { color: theme.colors.text.primary }]}>
         No tienes tickets {filter === 'upcoming' ? 'próximos' : filter === 'past' ? 'pasados' : ''}
       </Text>
-      <Text style={[styles.emptySubtitle, { color: colors.secondaryText }]}>
+      <Text style={[styles.emptySubtitle, { color: theme.colors.text.secondary }]}>
         {filter === 'upcoming' 
           ? 'Compra tickets para próximos eventos' 
           : filter === 'past' 
@@ -250,7 +243,7 @@ export const UserTicketsScreen = () => {
       </Text>
       
       <TouchableOpacity
-        style={[styles.browseButton, { backgroundColor: colors.primary }]}
+        style={[styles.browseButton, { backgroundColor: theme.colors.primary.main }]}
         onPress={() => router.push('/')}
       >
         <Text style={styles.browseButtonText}>
@@ -261,15 +254,23 @@ export const UserTicketsScreen = () => {
   );
   
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background.default }]}>
       {/* Filtros */}
-      <View style={[styles.filterContainer, { backgroundColor: colors.card }]}>
+      <View 
+        style={[
+          styles.filterContainer, 
+          { 
+            backgroundColor: theme.colors.background.paper,
+            borderColor: theme.colors.grey[300]
+          }
+        ]}
+      >
         <TouchableOpacity
           style={[
             styles.filterButton,
             filter === 'upcoming' && { 
-              backgroundColor: colors.primary + '20',
-              borderColor: colors.primary
+              backgroundColor: theme.colors.primary.light,
+              borderColor: theme.colors.primary.main
             }
           ]}
           onPress={() => setFilter('upcoming')}
@@ -277,7 +278,7 @@ export const UserTicketsScreen = () => {
           <Text
             style={[
               styles.filterText,
-              { color: filter === 'upcoming' ? colors.primary : colors.text }
+              { color: filter === 'upcoming' ? theme.colors.primary.main : theme.colors.text.primary }
             ]}
           >
             Próximos
@@ -290,8 +291,8 @@ export const UserTicketsScreen = () => {
           style={[
             styles.filterButton, 
             filter === 'past' && { 
-              backgroundColor: colors.primary + '20',
-              borderColor: colors.primary
+              backgroundColor: theme.colors.primary.light,
+              borderColor: theme.colors.primary.main
             }
           ]}
           onPress={() => setFilter('past')}
@@ -299,7 +300,7 @@ export const UserTicketsScreen = () => {
           <Text
             style={[
               styles.filterText,
-              { color: filter === 'past' ? colors.primary : colors.text }
+              { color: filter === 'past' ? theme.colors.primary.main : theme.colors.text.primary }
             ]}
           >
             Pasados
@@ -312,8 +313,8 @@ export const UserTicketsScreen = () => {
           style={[
             styles.filterButton,
             filter === 'all' && { 
-              backgroundColor: colors.primary + '20',
-              borderColor: colors.primary
+              backgroundColor: theme.colors.primary.light,
+              borderColor: theme.colors.primary.main
             }
           ]}
           onPress={() => setFilter('all')}
@@ -321,7 +322,7 @@ export const UserTicketsScreen = () => {
           <Text
             style={[
               styles.filterText,
-              { color: filter === 'all' ? colors.primary : colors.text }
+              { color: filter === 'all' ? theme.colors.primary.main : theme.colors.text.primary }
             ]}
           >
             Todos
@@ -332,8 +333,8 @@ export const UserTicketsScreen = () => {
       {/* Lista de tickets */}
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.secondaryText }]}>
+          <ActivityIndicator size="large" color={theme.colors.primary.main} />
+          <Text style={[styles.loadingText, { color: theme.colors.text.secondary }]}>
             Cargando tickets...
           </Text>
         </View>
@@ -350,8 +351,8 @@ export const UserTicketsScreen = () => {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              colors={[colors.primary]}
-              tintColor={colors.primary}
+              colors={[theme.colors.primary.main]}
+              tintColor={theme.colors.primary.main}
             />
           }
         />
@@ -410,7 +411,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  placeholderImage: {
+  ticketImagePlaceholder: {
     width: '100%',
     height: '100%',
     alignItems: 'center',
@@ -420,22 +421,28 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 12,
   },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
   eventTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     flex: 1,
     marginRight: 8,
   },
-  statusContainer: {
-    flexShrink: 0,
+  ticketMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  metaText: {
+    fontSize: 12,
+    marginLeft: 6,
   },
   statusBadge: {
+    flexShrink: 0,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -443,19 +450,6 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 10,
     fontWeight: '600',
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  detailText: {
-    fontSize: 12,
-    marginLeft: 6,
-  },
-  arrowContainer: {
-    justifyContent: 'center',
-    paddingRight: 12,
   },
   separator: {
     height: 16,

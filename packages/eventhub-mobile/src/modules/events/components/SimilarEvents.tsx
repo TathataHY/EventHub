@@ -11,14 +11,19 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '@core/context/ThemeContext';
 import { EventCard } from './EventCard';
-import { recommendationService } from '../../services/recommendation.service';
-import { authService } from '../../services/auth.service';
+import { Event } from '@modules/events/types';
+import { recommendationService } from '@modules/events/services/recommendation.service';
+import { authService } from '@modules/auth/services/auth.service';
 
 interface SimilarEventsProps {
   currentEventId: string;
   maxEvents?: number;
+}
+
+interface SimilarEvent extends Event {
+  similarityScore?: number;
 }
 
 export const SimilarEvents: React.FC<SimilarEventsProps> = ({
@@ -29,7 +34,7 @@ export const SimilarEvents: React.FC<SimilarEventsProps> = ({
   const router = useRouter();
   
   const [isLoading, setIsLoading] = useState(true);
-  const [similarEvents, setSimilarEvents] = useState<any[]>([]);
+  const [similarEvents, setSimilarEvents] = useState<SimilarEvent[]>([]);
   const [user, setUser] = useState<{ id: string } | null>(null);
   
   useEffect(() => {
@@ -68,17 +73,28 @@ export const SimilarEvents: React.FC<SimilarEventsProps> = ({
     if (user) {
       const event = similarEvents.find(e => e.id === eventId);
       if (event) {
+        let categoryValue = '';
+        
+        // Handle different category formats
+        if (typeof event.category === 'string') {
+          categoryValue = event.category;
+        } else if (event.category && typeof event.category === 'object') {
+          // Using optional chaining and type assertion to avoid type errors
+          const categoryObject = event.category as {name?: string};
+          categoryValue = categoryObject.name || '';
+        }
+
         recommendationService.recordInteraction(
           user.id,
           eventId,
-          event.category,
+          categoryValue,
           'view'
         ).catch(error => console.error('Error al registrar interacción:', error));
       }
     }
     
     // Navegar al evento
-    router.push(`/events/evento/${eventId}`);
+    router.push(`/events/${eventId}`);
   };
   
   // Si no hay eventos similares, no mostrar nada
@@ -88,56 +104,56 @@ export const SimilarEvents: React.FC<SimilarEventsProps> = ({
   
   return (
     <View style={styles.container}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
         Te podría interesar
       </Text>
       
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <ActivityIndicator size="small" color={theme.colors.primary.main} />
         </View>
       ) : (
         <FlatList
           data={similarEvents}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id.toString()}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.eventsList}
           renderItem={({ item }) => (
-            <TouchableOpacity 
-              style={styles.eventCardContainer}
-              onPress={() => navigateToEvent(item.id)}
-            >
-              <EventCard event={item} />
+            <View style={styles.eventCardContainer}>
+              <EventCard 
+                event={item} 
+                onPress={() => navigateToEvent(item.id.toString())}
+              />
               
               {/* Si hay puntuación de similitud, mostrar insignia */}
-              {item.similarityScore > 0 && (
+              {item.similarityScore && item.similarityScore > 0 && (
                 <View 
                   style={[
                     styles.similarityBadge, 
-                    { backgroundColor: theme.colors.card }
+                    { backgroundColor: theme.colors.background.card }
                   ]}
                 >
                   {item.category === similarEvents[0].category && (
                     <View style={styles.reasonContainer}>
-                      <Ionicons name="pricetag" size={12} color={theme.colors.primary} />
-                      <Text style={[styles.reasonText, { color: theme.colors.text }]}>
+                      <Ionicons name="pricetag" size={12} color={theme.colors.primary.main} />
+                      <Text style={[styles.reasonText, { color: theme.colors.text.primary }]}>
                         Misma categoría
                       </Text>
                     </View>
                   )}
                   
-                  {item.organizer === similarEvents[0].organizer && (
+                  {item.organizerId === similarEvents[0].organizerId && (
                     <View style={styles.reasonContainer}>
-                      <Ionicons name="person" size={12} color={theme.colors.primary} />
-                      <Text style={[styles.reasonText, { color: theme.colors.text }]}>
+                      <Ionicons name="person" size={12} color={theme.colors.primary.main} />
+                      <Text style={[styles.reasonText, { color: theme.colors.text.primary }]}>
                         Mismo organizador
                       </Text>
                     </View>
                   )}
                 </View>
               )}
-            </TouchableOpacity>
+            </View>
           )}
         />
       )}

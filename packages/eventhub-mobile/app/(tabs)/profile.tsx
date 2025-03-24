@@ -1,4 +1,4 @@
-import { ProfileScreen } from '../../src/modules/users/screens';
+import { ProfileScreen } from '@modules/users/screens';
 
 /**
  * Página de perfil que utiliza la estructura modular

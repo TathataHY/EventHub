@@ -5,252 +5,281 @@ import {
   Image,
   StyleSheet,
   TouchableOpacity,
-  Dimensions
+  Dimensions,
+  StyleProp,
+  ViewStyle,
+  ColorValue
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Event, EventStatus } from '../types';
-import { colors } from '@theme';
-import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
-import { EventCategory, EventType } from '../types/event.types';
-import { formatDate, formatLocation } from '../../../utils/formatters';
+import { useTheme } from '../../../shared/hooks/useTheme';
+import { getColorValue } from '@theme/theme.types';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { Event, EventLocation } from '../types';
 
-interface EventCardProps {
-  event: Event;
-  onPress?: () => void;
+const { width } = Dimensions.get('window');
+
+// Versión ampliada de EventCardProps para dar soporte a múltiples fuentes
+export interface EventCardProps {
+  event: {
+    id: string | number;
+    title: string;
+    description?: string;
+    imageUrl?: string;
+    image?: string;
+    location?: string | EventLocation;
+    startDate?: string | Date;
+    endDate?: string | Date;
+    date?: string | Date;
+    price?: number | string;
+    category?: string;
+    categories?: string[];
+    attendeesCount?: number;
+    organizerId?: string | number;
+    organizer?: string | { id: string | number; name: string };
+  };
+  style?: StyleProp<ViewStyle>;
+  onPress?: (eventId: string) => void;
+  showDetails?: boolean;
   compact?: boolean;
+  showDistance?: boolean;
+  distance?: number;
 }
 
-export const EventCard: React.FC<EventCardProps> = ({
-  event,
-  onPress,
-  compact = false
+/**
+ * Componente de tarjeta de evento reutilizable
+ */
+export const EventCard: React.FC<EventCardProps> = ({ 
+  event, 
+  style, 
+  onPress, 
+  showDetails = true, 
+  compact = false,
+  showDistance = false,
+  distance
 }) => {
-  // Formatear fecha de forma breve
-  const getFormattedDate = () => {
-    try {
-      const date = new Date(event.startDate);
-      const options = { 
-        day: 'numeric',
-        month: 'short'
-      } as Intl.DateTimeFormatOptions;
-      
-      return date.toLocaleDateString('es-ES', options);
-    } catch (error) {
-      return event.startDate?.toString() || 'Fecha no disponible';
+  const { theme } = useTheme();
+  
+  // Handler para el evento de press con conversión de ID a string
+  const handlePress = () => {
+    if (onPress && event.id) {
+      onPress(String(event.id));
     }
   };
   
-  // Devolver la ubicación formateada
-  const getFormattedLocation = () => {
+  // Formatear fecha
+  const formatDate = (dateString?: string | Date) => {
+    if (!dateString) return 'Fecha no disponible';
+    
+    try {
+      const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+      return format(date, "d MMM", { locale: es });
+    } catch (error) {
+      return 'Fecha inválida';
+    }
+  };
+  
+  // Obtener imagen del evento
+  const getImage = () => {
+    const imageSource = event.imageUrl || event.image;
+    if (!imageSource) {
+      return require('../../../shared/assets/images/event-placeholder.png');
+    }
+    return { uri: imageSource };
+  };
+  
+  // Obtener ubicación del evento
+  const getLocation = () => {
+    if (!event.location) return 'Ubicación no especificada';
+    
     if (typeof event.location === 'string') {
       return event.location;
-    } else if (event.location) {
-      const loc = event.location as any;
-      return loc.city ? loc.city : (loc.address || 'Ubicación no disponible');
     }
-    return 'Ubicación no disponible';
+    
+    // Si es un objeto de ubicación
+    const { name, city, state } = event.location;
+    if (name) return name;
+    return [city, state].filter(Boolean).join(', ') || 'Ubicación no especificada';
   };
   
-  // Verificar si el evento está cancelado
-  const isCancelled = () => {
-    return event.status === EventStatus.CANCELLED;
+  // Formatear precio
+  const formatPrice = () => {
+    if (event.price === 0 || event.price === '0' || event.price === 'free') {
+      return 'Gratuito';
+    }
+    
+    if (!event.price) {
+      return 'Precio no disponible';
+    }
+    
+    const price = typeof event.price === 'string' 
+      ? parseFloat(event.price) 
+      : event.price;
+    
+    if (isNaN(price)) {
+      return event.price;
+    }
+    
+    return `${price} €`;
   };
   
-  // Renderizar la etiqueta de estado
-  const renderStatusBadge = () => {
-    if (!event.status || event.status === EventStatus.PUBLISHED) return null;
-    
-    let badgeColor = colors.warning;
-    let badgeText = 'Borrador';
-    
-    switch (event.status) {
-      case EventStatus.CANCELLED:
-        badgeColor = colors.danger;
-        badgeText = 'Cancelado';
-        break;
-      case EventStatus.COMPLETED:
-        badgeColor = colors.gray;
-        badgeText = 'Finalizado';
-        break;
-      case EventStatus.POSTPONED:
-        badgeColor = colors.warning;
-        badgeText = 'Pospuesto';
-        break;
-    }
-    
-    return (
-      <View style={[styles.badge, { backgroundColor: badgeColor }]}>
-        <Text style={styles.badgeText}>{badgeText}</Text>
-      </View>
-    );
-  };
-  
-  // Renderizar indicador de gratuito o precio
-  const renderPriceIndicator = () => {
-    const ticketInfo = event.ticketInfo as any;
-    
-    if (!ticketInfo) return null;
-    
-    if (ticketInfo.isFree) {
-      return (
-        <View style={styles.freeTag}>
-          <Text style={styles.freeTagText}>Gratis</Text>
-        </View>
-      );
-    }
-    
-    if (ticketInfo.price) {
-      return (
-        <View style={styles.priceTag}>
-          <Text style={styles.priceTagText}>
-            {`${ticketInfo.price} ${ticketInfo.currency || 'EUR'}`}
-          </Text>
-        </View>
-      );
-    }
-    
-    return null;
-  };
-  
-  const getEventIcon = (category: string) => {
-    switch (category) {
-      case EventCategory.MUSIC:
-        return 'music';
-      case EventCategory.SPORTS:
-        return 'dribbble';
-      case EventCategory.TECHNOLOGY:
-        return 'laptop';
-      case EventCategory.ARTS:
-        return 'paint-brush';
-      case EventCategory.FOOD:
-        return 'cutlery';
-      case EventCategory.EDUCATION:
-        return 'graduation-cap';
-      case EventCategory.BUSINESS:
-        return 'briefcase';
-      case EventCategory.HEALTH:
-        return 'heartbeat';
-      default:
-        return 'calendar';
-    }
-  };
-
-  const getEventTypeLabel = (type: string) => {
+  // Obtener color de icono
+  const getIconColor = (type: string): ColorValue => {
     switch (type) {
-      case EventType.IN_PERSON:
-        return 'Presencial';
-      case EventType.ONLINE:
-        return 'Online';
-      case EventType.HYBRID:
-        return 'Híbrido';
+      case 'info':
+        return getColorValue(theme.colors.info.main);
+      case 'success':
+        return getColorValue(theme.colors.success.main);
+      case 'warning':
+        return getColorValue(theme.colors.warning.main);
       default:
-        return 'Evento';
+        return getColorValue(theme.colors.text.secondary);
     }
   };
 
-  const isOnlineEvent = event.type === EventType.ONLINE || event.type === EventType.HYBRID;
-  
-  // Si es versión compacta, mostrar en formato más pequeño
-  if (compact) {
-    return (
-      <TouchableOpacity
-        style={styles.compactContainer}
-        onPress={onPress}
-        disabled={isCancelled()}
-      >
-        <View style={styles.compactImageContainer}>
-          <Image
-            source={{ uri: event.imageUrl || 'https://via.placeholder.com/100?text=Evento' }}
-            style={styles.compactImage}
-            resizeMode="cover"
-          />
-          {renderStatusBadge()}
-        </View>
-        
-        <View style={styles.compactContent}>
-          <Text 
-            style={[styles.compactTitle, isCancelled() && styles.cancelledText]} 
-            numberOfLines={1}
-          >
-            {event.title}
-          </Text>
-          
-          <View style={styles.compactInfo}>
-            <Ionicons name="calendar" size={12} color={colors.primary} />
-            <Text style={styles.compactInfoText}>{getFormattedDate()}</Text>
-          </View>
-          
-          <View style={styles.compactInfo}>
-            <Ionicons name="location" size={12} color={colors.primary} />
-            <Text 
-              style={styles.compactInfoText} 
-              numberOfLines={1}
-            >
-              {getFormattedLocation()}
-            </Text>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  }
-  
-  // Versión normal (completa)
+  // Renderizar tarjeta de evento
   return (
     <TouchableOpacity
-      style={styles.container}
-      onPress={onPress}
-      disabled={isCancelled()}
+      style={[
+        styles.container,
+        compact ? styles.compactContainer : null,
+        style
+      ]}
+      onPress={handlePress}
+      activeOpacity={0.8}
     >
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: event.imageUrl || 'https://via.placeholder.com/400x200?text=Evento' }}
-          style={styles.image}
+      <View style={compact ? styles.compactContentLayout : styles.imageContainer}>
+        <Image 
+          source={getImage()} 
+          style={compact ? styles.compactImage : styles.image}
           resizeMode="cover"
         />
-        {renderStatusBadge()}
-        {renderPriceIndicator()}
+        
+        {!compact && event.category && (
+          <View style={[
+            styles.categoryLabel,
+            { backgroundColor: getColorValue(theme.colors.primary.main) }
+          ]}>
+            <Text style={styles.categoryText}>{event.category}</Text>
+          </View>
+        )}
+
+        {showDistance && distance !== undefined && (
+          <View style={[
+            styles.distanceLabel,
+            { backgroundColor: getColorValue(theme.colors.info.main) }
+          ]}>
+            <Ionicons 
+              name="location" 
+              size={12} 
+              color={getColorValue(theme.colors.common.white)}
+              style={styles.distanceIcon}
+            />
+            <Text style={styles.distanceText}>
+              {distance < 1 ? `${Math.round(distance * 1000)} m` : `${distance.toFixed(1)} km`}
+            </Text>
+          </View>
+        )}
       </View>
       
-      <View style={styles.content}>
+      <View style={compact ? styles.compactInfoContainer : styles.infoContainer}>
         <Text 
-          style={[styles.title, isCancelled() && styles.cancelledText]} 
-          numberOfLines={2}
+          style={[
+            styles.title, 
+            compact ? { fontSize: 14, marginBottom: 2 } : null,
+            { color: getColorValue(theme.colors.text.primary) }
+          ]}
+          numberOfLines={compact ? 1 : 2}
         >
           {event.title}
         </Text>
         
-        <View style={styles.infoContainer}>
-          <View style={styles.infoItem}>
-            <Ionicons name="calendar" size={14} color={colors.primary} />
-            <Text style={styles.infoText}>{getFormattedDate()}</Text>
-          </View>
-          
-          <View style={styles.infoItem}>
-            <Ionicons name="location" size={14} color={colors.primary} />
-            <Text style={styles.infoText} numberOfLines={1}>
-              {getFormattedLocation()}
-            </Text>
-          </View>
-        </View>
-        
-        {event.organizerName && (
-          <View style={styles.organizerContainer}>
-            <Text style={styles.organizerText} numberOfLines={1}>
-              Por: {event.organizerName}
-            </Text>
-          </View>
+        {showDetails && (
+          <>
+            <View style={styles.dateLocationContainer}>
+              <View style={styles.iconTextContainer}>
+                <Ionicons 
+                  name="calendar-outline" 
+                  size={14} 
+                  color={getIconColor('info')}
+                  style={styles.icon}
+                />
+                <Text 
+                  style={[
+                    styles.subtitle,
+                    { color: getColorValue(theme.colors.text.secondary) }
+                  ]}
+                  numberOfLines={1}
+                >
+                  {formatDate(event.startDate || event.date)}
+                </Text>
+              </View>
+              
+              <View style={styles.iconTextContainer}>
+                <Ionicons 
+                  name="location-outline" 
+                  size={14} 
+                  color={getIconColor('info')}
+                  style={styles.icon}
+                />
+                <Text 
+                  style={[
+                    styles.subtitle,
+                    { color: getColorValue(theme.colors.text.secondary) }
+                  ]}
+                  numberOfLines={1}
+                >
+                  {getLocation()}
+                </Text>
+              </View>
+              
+              {event.price !== undefined && (
+                <View style={styles.iconTextContainer}>
+                  <Ionicons 
+                    name="pricetag-outline" 
+                    size={14} 
+                    color={getIconColor('info')}
+                    style={styles.icon}
+                  />
+                  <Text 
+                    style={[
+                      styles.subtitle,
+                      { color: getColorValue(theme.colors.text.secondary) }
+                    ]}
+                  >
+                    {formatPrice()}
+                  </Text>
+                </View>
+              )}
+              
+              {event.attendeesCount !== undefined && (
+                <View style={styles.iconTextContainer}>
+                  <Ionicons 
+                    name="people-outline" 
+                    size={14} 
+                    color={getIconColor('info')}
+                    style={styles.icon}
+                  />
+                  <Text 
+                    style={[
+                      styles.subtitle,
+                      { color: getColorValue(theme.colors.text.secondary) }
+                    ]}
+                  >
+                    {event.attendeesCount} asistentes
+                  </Text>
+                </View>
+              )}
+            </View>
+          </>
         )}
       </View>
     </TouchableOpacity>
   );
 };
 
-const { width } = Dimensions.get('window');
-
 const styles = StyleSheet.create({
-  // Estilos versión normal
   container: {
-    backgroundColor: 'white',
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 16,
@@ -259,131 +288,81 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    width: width - 32,
   },
-  imageContainer: {
-    position: 'relative',
-    height: 160,
+  compactContainer: {
+    width: width * 0.7,
+    marginRight: 12,
   },
   image: {
+    height: 150,
     width: '100%',
-    height: '100%',
-  },
-  badge: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  badgeText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  freeTag: {
-    position: 'absolute',
-    bottom: 12,
-    left: 12,
-    backgroundColor: colors.success,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 16,
-  },
-  freeTagText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  priceTag: {
-    position: 'absolute',
-    bottom: 12,
-    left: 12,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 16,
-  },
-  priceTagText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  content: {
-    padding: 16,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.textDark,
-    marginBottom: 8,
-  },
-  cancelledText: {
-    textDecorationLine: 'line-through',
-    color: colors.textLight,
-  },
-  infoContainer: {
-    marginBottom: 8,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  infoText: {
-    fontSize: 14,
-    color: colors.textDark,
-    marginLeft: 8,
-  },
-  organizerContainer: {
-    marginTop: 4,
-  },
-  organizerText: {
-    fontSize: 14,
-    color: colors.textLight,
-  },
-  
-  // Estilos versión compacta
-  compactContainer: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    borderRadius: 8,
-    overflow: 'hidden',
-    marginBottom: 12,
-    height: 80,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  compactImageContainer: {
-    position: 'relative',
-    width: 80,
   },
   compactImage: {
-    width: '100%',
-    height: '100%',
+    height: 120,
   },
-  compactContent: {
-    flex: 1,
-    padding: 10,
-    justifyContent: 'space-between',
-  },
-  compactTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.textDark,
-    marginBottom: 4,
-  },
-  compactInfo: {
+  imageContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 2,
   },
-  compactInfoText: {
+  compactContentLayout: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryLabel: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    padding: 4,
+    borderRadius: 4,
+  },
+  categoryText: {
     fontSize: 12,
-    color: colors.textDark,
-    marginLeft: 4,
+    fontWeight: '500',
+  },
+  distanceLabel: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    padding: 4,
+    borderRadius: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  distanceIcon: {
+    marginRight: 4,
+  },
+  distanceText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  infoContainer: {
+    flex: 1,
+    padding: 12,
+  },
+  compactInfoContainer: {
+    padding: 12,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 12,
+    marginLeft: 6,
+    flex: 1,
+  },
+  dateLocationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  iconTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  icon: {
+    marginRight: 6,
   },
 }); 

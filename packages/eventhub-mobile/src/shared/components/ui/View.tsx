@@ -1,5 +1,5 @@
 import React from 'react';
-import { View as RNView, ViewProps as RNViewProps, StyleSheet } from 'react-native';
+import { View as RNView, ViewProps as RNViewProps, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 
 interface ViewProps extends RNViewProps {
   flex?: number;
@@ -10,6 +10,11 @@ interface ViewProps extends RNViewProps {
   margin?: 'none' | 'small' | 'medium' | 'large';
   background?: 'primary' | 'secondary' | 'surface' | 'error' | 'success' | 'warning';
 }
+
+// Convertir las propiedades con guiones a camelCase
+const formatStyleKey = (key: string, value: string): string => {
+  return `${key}${value.replace(/-/g, '')}`;
+};
 
 export const View: React.FC<ViewProps> = ({
   flex,
@@ -24,15 +29,15 @@ export const View: React.FC<ViewProps> = ({
 }) => {
   const viewStyles = [
     styles.base,
-    flex && { flex },
-    styles[direction],
-    styles[`justify${justify}`],
-    styles[`align${align}`],
-    styles[`padding${padding}`],
-    styles[`margin${margin}`],
-    styles[`background${background}`],
+    flex !== undefined && { flex },
+    styles[direction as keyof typeof styles],
+    styles[formatStyleKey('justify', justify) as keyof typeof styles],
+    styles[formatStyleKey('align', align) as keyof typeof styles],
+    styles[`padding${padding}` as keyof typeof styles],
+    styles[`margin${margin}` as keyof typeof styles],
+    styles[`background${background}` as keyof typeof styles],
     style,
-  ];
+  ].filter(Boolean);
 
   return <RNView style={viewStyles} {...props} />;
 };

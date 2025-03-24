@@ -1,4 +1,4 @@
-import { RootLayoutProvider } from '../src/core/providers';
+import { RootLayoutProvider } from '@core/providers';
 
 /**
  * Layout principal de la aplicación que utiliza la estructura modular

@@ -7,8 +7,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { useTheme } from '../../context/ThemeContext';
-import { UserProfile } from '../../services/achievement.service';
+import { useTheme } from '../../../shared/hooks/useTheme';
+import { UserProfile } from '@modules/gamification/types';
 
 interface LevelProgressProps {
   userProfile: UserProfile;
@@ -48,16 +48,16 @@ export const LevelProgress: React.FC<LevelProgressProps> = ({
         onPress={onPress}
         disabled={!onPress}
       >
-        <View style={[styles.levelBadge, { backgroundColor: theme.colors.primary }]}>
+        <View style={[styles.levelBadge, { backgroundColor: theme.colors.primary.main }]}>
           <Text style={styles.levelText}>{userProfile.level}</Text>
         </View>
         
         <View style={styles.compactContent}>
           <View style={styles.compactHeader}>
-            <Text style={[styles.levelTitle, { color: theme.colors.text }]}>
+            <Text style={[styles.levelTitle, { color: theme.colors.text.primary }]}>
               Nivel {userProfile.level}
             </Text>
-            <Text style={[styles.pointsText, { color: theme.colors.secondaryText }]}>
+            <Text style={[styles.pointsText, { color: theme.colors.text.secondary }]}>
               {userProfile.points} pts
             </Text>
           </View>
@@ -67,7 +67,7 @@ export const LevelProgress: React.FC<LevelProgressProps> = ({
               style={[
                 styles.progressBar, 
                 { 
-                  backgroundColor: theme.colors.border,
+                  backgroundColor: theme.colors.grey[300],
                 }
               ]}
             >
@@ -75,13 +75,13 @@ export const LevelProgress: React.FC<LevelProgressProps> = ({
                 style={[
                   styles.progressFill, 
                   { 
-                    backgroundColor: theme.colors.primary,
+                    backgroundColor: theme.colors.primary.main,
                     width: `${progress.percentage}%` 
                   }
                 ]}
               />
             </View>
-            <Text style={[styles.progressText, { color: theme.colors.secondaryText }]}>
+            <Text style={[styles.progressText, { color: theme.colors.text.secondary }]}>
               {progress.current}/{progress.required}
             </Text>
           </View>
@@ -91,7 +91,7 @@ export const LevelProgress: React.FC<LevelProgressProps> = ({
           <Ionicons 
             name="chevron-forward" 
             size={16} 
-            color={theme.colors.secondaryText} 
+            color={theme.colors.text.secondary} 
             style={styles.chevron}
           />
         )}
@@ -103,32 +103,32 @@ export const LevelProgress: React.FC<LevelProgressProps> = ({
     <Pressable 
       style={[
         styles.container,
-        { backgroundColor: theme.colors.card }
+        { backgroundColor: theme.colors.background.default }
       ]}
       onPress={onPress}
       disabled={!onPress}
     >
       <View style={styles.header}>
         <View style={styles.levelContainer}>
-          <View style={[styles.levelCircle, { borderColor: theme.colors.primary }]}>
-            <Text style={[styles.levelNumber, { color: theme.colors.primary }]}>
+          <View style={[styles.levelCircle, { borderColor: theme.colors.primary.main }]}>
+            <Text style={[styles.levelNumber, { color: theme.colors.primary.main }]}>
               {userProfile.level}
             </Text>
           </View>
-          <Text style={[styles.levelLabel, { color: theme.colors.text }]}>
+          <Text style={[styles.levelLabel, { color: theme.colors.text.primary }]}>
             Nivel
           </Text>
         </View>
         
         <View style={styles.pointsContainer}>
-          <Ionicons name="star" size={24} color={theme.colors.warning} />
-          <Text style={[styles.points, { color: theme.colors.text }]}>
+          <Ionicons name="star" size={24} color={theme.colors.warning.main} />
+          <Text style={[styles.points, { color: theme.colors.text.primary }]}>
             {userProfile.points} Puntos
           </Text>
         </View>
       </View>
       
-      <Text style={[styles.nextLevel, { color: theme.colors.secondaryText }]}>
+      <Text style={[styles.nextLevel, { color: theme.colors.text.secondary }]}>
         {progress.current} / {progress.required} puntos para el siguiente nivel
       </Text>
       
@@ -136,31 +136,31 @@ export const LevelProgress: React.FC<LevelProgressProps> = ({
         <View 
           style={[
             styles.progressBackground, 
-            { backgroundColor: theme.colors.border }
+            { backgroundColor: theme.colors.grey[300] }
           ]}
         >
           <View 
             style={[
               styles.progressFilled, 
               { 
-                backgroundColor: theme.colors.primary,
+                backgroundColor: theme.colors.primary.main,
                 width: `${progress.percentage}%` 
               }
             ]}
           />
         </View>
         
-        <Text style={[styles.progressPercentage, { color: theme.colors.primary }]}>
+        <Text style={[styles.progressPercentage, { color: theme.colors.primary.main }]}>
           {progress.percentage}%
         </Text>
       </View>
       
       {onPress && (
         <View style={styles.footer}>
-          <Text style={[styles.viewAll, { color: theme.colors.primary }]}>
+          <Text style={[styles.viewAll, { color: theme.colors.primary.main }]}>
             Ver todos mis logros
           </Text>
-          <Ionicons name="chevron-forward" size={16} color={theme.colors.primary} />
+          <Ionicons name="chevron-forward" size={16} color={theme.colors.primary.main} />
         </View>
       )}
     </Pressable>
@@ -255,24 +255,24 @@ const styles = StyleSheet.create({
   compactContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
   levelBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   levelText: {
     color: 'white',
-    fontSize: 16,
     fontWeight: 'bold',
+    fontSize: 14,
   },
   compactContent: {
     flex: 1,
+    marginLeft: 12,
   },
   compactHeader: {
     flexDirection: 'row',
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   },
   progressText: {
     fontSize: 10,
-    width: 40,
+    width: 45,
   },
   chevron: {
     marginLeft: 8,

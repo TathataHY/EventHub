@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FlatList, RefreshControl, Text, StyleSheet, View, ActivityIndicator } from 'react-native';
-import { Notification } from '../types';
+import { FlatList, RefreshControl, StyleSheet, View, ActivityIndicator } from 'react-native';
+import { Notification, NotificationResponse } from '@modules/notifications/services/notification.service';
 import { NotificationItem } from './NotificationItem';
-import { notificationService } from '../services';
-import { EmptyState } from '@core/components';
-import { colors } from '@core/theme';
+import { notificationService } from '@modules/notifications/services';
+import { EmptyState } from '@shared/components/ui/EmptyState';
+import { useTheme } from '@core/context/ThemeContext';
 
 export const NotificationList: React.FC = () => {
+  const { theme } = useTheme();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -15,7 +16,7 @@ export const NotificationList: React.FC = () => {
   const loadNotifications = useCallback(async () => {
     try {
       const response = await notificationService.getNotifications();
-      setNotifications(response.notifications);
+      setNotifications(response.data);
     } catch (error) {
       console.error('Error al cargar notificaciones:', error);
     } finally {
@@ -38,14 +39,14 @@ export const NotificationList: React.FC = () => {
   // Manejar marcar como leída
   const handleMarkAsRead = useCallback(async (notificationId: string) => {
     try {
-      const success = await notificationService.markAsRead({ notificationId });
+      const success = await notificationService.markAsRead(notificationId);
       
       if (success) {
         // Actualizar la UI localmente para mostrar como leída
         setNotifications(prevNotifications => 
           prevNotifications.map(notification => 
             notification.id === notificationId 
-              ? { ...notification, isRead: true } 
+              ? { ...notification, read: true } 
               : notification
           )
         );
@@ -59,7 +60,7 @@ export const NotificationList: React.FC = () => {
   const renderNotificationItem = ({ item }: { item: Notification }) => (
     <NotificationItem 
       notification={item} 
-      onMarkAsRead={handleMarkAsRead} 
+      onPress={() => handleMarkAsRead(item.id)} 
     />
   );
 
@@ -67,7 +68,7 @@ export const NotificationList: React.FC = () => {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={theme.colors.primary.main} />
       </View>
     );
   }
@@ -93,7 +94,8 @@ export const NotificationList: React.FC = () => {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={handleRefresh}
-          colors={[colors.primary]}
+          colors={[theme.colors.primary.main]}
+          tintColor={theme.colors.primary.main}
         />
       }
     />

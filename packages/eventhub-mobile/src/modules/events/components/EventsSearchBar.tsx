@@ -10,7 +10,7 @@ import {
   TextStyle
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@theme';
+import { useTheme } from '@core/context/ThemeContext';
 
 interface EventsSearchBarProps {
   onSearch: (query: string) => void;
@@ -29,6 +29,7 @@ export const EventsSearchBar: React.FC<EventsSearchBarProps> = ({
   inputStyle,
   delay = 500
 }) => {
+  const { theme } = useTheme();
   const [query, setQuery] = useState(initialValue);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -62,15 +63,36 @@ export const EventsSearchBar: React.FC<EventsSearchBarProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color={colors.textLight} style={styles.searchIcon} />
+      <View 
+        style={[
+          styles.searchContainer, 
+          { 
+            backgroundColor: theme.colors.background.paper,
+            borderRadius: 8,
+            shadowColor: '#000'
+          }
+        ]}
+      >
+        <Ionicons 
+          name="search" 
+          size={20} 
+          color={theme.colors.text.secondary} 
+          style={styles.searchIcon} 
+        />
         
         <TextInput
-          style={[styles.input, inputStyle]}
+          style={[
+            styles.input, 
+            { 
+              color: theme.colors.text.primary,
+              fontSize: 16
+            }, 
+            inputStyle
+          ]}
           value={query}
           onChangeText={handleChangeText}
           placeholder={placeholder}
-          placeholderTextColor={colors.textLight}
+          placeholderTextColor={theme.colors.text.secondary}
           returnKeyType="search"
           onSubmitEditing={handleSubmit}
           clearButtonMode="while-editing"
@@ -80,7 +102,7 @@ export const EventsSearchBar: React.FC<EventsSearchBarProps> = ({
         
         {query.length > 0 && Platform.OS === 'android' && (
           <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
-            <Ionicons name="close-circle" size={18} color={colors.textLight} />
+            <Ionicons name="close-circle" size={18} color={theme.colors.text.secondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -97,11 +119,8 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.cardBackground,
-    borderRadius: 8,
     paddingHorizontal: 12,
     height: 48,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
@@ -112,8 +131,6 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: colors.textDark,
     height: '100%',
     padding: 0,
   },

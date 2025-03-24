@@ -2,7 +2,7 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { TouchableOpacity, View } from 'react-native';
-import { useTheme } from '../../../core/context';
+import { useTheme } from '../../../shared/hooks/useTheme';
 import { useRouter } from 'expo-router';
 
 /**
@@ -10,39 +10,46 @@ import { useRouter } from 'expo-router';
  * Versión modular del antiguo TabsLayout
  */
 export const TabsLayout = () => {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const router = useRouter();
+
+  // Colores para las opciones de la pantalla
+  const primaryColor = theme.colors.primary.main;
+  const greyColor = theme.colors.grey[500];
+  const backgroundColor = '#FFFFFF';
+  const borderColor = theme.colors.grey[300];
+  const textColor = theme.colors.text.primary;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.secondaryText,
+        tabBarActiveTintColor: primaryColor,
+        tabBarInactiveTintColor: greyColor,
         tabBarStyle: {
-          backgroundColor: theme.colors.card,
-          borderTopColor: theme.colors.border,
+          backgroundColor: backgroundColor,
+          borderTopColor: borderColor,
         },
         tabBarLabelStyle: {
           fontSize: 12,
         },
         headerStyle: {
-          backgroundColor: theme.colors.card,
+          backgroundColor: backgroundColor,
         },
         headerShadowVisible: false,
-        headerTintColor: theme.colors.text,
+        headerTintColor: textColor,
         headerRight: () => (
           <View style={{ flexDirection: 'row' }}>
             <TouchableOpacity
               onPress={() => router.push('/map')}
               style={{ marginRight: 15 }}
             >
-              <Ionicons name="map-outline" size={24} color={theme.colors.text} />
+              <Ionicons name="map-outline" size={24} color={textColor} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push('/search')}
               style={{ marginRight: 15 }}
             >
-              <Ionicons name="search" size={24} color={theme.colors.text} />
+              <Ionicons name="search" size={24} color={textColor} />
             </TouchableOpacity>
           </View>
         ),

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { TicketDetailsScreen } from '../../src/modules/tickets';
+import { TicketDetailsScreen } from '@modules/tickets';
 
 /**
  * Página de detalles de ticket

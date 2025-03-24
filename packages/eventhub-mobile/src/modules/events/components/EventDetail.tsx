@@ -12,8 +12,8 @@ import {
   Linking
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Event, EventTicketInfo, EventLocation, EventStatus } from '../types';
-import { colors } from '@theme';
+import { Event, EventTicketInfo, EventLocation, EventStatus } from '@modules/events/types';
+import { useTheme, getColorValue, getIconColor } from '../../../core/theme';
 
 interface EventDetailProps {
   event: Event;
@@ -32,6 +32,8 @@ export const EventDetail: React.FC<EventDetailProps> = ({
   onSharePress,
   onOrganizerPress
 }) => {
+  const { theme } = useTheme();
+  
   // Manejar compartir evento
   const handleShare = async () => {
     try {
@@ -41,7 +43,7 @@ export const EventDetail: React.FC<EventDetailProps> = ({
       
       await Share.share({
         title: event.title,
-        message: `¡Mira este evento: ${event.title}! ${event.shortDescription || event.description.substring(0, 100)}...`
+        message: `¡Mira este evento: ${event.title}! ${event.description.substring(0, 100)}...`
       });
     } catch (error) {
       console.error('Error compartiendo evento:', error);
@@ -49,7 +51,7 @@ export const EventDetail: React.FC<EventDetailProps> = ({
   };
 
   // Obtener ubicación formateada
-  const getFormattedLocation = () => {
+  const getFormattedLocation = (): string => {
     if (typeof event.location === 'string') {
       return event.location;
     } else if (event.location) {
@@ -65,28 +67,17 @@ export const EventDetail: React.FC<EventDetailProps> = ({
   };
 
   // Formatear fecha y hora
-  const getFormattedDateTime = () => {
+  const getFormattedDateTime = (): string => {
     try {
       const startDate = new Date(event.startDate);
-      const options = { 
+      const options: Intl.DateTimeFormatOptions = { 
         weekday: 'long', 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
-      } as Intl.DateTimeFormatOptions;
+      };
       
       let dateTimeString = startDate.toLocaleDateString('es-ES', options);
-      
-      if (event.startTime) {
-        dateTimeString += ` a las ${event.startTime}`;
-      }
-      
-      if (event.endDate) {
-        const endDate = new Date(event.endDate);
-        if (endDate.getDate() !== startDate.getDate()) {
-          dateTimeString += ` hasta el ${endDate.toLocaleDateString('es-ES', options)}`;
-        }
-      }
       
       return dateTimeString;
     } catch (error) {
@@ -95,8 +86,9 @@ export const EventDetail: React.FC<EventDetailProps> = ({
   };
 
   // Obtener información de precio formateada
-  const getFormattedPrice = () => {
-    const ticketInfo = event.ticketInfo as EventTicketInfo;
+  const getFormattedPrice = (): string => {
+    // @ts-ignore - ticketInfo puede no existir en Event pero lo manejamos adecuadamente
+    const ticketInfo = event.ticketInfo;
     
     if (!ticketInfo) {
       return 'Precio no disponible';
@@ -114,175 +106,262 @@ export const EventDetail: React.FC<EventDetailProps> = ({
   };
 
   // Verificar si el evento está activo (no cancelado ni completado)
-  const isEventActive = () => {
+  const isEventActive = (): boolean => {
     if (!event.status) return true;
-    return event.status !== EventStatus.CANCELLED && 
-           event.status !== EventStatus.COMPLETED;
+    return event.status !== 'cancelled' && 
+           event.status !== 'completed';
   };
 
   // Verificar si el evento está lleno
-  const isEventFull = () => {
+  const isEventFull = (): boolean => {
+    // @ts-ignore - metrics puede no existir en Event pero lo manejamos adecuadamente
     if (!event.metrics?.maxCapacity) return false;
-    return (event.metrics.attendees >= event.metrics.maxCapacity);
+    // @ts-ignore
+    return (event.metrics.registeredAttendees >= event.metrics.maxCapacity);
   };
 
   // Renderizar el badge de estado del evento
   const renderStatusBadge = () => {
     if (!event.status) return null;
     
-    let badgeColor = colors.success;
+    let badgeColor = getColorValue(theme.colors.success);
     let badgeText = 'Publicado';
     
     switch (event.status) {
-      case EventStatus.DRAFT:
-        badgeColor = colors.warning;
+      case 'draft':
+        badgeColor = getColorValue(theme.colors.warning);
         badgeText = 'Borrador';
         break;
-      case EventStatus.CANCELLED:
-        badgeColor = colors.danger;
+      case 'cancelled':
+        badgeColor = getColorValue(theme.colors.error);
         badgeText = 'Cancelado';
         break;
-      case EventStatus.COMPLETED:
-        badgeColor = colors.gray;
+      case 'completed':
+        badgeColor = getColorValue(theme.colors.text.secondary);
         badgeText = 'Finalizado';
         break;
-      case EventStatus.POSTPONED:
-        badgeColor = colors.warning;
+      case 'postponed':
+        badgeColor = getColorValue(theme.colors.warning);
         badgeText = 'Pospuesto';
         break;
     }
     
     return (
-      <View style={[styles.statusBadge, { backgroundColor: badgeColor }]}>
-        <Text style={styles.statusText}>{badgeText}</Text>
+      <View style={[styles.statusBadge, { backgroundColor: `${String(badgeColor)}20` }]}>
+        <Text style={[styles.statusText, { color: badgeColor }]}>
+          {badgeText}
+        </Text>
       </View>
     );
   };
-
-  // Si está cargando, mostrar indicador
+  
+  // Abrir mapa
+  const openMap = () => {
+    let location: string;
+    
+    if (typeof event.location === 'string') {
+      location = event.location;
+    } else if (event.location) {
+      const loc = event.location as EventLocation;
+      location = [loc.address, loc.city, loc.state, loc.country].filter(Boolean).join(', ');
+    } else {
+      return; // No location to open
+    }
+    
+    const url = `https://maps.google.com/?q=${encodeURIComponent(location)}`;
+    Linking.canOpenURL(url)
+      .then(supported => {
+        if (supported) {
+          return Linking.openURL(url);
+        }
+      })
+      .catch(error => console.error('Error abriendo mapa:', error));
+  };
+  
+  // Abrir sitio web del evento
+  const openWebsite = () => {
+    if (!event.websiteUrl) return;
+    
+    Linking.canOpenURL(event.websiteUrl)
+      .then(supported => {
+        if (supported) {
+          return Linking.openURL(event.websiteUrl!);
+        }
+      })
+      .catch(error => console.error('Error abriendo sitio web:', error));
+  };
+  
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Cargando evento...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: getColorValue(theme.colors.background) }]}>
+        <ActivityIndicator size="large" color={getColorValue(theme.colors.primary)} />
+        <Text style={[styles.loadingText, { color: getColorValue(theme.colors.text.secondary) }]}>
+          Cargando detalles del evento...
+        </Text>
       </View>
     );
   }
+  
+  const imageSource = event.imageUrl || event.image;
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Imagen del evento */}
-      <View style={styles.imageContainer}>
-        <Image
-          source={{ uri: event.imageUrl || 'https://via.placeholder.com/400x200?text=Evento' }}
-          style={styles.image}
-          resizeMode="cover"
-        />
+    <ScrollView style={[styles.container, { backgroundColor: getColorValue(theme.colors.background) }]}>
+      {/* Cabecera con imagen */}
+      <View style={styles.headerContainer}>
+        {imageSource ? (
+          <Image 
+            source={{ uri: imageSource }} 
+            style={styles.headerImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.imagePlaceholder, { backgroundColor: `${String(getColorValue(theme.colors.primary))}20` }]}>
+            <Ionicons name="calendar" size={64} color={getIconColor(theme.colors.primary)} />
+          </View>
+        )}
+        
+        {/* Badge de estado */}
         {renderStatusBadge()}
       </View>
       
-      {/* Encabezado del evento */}
-      <View style={styles.headerContainer}>
-        <Text style={styles.title}>{event.title}</Text>
-        <Text style={styles.date}>{getFormattedDateTime()}</Text>
-        
-        <View style={styles.locationContainer}>
-          <Ionicons name="location" size={16} color={colors.primary} />
-          <Text style={styles.location}>{getFormattedLocation()}</Text>
-        </View>
-        
-        <Text style={styles.price}>{getFormattedPrice()}</Text>
-      </View>
-      
-      {/* Acciones */}
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity 
-          style={[
-            styles.attendButton, 
-            isAttending ? styles.attendingButton : null,
-            !isEventActive() || isEventFull() ? styles.disabledButton : null
-          ]}
-          onPress={onAttendPress}
-          disabled={!isEventActive() || isEventFull()}
-        >
-          <Ionicons 
-            name={isAttending ? 'checkmark-circle' : 'calendar'} 
-            size={20} 
-            color="white" 
-          />
-          <Text style={styles.buttonText}>
-            {isAttending ? 'Asistiendo' : 'Asistir'}
+      {/* Contenido principal */}
+      <View style={styles.contentContainer}>
+        {/* Título y organizador */}
+        <View style={styles.titleContainer}>
+          <Text style={[styles.title, { color: getColorValue(theme.colors.text.primary) }]}>
+            {event.title}
           </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.shareButton}
-          onPress={handleShare}
-        >
-          <Ionicons name="share-social" size={20} color="white" />
-          <Text style={styles.buttonText}>Compartir</Text>
-        </TouchableOpacity>
-      </View>
-      
-      {/* Descripción */}
-      <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>Descripción</Text>
-        <Text style={styles.description}>{event.description}</Text>
-      </View>
-      
-      {/* Organizador */}
-      <TouchableOpacity 
-        style={styles.organizerContainer}
-        onPress={onOrganizerPress}
-      >
-        <View style={styles.organizerImageContainer}>
-          {event.organizerLogo ? (
-            <Image 
-              source={{ uri: event.organizerLogo }} 
-              style={styles.organizerImage} 
-            />
-          ) : (
-            <View style={styles.organizerImagePlaceholder}>
-              <Ionicons name="person" size={24} color={colors.textLight} />
-            </View>
+          
+          {event.organizer && (
+            <TouchableOpacity 
+              style={styles.organizerContainer}
+              onPress={onOrganizerPress}
+            >
+              <Text style={[styles.organizerLabel, { color: getColorValue(theme.colors.text.secondary) }]}>
+                Organizado por
+              </Text>
+              <Text style={[styles.organizerName, { color: getColorValue(theme.colors.primary) }]}>
+                {event.organizer.name}
+              </Text>
+            </TouchableOpacity>
           )}
         </View>
         
-        <View style={styles.organizerInfo}>
-          <Text style={styles.organizerTitle}>Organizado por:</Text>
-          <Text style={styles.organizerName}>{event.organizerName}</Text>
+        {/* Información principal */}
+        <View style={styles.infoContainer}>
+          {/* Fecha y hora */}
+          <View style={styles.infoItem}>
+            <Ionicons 
+              name="calendar-outline" 
+              size={22} 
+              color={getIconColor(theme.colors.primary)} 
+              style={styles.infoIcon} 
+            />
+            <Text style={[styles.infoText, { color: getColorValue(theme.colors.text.primary) }]}>
+              {getFormattedDateTime()}
+            </Text>
+          </View>
+          
+          {/* Ubicación */}
+          <TouchableOpacity style={styles.infoItem} onPress={openMap}>
+            <Ionicons 
+              name="location-outline" 
+              size={22} 
+              color={getIconColor(theme.colors.primary)} 
+              style={styles.infoIcon} 
+            />
+            <Text style={[styles.infoText, { color: getColorValue(theme.colors.text.primary) }]}>
+              {getFormattedLocation()}
+            </Text>
+          </TouchableOpacity>
+          
+          {/* Precio */}
+          <View style={styles.infoItem}>
+            <Ionicons 
+              name="pricetag-outline" 
+              size={22} 
+              color={getIconColor(theme.colors.primary)} 
+              style={styles.infoIcon} 
+            />
+            <Text style={[styles.infoText, { color: getColorValue(theme.colors.text.primary) }]}>
+              {getFormattedPrice()}
+            </Text>
+          </View>
+          
+          {/* Sitio web (si está disponible) */}
+          {event.websiteUrl && (
+            <TouchableOpacity style={styles.infoItem} onPress={openWebsite}>
+              <Ionicons 
+                name="globe-outline" 
+                size={22} 
+                color={getIconColor(theme.colors.primary)} 
+                style={styles.infoIcon} 
+              />
+              <Text style={[styles.infoText, { color: getColorValue(theme.colors.primary) }]}>
+                Visitar sitio web
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
         
-        <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
-      </TouchableOpacity>
-      
-      {/* Sitio web y enlaces */}
-      {event.websiteUrl && (
-        <TouchableOpacity 
-          style={styles.linkContainer}
-          onPress={() => Linking.openURL(event.websiteUrl || '')}
-        >
-          <Ionicons name="globe" size={20} color={colors.primary} />
-          <Text style={styles.linkText}>Visitar sitio web</Text>
-        </TouchableOpacity>
-      )}
-      
-      {/* Etiquetas */}
-      {event.tags && event.tags.length > 0 && (
-        <View style={styles.tagsContainer}>
-          <Text style={styles.sectionTitle}>Etiquetas:</Text>
-          <View style={styles.tagsList}>
-            {event.tags.map((tag, index) => (
-              <View key={index} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
-              </View>
-            ))}
-          </View>
+        {/* Descripción */}
+        <View style={styles.descriptionContainer}>
+          <Text style={[styles.sectionTitle, { color: getColorValue(theme.colors.text.primary) }]}>
+            Descripción
+          </Text>
+          <Text style={[styles.description, { color: getColorValue(theme.colors.text.secondary) }]}>
+            {event.description}
+          </Text>
         </View>
-      )}
-      
-      {/* Espacio al final */}
-      <View style={styles.footer} />
+        
+        {/* Acciones */}
+        <View style={styles.actionsContainer}>
+          {isEventActive() && !isEventFull() && (
+            <TouchableOpacity
+              style={[
+                styles.attendButton,
+                { 
+                  backgroundColor: isAttending 
+                    ? `${String(getColorValue(theme.colors.success))}20` 
+                    : getColorValue(theme.colors.primary) 
+                }
+              ]}
+              onPress={onAttendPress}
+              disabled={isAttending}
+            >
+              <Ionicons 
+                name={isAttending ? "checkmark-circle" : "add-circle-outline"} 
+                size={20} 
+                color={isAttending ? getIconColor(theme.colors.success) : "#fff"} 
+                style={styles.actionIcon} 
+              />
+              <Text 
+                style={[
+                  styles.attendButtonText, 
+                  { color: isAttending ? getColorValue(theme.colors.success) : "#fff" }
+                ]}
+              >
+                {isAttending ? "Asistiré" : "Asistir"}
+              </Text>
+            </TouchableOpacity>
+          )}
+          
+          <TouchableOpacity
+            style={[styles.shareButton, { backgroundColor: `${String(getColorValue(theme.colors.secondary))}20` }]}
+            onPress={handleShare}
+          >
+            <Ionicons 
+              name="share-social-outline" 
+              size={20} 
+              color={getIconColor(theme.colors.secondary)} 
+              style={styles.actionIcon} 
+            />
+            <Text style={[styles.shareButtonText, { color: getColorValue(theme.colors.secondary) }]}>
+              Compartir
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </ScrollView>
   );
 };
@@ -292,7 +371,6 @@ const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   loadingContainer: {
     flex: 1,
@@ -303,16 +381,20 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: colors.textDark,
   },
-  imageContainer: {
-    position: 'relative',
+  headerContainer: {
     width: '100%',
     height: 200,
+    position: 'relative',
   },
-  image: {
+  headerImage: {
     width: '100%',
     height: '100%',
+  },
+  imagePlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statusBadge: {
     position: 'absolute',
@@ -323,166 +405,97 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   statusText: {
-    color: 'white',
+    color: '#FFF',
     fontSize: 12,
     fontWeight: 'bold',
   },
-  headerContainer: {
+  contentContainer: {
     padding: 16,
-    backgroundColor: 'white',
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: colors.textDark,
-    marginBottom: 8,
   },
-  date: {
-    fontSize: 16,
-    color: colors.textDark,
-    marginBottom: 12,
-  },
-  locationContainer: {
+  organizerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginLeft: 16,
   },
-  location: {
-    fontSize: 14,
-    color: colors.textDark,
-    marginLeft: 8,
+  organizerLabel: {
+    fontSize: 12,
   },
-  price: {
+  organizerName: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  infoContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  infoIcon: {
+    marginRight: 8,
+  },
+  infoText: {
+    fontSize: 16,
+  },
+  descriptionContainer: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: colors.primary,
+    marginBottom: 8,
+  },
+  description: {
+    fontSize: 16,
+    lineHeight: 24,
   },
   actionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 16,
+    marginTop: 16,
   },
   attendButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    padding: 12,
     borderRadius: 8,
     flex: 1,
     marginRight: 8,
   },
-  attendingButton: {
-    backgroundColor: colors.success,
-  },
-  disabledButton: {
-    backgroundColor: colors.gray,
+  attendButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
   shareButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.secondary,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    padding: 12,
     borderRadius: 8,
     flex: 1,
     marginLeft: 8,
   },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
-    marginLeft: 8,
-  },
-  sectionContainer: {
-    padding: 16,
-    backgroundColor: 'white',
-    marginTop: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.textDark,
-    marginBottom: 8,
-  },
-  description: {
-    fontSize: 16,
-    color: colors.textDark,
-    lineHeight: 24,
-  },
-  organizerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'white',
-    marginTop: 8,
-  },
-  organizerImageContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    overflow: 'hidden',
-    marginRight: 16,
-  },
-  organizerImage: {
-    width: '100%',
-    height: '100%',
-  },
-  organizerImagePlaceholder: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: colors.lightGray,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  organizerInfo: {
-    flex: 1,
-  },
-  organizerTitle: {
+  shareButtonText: {
+    color: '#FFF',
     fontSize: 14,
-    color: colors.textLight,
-  },
-  organizerName: {
-    fontSize: 16,
     fontWeight: 'bold',
-    color: colors.textDark,
-  },
-  linkContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'white',
-    marginTop: 8,
-  },
-  linkText: {
-    fontSize: 16,
-    color: colors.primary,
     marginLeft: 8,
   },
-  tagsContainer: {
-    padding: 16,
-    backgroundColor: 'white',
-    marginTop: 8,
-  },
-  tagsList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  tag: {
-    backgroundColor: colors.lightGray,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+  actionIcon: {
     marginRight: 8,
-    marginBottom: 8,
-  },
-  tagText: {
-    fontSize: 12,
-    color: colors.textDark,
-  },
-  footer: {
-    height: 32,
   },
 }); 

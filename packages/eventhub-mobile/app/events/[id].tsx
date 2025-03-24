@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { EventDetailsScreen } from '../../src/modules/events/screens';
+import { EventDetailsScreen } from '@modules/events/screens';
 
 /**
  * Pantalla de detalles de evento usando la estructura modular

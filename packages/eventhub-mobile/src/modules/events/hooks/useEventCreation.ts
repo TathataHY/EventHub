@@ -1,24 +1,49 @@
 import { useState, useCallback } from 'react';
 import { eventService } from '../services';
-import { CreateEventParams, UpdateEventParams } from '../types';
+import { 
+  CreateEventData, 
+  Event, 
+  EventType, 
+  EventStatus,
+  EventVisibility,
+  EventCategory
+} from '../types';
 
-type ValidationError = {
+interface ValidationError {
   field: string;
   message: string;
-};
+}
 
-type ValidationResult = {
+interface ValidationResult {
   isValid: boolean;
   errors: ValidationError[];
-};
+}
 
-export const useEventCreation = () => {
+interface EventCreationResult {
+  isLoading: boolean;
+  error: string | null;
+  success: boolean;
+  createEvent: (eventData: CreateEventData) => Promise<string | null>;
+  updateEvent: (eventId: string, eventData: Partial<CreateEventData>) => Promise<string | null>;
+  deleteEvent: (eventId: string) => Promise<boolean>;
+  validateEvent: (eventData: CreateEventData) => ValidationResult;
+  resetState: () => void;
+}
+
+export const useEventCreation = (): EventCreationResult => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
 
+  // Resetear el estado
+  const resetState = useCallback(() => {
+    setIsLoading(false);
+    setError(null);
+    setSuccess(false);
+  }, []);
+
   // Validar el evento antes de crear/actualizar
-  const validateEvent = useCallback((eventData: CreateEventParams): ValidationResult => {
+  const validateEvent = useCallback((eventData: CreateEventData): ValidationResult => {
     const errors: ValidationError[] = [];
 
     // Validar campos requeridos
@@ -61,7 +86,7 @@ export const useEventCreation = () => {
   }, []);
 
   // Crear un nuevo evento
-  const createEvent = useCallback(async (eventData: CreateEventParams): Promise<string | number | null> => {
+  const createEvent = useCallback(async (eventData: CreateEventData): Promise<string | null> => {
     setIsLoading(true);
     setError(null);
     setSuccess(false);
@@ -75,10 +100,10 @@ export const useEventCreation = () => {
 
       const newEvent = await eventService.createEvent(eventData);
       setSuccess(true);
-      return newEvent.id;
+      return String(newEvent.id);
     } catch (err) {
       console.error('Error creating event:', err);
-      setError('Error al crear el evento');
+      setError('Error al crear el evento. Por favor, inténtalo de nuevo.');
       return null;
     } finally {
       setIsLoading(false);
@@ -86,24 +111,28 @@ export const useEventCreation = () => {
   }, [validateEvent]);
 
   // Actualizar un evento existente
-  const updateEvent = useCallback(async (eventId: string | number, eventData: UpdateEventParams): Promise<string | number | null> => {
+  const updateEvent = useCallback(async (eventId: string, eventData: Partial<CreateEventData>): Promise<string | null> => {
     setIsLoading(true);
     setError(null);
     setSuccess(false);
 
     try {
-      const validationResult = validateEvent(eventData as CreateEventParams);
-      if (!validationResult.isValid) {
-        setError('Hay errores de validación en el formulario');
-        return null;
+      // Para actualizaciones parciales no necesitamos validar todos los campos
+      // Solo validamos si tenemos todos los datos requeridos
+      if ('title' in eventData && 'description' in eventData && 'startDate' in eventData && 'location' in eventData) {
+        const validationResult = validateEvent(eventData as CreateEventData);
+        if (!validationResult.isValid) {
+          setError('Hay errores de validación en el formulario');
+          return null;
+        }
       }
 
-      await eventService.updateEvent(eventId, eventData);
+      const updatedEvent = await eventService.updateEvent(eventId, eventData);
       setSuccess(true);
-      return eventId;
+      return String(updatedEvent.id);
     } catch (err) {
       console.error('Error updating event:', err);
-      setError('Error al actualizar el evento');
+      setError('Error al actualizar el evento. Por favor, inténtalo de nuevo.');
       return null;
     } finally {
       setIsLoading(false);
@@ -111,7 +140,7 @@ export const useEventCreation = () => {
   }, [validateEvent]);
 
   // Eliminar un evento
-  const deleteEvent = useCallback(async (eventId: string | number): Promise<boolean> => {
+  const deleteEvent = useCallback(async (eventId: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
     setSuccess(false);
@@ -122,7 +151,7 @@ export const useEventCreation = () => {
       return true;
     } catch (err) {
       console.error('Error deleting event:', err);
-      setError('Error al eliminar el evento');
+      setError('Error al eliminar el evento. Por favor, inténtalo de nuevo.');
       return false;
     } finally {
       setIsLoading(false);
@@ -136,6 +165,7 @@ export const useEventCreation = () => {
     createEvent,
     updateEvent,
     deleteEvent,
-    validateEvent
+    validateEvent,
+    resetState
   };
 }; 

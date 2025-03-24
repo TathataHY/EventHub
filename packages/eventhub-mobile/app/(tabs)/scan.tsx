@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { useTheme } from '../../src/context/ThemeContext';
+import { useTheme } from '@shared/hooks/useTheme';
 
 /**
  * Pantalla de marcador para la pestaña de escaneo
@@ -22,9 +22,9 @@ export default function ScanScreen() {
   }, []);
   
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <ActivityIndicator size="large" color={theme.colors.primary} />
-      <Text style={[styles.text, { color: theme.colors.text }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background.default }]}>
+      <ActivityIndicator size="large" color={theme.colors.primary.main} />
+      <Text style={[styles.text, { color: theme.colors.text.primary }]}>
         Redirigiendo...
       </Text>
     </View>

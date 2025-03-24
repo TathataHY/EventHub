@@ -1,185 +1,206 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ColorValue } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Card } from '@shared/components/ui/Card';
+import { useTheme } from '@shared/hooks/useTheme';
+import { getColorValue } from '@theme/theme.types';
+import { Ticket, TicketStatus } from '../types';
 
-import { useTheme } from '../../context/ThemeContext';
-import { Ticket, TicketStatus } from '../../services/ticket.service';
-
-interface TicketCardProps {
+export interface TicketCardProps {
   ticket: Ticket;
-  eventName: string;
-  eventImage?: string;
-  onPress: (ticketId: string) => void;
+  onPress?: (ticketId: string) => void;
 }
 
 /**
  * Componente para mostrar un ticket en formato de tarjeta
  */
-export const TicketCard: React.FC<TicketCardProps> = ({
-  ticket,
-  eventName,
-  eventImage,
-  onPress
-}) => {
+export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onPress }) => {
   const { theme } = useTheme();
   
-  // Formatear fecha a formato legible
-  const formatDate = (dateString: string) => {
+  // Formatear fecha
+  const formatDate = (dateString?: string | Date) => {
+    if (!dateString) return 'Fecha no disponible';
+    
     try {
-      const date = new Date(dateString);
-      return format(date, "d 'de' MMMM, yyyy", { locale: es });
+      const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+      return format(date, 'd MMM yyyy', { locale: es });
     } catch (error) {
-      return dateString;
+      return 'Fecha inválida';
     }
   };
-  
-  // Determinar icono y color según el estado del ticket
-  const getStatusInfo = () => {
-    switch (ticket.status) {
-      case TicketStatus.VALID:
-        return {
-          icon: 'checkmark-circle',
-          color: theme.colors.success,
-          text: 'Válido'
-        };
-      case TicketStatus.USED:
-        return {
-          icon: 'time',
-          color: theme.colors.warning,
-          text: 'Utilizado'
-        };
-      case TicketStatus.EXPIRED:
-        return {
-          icon: 'close-circle',
-          color: theme.colors.error,
-          text: 'Expirado'
-        };
-      case TicketStatus.CANCELLED:
-        return {
-          icon: 'ban',
-          color: theme.colors.error,
-          text: 'Cancelado'
-        };
-      default:
-        return {
-          icon: 'help-circle',
-          color: theme.colors.secondaryText,
-          text: 'Desconocido'
-        };
-    }
+
+  // Determinar qué icono mostrar según el estado del ticket
+  const getStatusIcon = (status: TicketStatus) => {
+    if (status === 'valid') return 'checkmark-circle';
+    if (status === 'used') return 'checkmark-circle-outline';
+    if (status === 'expired') return 'time';
+    return 'close-circle';
+  };
+
+  // Determinar qué color mostrar según el estado del ticket
+  const getStatusColor = (status: TicketStatus): ColorValue => {
+    const colors: Record<string, ColorValue> = {
+      valid: getColorValue(theme.colors.success.main),
+      used: getColorValue(theme.colors.secondary.main),
+      expired: getColorValue(theme.colors.error.main),
+      cancelled: getColorValue(theme.colors.error.main)
+    };
+    
+    return colors[status] || getColorValue(theme.colors.grey[500]);
   };
   
-  const statusInfo = getStatusInfo();
-  
+  // Otra manera de hacer lo mismo
+  const getTextColor = (status: TicketStatus): ColorValue => {
+    if (status === 'valid') return getColorValue(theme.colors.success.main);
+    if (status === 'used') return getColorValue(theme.colors.secondary.main);
+    return getColorValue(theme.colors.error.main);
+  };
+
   return (
-    <TouchableOpacity
-      style={[styles.container, { backgroundColor: theme.colors.card }]}
-      onPress={() => onPress(ticket.id)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.content}>
-        {/* Imagen del evento */}
-        <Image
-          source={{ uri: eventImage || 'https://via.placeholder.com/150' }}
-          style={styles.image}
-          resizeMode="cover"
-        />
-        
-        {/* Detalles del ticket */}
-        <View style={styles.details}>
-          <Text 
-            style={[styles.eventName, { color: theme.colors.text }]} 
-            numberOfLines={1}
-          >
-            {eventName}
-          </Text>
-          
-          <View style={styles.infoRow}>
-            <Ionicons name="pricetag-outline" size={14} color={theme.colors.secondaryText} />
-            <Text style={[styles.infoText, { color: theme.colors.secondaryText }]}>
-              {ticket.ticketType} - {ticket.price.toFixed(2)} €
+    <Card style={styles.card}>
+      <TouchableOpacity
+        style={styles.container}
+        onPress={() => onPress && onPress(ticket.id)}
+        activeOpacity={0.8}
+      >
+        <View style={styles.header}>
+          <View style={styles.eventInfo}>
+            <Text style={[styles.eventName, { color: getColorValue(theme.colors.text.primary) }]}>
+              {ticket.event?.title || 'Evento no disponible'}
+            </Text>
+            <Text style={[styles.date, { color: getColorValue(theme.colors.text.secondary) }]}>
+              {ticket.event ? formatDate(ticket.event.startDate) : 'Fecha no disponible'}
             </Text>
           </View>
           
-          <View style={styles.infoRow}>
-            <Ionicons name="calendar-outline" size={14} color={theme.colors.secondaryText} />
-            <Text style={[styles.infoText, { color: theme.colors.secondaryText }]}>
-              {formatDate(ticket.purchaseDate)}
-            </Text>
-          </View>
-          
-          <View style={[styles.statusBadge, { backgroundColor: statusInfo.color + '20' }]}>
-            <Ionicons name={statusInfo.icon} size={14} color={statusInfo.color} />
-            <Text style={[styles.statusText, { color: statusInfo.color }]}>
-              {statusInfo.text}
+          <View style={[styles.status, { backgroundColor: `${String(getStatusColor(ticket.status))}20` }]}>
+            <Ionicons 
+              name={getStatusIcon(ticket.status)} 
+              size={18} 
+              color={getStatusColor(ticket.status)} 
+            />
+            <Text style={[styles.statusText, { color: getTextColor(ticket.status) }]}>
+              {ticket.status === 'valid' ? 'Válido' : 
+               ticket.status === 'used' ? 'Usado' : 
+               ticket.status === 'expired' ? 'Expirado' : 'Cancelado'}
             </Text>
           </View>
         </View>
         
-        {/* Flecha derecha */}
-        <View style={styles.chevron}>
-          <Ionicons name="chevron-forward" size={20} color={theme.colors.secondaryText} />
+        <View style={styles.ticketDetails}>
+          <View style={styles.infoRow}>
+            <Ionicons 
+              name="person-outline" 
+              size={16} 
+              color={getColorValue(theme.colors.text.secondary)} 
+              style={styles.icon} 
+            />
+            <Text style={[styles.infoText, { color: getColorValue(theme.colors.text.secondary) }]}>
+              {ticket.ticketHolder.name}
+            </Text>
+          </View>
+          
+          <View style={styles.infoRow}>
+            <Ionicons 
+              name="location-outline" 
+              size={16}
+              color={getColorValue(theme.colors.text.secondary)} 
+              style={styles.icon} 
+            />
+            <Text style={[styles.infoText, { color: getColorValue(theme.colors.text.secondary) }]}
+                  numberOfLines={1}>
+              {ticket.event?.location || 'Ubicación no especificada'}
+            </Text>
+          </View>
+          
+          <View style={styles.infoRow}>
+            <Ionicons 
+              name="ticket-outline" 
+              size={16} 
+              color={getColorValue(theme.colors.text.secondary)} 
+              style={styles.icon} 
+            />
+            <Text style={[styles.infoText, { color: getColorValue(theme.colors.text.secondary) }]}>
+              {ticket.ticketType} - {ticket.price ? `${ticket.price}€` : 'Gratuito'}
+            </Text>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
+        
+        {ticket.status === 'valid' && (
+          <View style={styles.qrContainer}>
+            <Image 
+              source={{ uri: ticket.qrCode }} 
+              style={styles.qrCode} 
+              resizeMode="contain"
+            />
+          </View>
+        )}
+      </TouchableOpacity>
+    </Card>
   );
 };
 
 const styles = StyleSheet.create({
+  card: {
+    marginBottom: 16,
+  },
   container: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    padding: 16,
   },
-  content: {
+  header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
-  image: {
-    width: 80,
-    height: 100,
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
-  },
-  details: {
+  eventInfo: {
     flex: 1,
-    padding: 12,
+    marginRight: 12,
   },
   eventName: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     marginBottom: 4,
   },
-  infoRow: {
+  date: {
+    fontSize: 14,
+  },
+  status: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
-  },
-  infoText: {
-    fontSize: 12,
-    marginLeft: 6,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
+    padding: 8,
+    borderRadius: 16,
   },
   statusText: {
     fontSize: 12,
     fontWeight: '500',
     marginLeft: 4,
   },
-  chevron: {
-    paddingRight: 12,
-  }
+  ticketDetails: {
+    marginBottom: 16,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  icon: {
+    marginRight: 8,
+  },
+  infoText: {
+    fontSize: 14,
+    flex: 1,
+  },
+  qrContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+  },
+  qrCode: {
+    width: 160,
+    height: 160,
+  },
 }); 

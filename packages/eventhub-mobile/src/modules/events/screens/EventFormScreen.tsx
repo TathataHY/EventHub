@@ -19,22 +19,31 @@ import {
   Event,
   EventType,
   EventCategory,
+  EventCategoryEnum,
   EventVisibility,
-  CreateEventParams
+  CreateEventData,
+  EventTicketInfo,
+  EventLocation
 } from '../types';
-import { colors } from '@theme';
+import { useTheme, getColorValue, getIconColor } from '../../../core/theme';
+import { format, addDays } from 'date-fns';
+import { ServiceEvent } from '@modules/events/services/event.service';
 
 interface EventFormScreenProps {
   event?: Event;
-  onSave?: (eventId: string | number) => void;
+  onSave?: (eventId: string) => void;
   onCancel?: () => void;
+  isEditMode?: boolean;
 }
 
 export const EventFormScreen: React.FC<EventFormScreenProps> = ({
   event,
   onSave,
-  onCancel
+  onCancel,
+  isEditMode = false
 }) => {
+  const { theme } = useTheme();
+  
   // Hook para gestionar la creación/edición
   const {
     isLoading,
@@ -47,17 +56,21 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
   } = useEventCreation();
 
   // Estado para los campos del formulario
-  const [formData, setFormData] = useState<CreateEventParams>({
+  const [formData, setFormData] = useState<CreateEventData>({
     title: '',
     description: '',
-    startDate: new Date(),
+    startDate: new Date().toISOString(),
+    endDate: '',
     location: '',
-    category: EventCategory.OTHER,
-    type: EventType.IN_PERSON,
-    visibility: EventVisibility.PUBLIC,
+    category: EventCategoryEnum.OTHER,
+    type: EventType.INPERSON,
+    price: 0,
+    capacity: 0,
+    organizerId: '', // Se debe establecer desde el contexto de autenticación
     ticketInfo: {
-      isFree: true,
       price: 0,
+      availableTickets: 0,
+      isFree: true,
       currency: 'EUR'
     }
   });
@@ -70,114 +83,124 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
   // Estado para los errores de validación
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  // Cargar datos del evento si estamos editando
+  // Cargar datos del evento si estamos en modo edición
   useEffect(() => {
-    if (event) {
-      const eventData: CreateEventParams = {
-        title: event.title,
-        description: event.description,
-        startDate: event.startDate ? new Date(event.startDate) : new Date(),
-        endDate: event.endDate ? new Date(event.endDate) : undefined,
-        startTime: event.startTime,
-        endTime: event.endTime,
-        location: event.location,
-        category: event.category || EventCategory.OTHER,
-        type: event.type || EventType.IN_PERSON,
-        visibility: event.visibility || EventVisibility.PUBLIC,
-        ticketInfo: event.ticketInfo || {
-          isFree: true,
-          price: 0,
-          currency: 'EUR'
-        },
-        websiteUrl: event.websiteUrl,
-        imageUrl: event.imageUrl,
-        tags: event.tags,
-        capacity: event.metrics?.maxCapacity
-      };
-      
-      setFormData(eventData);
+    if (isEditMode && event) {
+      // Usar la función setFormFieldsFromEvent que ya maneja ServiceEvent
+      setFormFieldsFromEvent(event as ServiceEvent);
     }
-  }, [event]);
+  }, [event, isEditMode]);
 
-  // Actualizar un campo del formulario
-  const handleChange = (field: keyof CreateEventParams, value: any) => {
-    setFormData(prev => ({
-      ...prev,
+  // Manejar cambios en campos simples
+  const handleChange = (field: keyof CreateEventData, value: any) => {
+    setFormData(prevData => ({
+      ...prevData,
       [field]: value
     }));
     
-    // Limpiar error de validación al cambiar un campo
+    // Limpiar error de validación si existe
     if (validationErrors[field]) {
-      setValidationErrors(prev => {
-        const newErrors = { ...prev };
+      setValidationErrors(prevErrors => {
+        const newErrors = { ...prevErrors };
         delete newErrors[field];
         return newErrors;
       });
     }
   };
 
-  // Actualizar campos anidados
-  const handleNestedChange = (parent: keyof CreateEventParams, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [parent]: {
-        ...prev[parent],
-        [field]: value
+  // Manejar cambios en objetos anidados
+  const handleNestedChange = (parent: keyof CreateEventData, field: string, value: any) => {
+    setFormData(prevData => {
+      // Asegurarse que prevData[parent] sea un objeto
+      const parentData = prevData[parent] || {};
+      if (typeof parentData === 'object') {
+        return {
+          ...prevData,
+          [parent]: {
+            ...parentData,
+            [field]: value
+          }
+        };
       }
-    }));
-  };
-
-  // Gestionar cambios en el tipo de entrada (gratis o de pago)
-  const handleFreeToggle = (isFree: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      ticketInfo: {
-        ...prev.ticketInfo,
-        isFree,
-        price: isFree ? 0 : prev.ticketInfo?.price || 0
-      }
-    }));
-  };
-
-  // Cambios en fechas
-  const handleDateChange = (field: 'startDate' | 'endDate', date?: Date) => {
-    if (date) {
-      setFormData(prev => ({
-        ...prev,
-        [field]: date
-      }));
+      // Si no es un objeto, simplemente devolver los datos anteriores
+      return prevData;
+    });
+    
+    const errorKey = `${parent}.${field}`;
+    if (validationErrors[errorKey]) {
+      setValidationErrors(prevErrors => {
+        const newErrors = { ...prevErrors };
+        delete newErrors[errorKey];
+        return newErrors;
+      });
     }
+  };
+
+  // Manejar cambio en "Evento gratuito"
+  const handleFreeToggle = (isFree: boolean) => {
+    setFormData(prevData => ({
+      ...prevData,
+      ticketInfo: {
+        ...prevData.ticketInfo as EventTicketInfo,
+        isFree,
+        price: isFree ? 0 : prevData.ticketInfo?.price || 0
+      }
+    }));
+  };
+
+  // Manejar cambios de fecha
+  const handleDateChange = (field: 'startDate' | 'endDate', date?: Date) => {
+    if (!date) return;
+    
+    const isoDate = date.toISOString();
+    
+    setFormData(prevData => ({
+      ...prevData,
+      [field]: isoDate
+    }));
     
     if (field === 'startDate') {
       setShowStartDatePicker(false);
-      setShowStartTimePicker(Platform.OS === 'ios');
     } else {
       setShowEndDatePicker(false);
+    }
+    
+    // Limpiar error de validación si existe
+    if (validationErrors[field]) {
+      setValidationErrors(prevErrors => {
+        const newErrors = { ...prevErrors };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
   };
 
   // Formatear fecha para mostrar
-  const formatDate = (date?: Date): string => {
-    if (!date) return 'Seleccionar fecha';
+  const formatDate = (dateString?: string): string => {
+    if (!dateString) return 'No seleccionada';
     
-    const options = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    } as Intl.DateTimeFormatOptions;
-    
-    return date.toLocaleDateString('es-ES', options);
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('es-ES', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'Fecha inválida';
+    }
   };
 
   // Validar formulario antes de enviar
   const validate = (): boolean => {
-    const errors: Record<string, string> = {};
     const result = validateEvent(formData);
     
     if (!result.isValid) {
-      result.errors.forEach(err => {
-        errors[err.field] = err.message;
+      const errors: Record<string, string> = {};
+      result.errors.forEach(error => {
+        errors[error.field] = error.message;
       });
       
       setValidationErrors(errors);
@@ -187,64 +210,53 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
     return true;
   };
 
-  // Enviar formulario
+  // Manejar envío del formulario
   const handleSubmit = async () => {
+    if (!validate()) {
+      Alert.alert('Error de validación', 'Por favor, completa correctamente todos los campos requeridos.');
+      return;
+    }
+    
     try {
-      if (!validate()) {
-        // Mensaje de error para el primer error de validación
-        const firstError = Object.values(validationErrors)[0];
-        Alert.alert('Error de validación', firstError);
-        return;
-      }
+      // Crear o actualizar según el caso
+      let eventId: string | null;
       
-      let eventId;
-      if (event) {
-        // Actualizar evento existente
+      if (isEditMode && event?.id) {
         eventId = await updateEvent(event.id, formData);
       } else {
-        // Crear nuevo evento
         eventId = await createEvent(formData);
       }
       
-      if (onSave && eventId) {
+      if (eventId && onSave) {
         onSave(eventId);
       }
-    } catch (err) {
-      console.error('Error saving event:', err);
-      Alert.alert(
-        'Error',
-        'No se pudo guardar el evento. Inténtelo de nuevo más tarde.'
-      );
+    } catch (error) {
+      console.error('Error al guardar evento:', error);
+      Alert.alert('Error', 'No se pudo guardar el evento. Inténtalo de nuevo.');
     }
   };
 
-  // Eliminar evento
+  // Manejar eliminación del evento
   const handleDelete = () => {
-    if (!event) return;
+    if (!event?.id) return;
     
     Alert.alert(
-      'Eliminar evento',
-      '¿Está seguro que desea eliminar este evento? Esta acción no se puede deshacer.',
+      'Confirmar eliminación',
+      '¿Estás seguro de que deseas eliminar este evento? Esta acción no se puede deshacer.',
       [
-        { 
-          text: 'Cancelar', 
-          style: 'cancel' 
-        },
-        { 
-          text: 'Eliminar', 
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteEvent(event.id);
-              if (onCancel) {
+              const success = await deleteEvent(event.id);
+              if (success && onCancel) {
                 onCancel();
               }
-            } catch (err) {
-              console.error('Error deleting event:', err);
-              Alert.alert(
-                'Error',
-                'No se pudo eliminar el evento. Inténtelo de nuevo más tarde.'
-              );
+            } catch (error) {
+              console.error('Error al eliminar evento:', error);
+              Alert.alert('Error', 'No se pudo eliminar el evento. Inténtalo de nuevo.');
             }
           }
         }
@@ -252,330 +264,515 @@ export const EventFormScreen: React.FC<EventFormScreenProps> = ({
     );
   };
 
-  // Si está cargando, mostrar indicador
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>
-          {event ? 'Actualizando evento...' : 'Creando evento...'}
-        </Text>
-      </View>
-    );
-  }
+  // Utilidad para crear colores con opacidad
+  const withOpacity = (color: any, opacity: string) => {
+    return `${String(color)}${opacity}`;
+  };
+
+  // Función para obtener el color de la categoría seleccionada
+  const getSelectedCategoryColor = (category: string, selectedCategory?: string) => {
+    return category === selectedCategory ? 'active' : 'inactive';
+  };
+
+  // Obtener el icono para una categoría
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case EventCategoryEnum.MUSIC:
+        return 'musical-notes-outline';
+      case EventCategoryEnum.SPORTS:
+        return 'football-outline';
+      case EventCategoryEnum.ARTS:
+        return 'color-palette-outline';
+      case EventCategoryEnum.BUSINESS:
+        return 'briefcase-outline';
+      case EventCategoryEnum.FOOD:
+        return 'restaurant-outline';
+      case EventCategoryEnum.TECHNOLOGY:
+        return 'hardware-chip-outline';
+      case EventCategoryEnum.LIFESTYLE:
+        return 'leaf-outline';
+      case EventCategoryEnum.EDUCATION:
+        return 'book-outline';
+      case EventCategoryEnum.OTHER:
+      default:
+        return 'pricetag-outline';
+    }
+  };
+
+  // Actualizar la función setFormFieldsFromEvent para usar ServiceEvent
+  const setFormFieldsFromEvent = (event: ServiceEvent | null) => {
+    if (!event) return;
+    
+    const formData: CreateEventData = {
+      title: event.title || '',
+      description: event.description || '',
+      location: typeof event.location === 'string' ? event.location : event.location?.address || '',
+      startDate: event.startDate || new Date().toISOString(),
+      endDate: event.endDate || new Date().toISOString(),
+      category: event.category?.toString() || EventCategoryEnum.OTHER,
+      type: (event.type as EventType) || EventType.INPERSON,
+      organizerId: String(event.organizerId) || '',
+      capacity: event.metrics?.maxCapacity || 0,
+      imageUrl: event.imageUrl || '',
+      ticketInfo: {
+        price: event.ticketInfo?.price || 0,
+        availableTickets: event.ticketInfo?.availableTickets || 0,
+        isFree: event.ticketInfo?.isFree || true,
+        currency: event.ticketInfo?.currency || 'MXN'
+      }
+    };
+    
+    setFormData(formData);
+  };
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={100}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={[styles.container, { backgroundColor: getColorValue(theme.colors.background) }]}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Título *</Text>
-          <TextInput
-            style={[
-              styles.input,
-              validationErrors.title ? styles.inputError : null
-            ]}
-            value={formData.title}
-            onChangeText={(value) => handleChange('title', value)}
-            placeholder="Título del evento"
-            placeholderTextColor={colors.textLight}
-            maxLength={100}
-          />
-          {validationErrors.title && (
-            <Text style={styles.errorText}>{validationErrors.title}</Text>
-          )}
-        </View>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* Título del formulario */}
+        <Text style={[styles.formTitle, { color: getColorValue(theme.colors.text.primary) }]}>
+          {isEditMode ? 'Editar Evento' : 'Crear Nuevo Evento'}
+        </Text>
         
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Descripción *</Text>
-          <TextInput
-            style={[
-              styles.textArea,
-              validationErrors.description ? styles.inputError : null
-            ]}
-            value={formData.description}
-            onChangeText={(value) => handleChange('description', value)}
-            placeholder="Describe tu evento..."
-            placeholderTextColor={colors.textLight}
-            multiline
-            numberOfLines={5}
-            textAlignVertical="top"
-          />
-          {validationErrors.description && (
-            <Text style={styles.errorText}>{validationErrors.description}</Text>
-          )}
-        </View>
-
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Fecha de inicio *</Text>
-          <TouchableOpacity 
-            style={styles.dateButton}
-            onPress={() => setShowStartDatePicker(true)}
-          >
-            <Text style={styles.dateButtonText}>
-              {formatDate(formData.startDate)}
-            </Text>
-            <Ionicons name="calendar" size={20} color={colors.primary} />
-          </TouchableOpacity>
+        {/* Campos del formulario */}
+        <View style={styles.formSection}>
+          <Text style={[styles.sectionTitle, { color: getColorValue(theme.colors.text.primary) }]}>
+            Información Básica
+          </Text>
           
-          {showStartDatePicker && (
-            <DateTimePicker
-              value={formData.startDate || new Date()}
-              mode="date"
-              display="default"
-              onChange={(_, date) => handleDateChange('startDate', date)}
-            />
-          )}
-        </View>
-        
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Fecha de finalización (opcional)</Text>
-          <TouchableOpacity 
-            style={styles.dateButton}
-            onPress={() => setShowEndDatePicker(true)}
-          >
-            <Text style={styles.dateButtonText}>
-              {formData.endDate ? formatDate(formData.endDate) : 'Seleccionar fecha'}
+          {/* Título */}
+          <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: getColorValue(theme.colors.text.primary) }]}>
+              Título *
             </Text>
-            <Ionicons name="calendar" size={20} color={colors.primary} />
-          </TouchableOpacity>
-          
-          {showEndDatePicker && (
-            <DateTimePicker
-              value={formData.endDate || new Date()}
-              mode="date"
-              display="default"
-              onChange={(_, date) => handleDateChange('endDate', date)}
-              minimumDate={formData.startDate}
+            <TextInput
+              style={[
+                styles.textInput,
+                {
+                  borderColor: validationErrors.title
+                    ? getColorValue(theme.colors.error)
+                    : withOpacity(getColorValue(theme.colors.text.secondary), '40')
+                }
+              ]}
+              placeholder="Ej. Conferencia sobre Desarrollo Web"
+              placeholderTextColor={withOpacity(getColorValue(theme.colors.text.secondary), '80')}
+              value={formData.title}
+              onChangeText={(text) => handleChange('title', text)}
             />
-          )}
+            {validationErrors.title && (
+              <Text style={[styles.errorText, { color: getColorValue(theme.colors.error) }]}>
+                {validationErrors.title}
+              </Text>
+            )}
+          </View>
+          
+          {/* Descripción */}
+          <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: getColorValue(theme.colors.text.primary) }]}>
+              Descripción *
+            </Text>
+            <TextInput
+              style={[
+                styles.textInput,
+                styles.textArea,
+                { 
+                  borderColor: validationErrors.description
+                    ? getColorValue(theme.colors.error)
+                    : withOpacity(getColorValue(theme.colors.text.secondary), '40')
+                }
+              ]}
+              placeholder="Describe tu evento..."
+              placeholderTextColor={withOpacity(getColorValue(theme.colors.text.secondary), '80')}
+              value={formData.description}
+              onChangeText={(text) => handleChange('description', text)}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+            {validationErrors.description && (
+              <Text style={[styles.errorText, { color: getColorValue(theme.colors.error) }]}>
+                {validationErrors.description}
+              </Text>
+            )}
+          </View>
         </View>
         
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Ubicación *</Text>
-          <TextInput
-            style={[
-              styles.input,
-              validationErrors.location ? styles.inputError : null
-            ]}
-            value={typeof formData.location === 'string' ? formData.location : ''}
-            onChangeText={(value) => handleChange('location', value)}
-            placeholder="Dirección o ubicación del evento"
-            placeholderTextColor={colors.textLight}
-          />
-          {validationErrors.location && (
-            <Text style={styles.errorText}>{validationErrors.location}</Text>
-          )}
+        {/* Fecha y Hora */}
+        <View style={styles.formSection}>
+          <Text style={[styles.sectionTitle, { color: getColorValue(theme.colors.text.primary) }]}>
+            Fecha y Hora
+          </Text>
+          
+          {/* Fecha de inicio */}
+          <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: getColorValue(theme.colors.text.primary) }]}>
+              Fecha de inicio *
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.datePickerButton,
+                { 
+                  borderColor: validationErrors.startDate
+                    ? getColorValue(theme.colors.error)
+                    : withOpacity(getColorValue(theme.colors.text.secondary), '40')
+                }
+              ]}
+              onPress={() => setShowStartDatePicker(true)}
+            >
+              <Ionicons name="calendar-outline" size={18} color={getIconColor(theme.colors.primary)} />
+              <Text style={[styles.dateText, { color: getColorValue(theme.colors.text.primary) }]}>
+                {formatDate(formData.startDate)}
+              </Text>
+            </TouchableOpacity>
+            {validationErrors.startDate && (
+              <Text style={[styles.errorText, { color: getColorValue(theme.colors.error) }]}>
+                {validationErrors.startDate}
+              </Text>
+            )}
+            
+            {/* Date Picker para fecha de inicio */}
+            {showStartDatePicker && (
+              <DateTimePicker
+                value={new Date(formData.startDate || new Date())}
+                mode="datetime"
+                display="default"
+                onChange={(event, date) => handleDateChange('startDate', date)}
+              />
+            )}
+          </View>
+          
+          {/* Fecha de fin */}
+          <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: getColorValue(theme.colors.text.primary) }]}>
+              Fecha de fin (opcional)
+            </Text>
+            <TouchableOpacity
+              style={[
+                styles.datePickerButton,
+                { 
+                  borderColor: validationErrors.endDate
+                    ? getColorValue(theme.colors.error)
+                    : withOpacity(getColorValue(theme.colors.text.secondary), '40')
+                }
+              ]}
+              onPress={() => setShowEndDatePicker(true)}
+            >
+              <Ionicons name="calendar-outline" size={18} color={getIconColor(theme.colors.primary)} />
+              <Text style={[styles.dateText, { color: getColorValue(theme.colors.text.primary) }]}>
+                {formData.endDate ? formatDate(formData.endDate) : 'No seleccionada'}
+              </Text>
+            </TouchableOpacity>
+            {validationErrors.endDate && (
+              <Text style={[styles.errorText, { color: getColorValue(theme.colors.error) }]}>
+                {validationErrors.endDate}
+              </Text>
+            )}
+            
+            {/* Date Picker para fecha de fin */}
+            {showEndDatePicker && (
+              <DateTimePicker
+                value={new Date(formData.endDate || formData.startDate || new Date())}
+                mode="datetime"
+                display="default"
+                onChange={(event, date) => handleDateChange('endDate', date)}
+              />
+            )}
+          </View>
         </View>
         
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Categoría *</Text>
-          <View style={styles.pickerContainer}>
+        {/* Ubicación */}
+        <View style={styles.formSection}>
+          <Text style={[styles.sectionTitle, { color: getColorValue(theme.colors.text.primary) }]}>
+            Ubicación
+          </Text>
+          
+          <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: getColorValue(theme.colors.text.primary) }]}>
+              Dirección *
+            </Text>
+            <TextInput
+              style={[
+                styles.textInput,
+                { 
+                  borderColor: validationErrors.location
+                    ? getColorValue(theme.colors.error)
+                    : withOpacity(getColorValue(theme.colors.text.secondary), '40')
+                }
+              ]}
+              placeholder="Ej. Calle Ejemplo 123, Madrid"
+              placeholderTextColor={withOpacity(getColorValue(theme.colors.text.secondary), '80')}
+              value={typeof formData.location === 'string' ? formData.location : ''}
+              onChangeText={(text) => handleChange('location', text)}
+            />
+            {validationErrors.location && (
+              <Text style={[styles.errorText, { color: getColorValue(theme.colors.error) }]}>
+                {validationErrors.location}
+              </Text>
+            )}
+          </View>
+        </View>
+        
+        {/* Categoría y Tipo */}
+        <View style={styles.formSection}>
+          <Text style={[styles.sectionTitle, { color: getColorValue(theme.colors.text.primary) }]}>
+            Categoría y Tipo
+          </Text>
+          
+          {/* Categoría */}
+          <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: getColorValue(theme.colors.text.primary) }]}>
+              Categoría
+            </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {Object.values(EventCategory).map((category) => (
-                <TouchableOpacity
-                  key={category}
-                  style={[
-                    styles.categoryButton,
-                    formData.category === category && styles.categorySelected
-                  ]}
-                  onPress={() => handleChange('category', category)}
-                >
-                  <Text
+              <View style={styles.categoryRow}>
+                {Object.values(EventCategoryEnum).map((category) => (
+                  <TouchableOpacity
+                    key={String(category)}
+                    onPress={() => handleChange('category', category)}
                     style={[
-                      styles.categoryText,
-                      formData.category === category && styles.categoryTextSelected
+                      styles.categoryButton,
+                      getSelectedCategoryColor(String(category), formData.category) === 'active'
+                        ? { 
+                            backgroundColor: getColorValue(theme.colors.primary),
+                            borderColor: getColorValue(theme.colors.primary)
+                          }
+                        : {
+                            backgroundColor: getColorValue(theme.colors.background),
+                            borderColor: getSelectedCategoryColor(String(category), formData.category) === 'active'
+                              ? getColorValue(theme.colors.primary)
+                              : getColorValue(theme.colors.border)
+                          }
                     ]}
                   >
-                    {getCategoryLabel(category)}
+                    <View style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8
+                    }}>
+                      <Text style={{
+                        color: getSelectedCategoryColor(String(category), formData.category) === 'active'
+                          ? getColorValue(theme.colors.primary.contrastText)
+                          : getColorValue(theme.colors.text.primary),
+                        fontWeight: 'bold'
+                      }}>
+                        {getCategoryLabel(String(category))}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+          
+          {/* Tipo de evento */}
+          <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: getColorValue(theme.colors.text.primary) }]}>
+              Tipo de evento
+            </Text>
+            <View style={styles.typeContainer}>
+              {Object.values(EventType).map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  style={[
+                    styles.typeButton,
+                    formData.type === type && { 
+                      backgroundColor: withOpacity(getColorValue(theme.colors.primary), '20'),
+                      borderColor: getColorValue(theme.colors.primary)
+                    }
+                  ]}
+                  onPress={() => handleChange('type', type)}
+                >
+                  <Text 
+                    style={[
+                      styles.typeText, 
+                      { 
+                        color: formData.type === type 
+                          ? getColorValue(theme.colors.primary)
+                          : getColorValue(theme.colors.text.primary)
+                      }
+                    ]}
+                  >
+                    {getTypeLabel(type)}
                   </Text>
                 </TouchableOpacity>
               ))}
-            </ScrollView>
+            </View>
           </View>
         </View>
         
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Tipo de evento *</Text>
-          <View style={styles.pickerContainer}>
-            {Object.values(EventType).map((type) => (
-              <TouchableOpacity
-                key={type}
-                style={[
-                  styles.typeButton,
-                  formData.type === type && styles.typeSelected
-                ]}
-                onPress={() => handleChange('type', type)}
-              >
-                <Text
-                  style={[
-                    styles.typeText,
-                    formData.type === type && styles.typeTextSelected
-                  ]}
-                >
-                  {getTypeLabel(type)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-        
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Entrada</Text>
+        {/* Entradas */}
+        <View style={styles.formSection}>
+          <Text style={[styles.sectionTitle, { color: getColorValue(theme.colors.text.primary) }]}>
+            Información de Entradas
+          </Text>
+          
+          {/* Evento gratuito */}
           <View style={styles.switchContainer}>
-            <Text style={styles.switchLabel}>Evento gratuito</Text>
+            <Text style={[styles.switchLabel, { color: getColorValue(theme.colors.text.primary) }]}>
+              Evento gratuito
+            </Text>
             <Switch
               value={formData.ticketInfo?.isFree}
               onValueChange={handleFreeToggle}
-              trackColor={{ false: colors.grayLight, true: colors.primaryLight }}
-              thumbColor={formData.ticketInfo?.isFree ? colors.primary : colors.gray}
+              trackColor={{ 
+                false: withOpacity(getColorValue(theme.colors.text.secondary), '40'), 
+                true: withOpacity(getColorValue(theme.colors.success), '70')
+              }}
+              thumbColor={
+                formData.ticketInfo?.isFree 
+                  ? getColorValue(theme.colors.success) 
+                  : getColorValue(theme.colors.text.secondary)
+              }
             />
           </View>
           
+          {/* Precio (si no es gratuito) */}
           {!formData.ticketInfo?.isFree && (
-            <View style={styles.priceContainer}>
+            <View style={styles.inputContainer}>
+              <Text style={[styles.inputLabel, { color: getColorValue(theme.colors.text.primary) }]}>
+                Precio (EUR)
+              </Text>
               <TextInput
-                style={styles.priceInput}
-                value={formData.ticketInfo?.price?.toString() || '0'}
-                onChangeText={(value) => 
-                  handleNestedChange('ticketInfo', 'price', parseFloat(value) || 0)
-                }
-                keyboardType="numeric"
+                style={[
+                  styles.textInput,
+                  { 
+                    borderColor: validationErrors['ticketInfo.price']
+                      ? getColorValue(theme.colors.error)
+                      : withOpacity(getColorValue(theme.colors.text.secondary), '40')
+                  }
+                ]}
                 placeholder="0.00"
-                placeholderTextColor={colors.textLight}
+                placeholderTextColor={withOpacity(getColorValue(theme.colors.text.secondary), '80')}
+                value={formData.ticketInfo?.price?.toString() || '0'}
+                onChangeText={(text) => {
+                  const price = parseFloat(text) || 0;
+                  handleNestedChange('ticketInfo', 'price', price);
+                }}
+                keyboardType="numeric"
               />
-              
-              <TextInput
-                style={styles.currencyInput}
-                value={formData.ticketInfo?.currency || 'EUR'}
-                onChangeText={(value) => 
-                  handleNestedChange('ticketInfo', 'currency', value)
-                }
-                placeholder="EUR"
-                placeholderTextColor={colors.textLight}
-                maxLength={3}
-              />
+              {validationErrors['ticketInfo.price'] && (
+                <Text style={[styles.errorText, { color: getColorValue(theme.colors.error) }]}>
+                  {validationErrors['ticketInfo.price']}
+                </Text>
+              )}
             </View>
           )}
-        </View>
-        
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Visibilidad</Text>
-          <View style={styles.pickerContainer}>
-            {Object.values(EventVisibility).map((visibility) => (
-              <TouchableOpacity
-                key={visibility}
-                style={[
-                  styles.visibilityButton,
-                  formData.visibility === visibility && styles.visibilitySelected
-                ]}
-                onPress={() => handleChange('visibility', visibility)}
-              >
-                <Text
-                  style={[
-                    styles.visibilityText,
-                    formData.visibility === visibility && styles.visibilityTextSelected
-                  ]}
-                >
-                  {getVisibilityLabel(visibility)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+          
+          {/* Capacidad */}
+          <View style={styles.inputContainer}>
+            <Text style={[styles.inputLabel, { color: getColorValue(theme.colors.text.primary) }]}>
+              Capacidad máxima
+            </Text>
+            <TextInput
+              style={[
+                styles.textInput,
+                { 
+                  borderColor: withOpacity(getColorValue(theme.colors.text.secondary), '40')
+                }
+              ]}
+              placeholder="Ej. 100"
+              placeholderTextColor={withOpacity(getColorValue(theme.colors.text.secondary), '80')}
+              value={formData.capacity?.toString() || ''}
+              onChangeText={(text) => {
+                const capacity = parseInt(text) || 0;
+                handleChange('capacity', capacity);
+              }}
+              keyboardType="numeric"
+            />
           </View>
         </View>
         
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Sitio web (opcional)</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.websiteUrl || ''}
-            onChangeText={(value) => handleChange('websiteUrl', value)}
-            placeholder="https://www.ejemplo.com"
-            placeholderTextColor={colors.textLight}
-            keyboardType="url"
-            autoCapitalize="none"
-          />
-        </View>
-        
-        <View style={styles.formGroup}>
-          <Text style={styles.label}>Capacidad máxima (opcional)</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.capacity?.toString() || ''}
-            onChangeText={(value) => 
-              handleChange('capacity', value ? parseInt(value, 10) : undefined)
-            }
-            placeholder="Número de asistentes permitidos"
-            placeholderTextColor={colors.textLight}
-            keyboardType="numeric"
-          />
-        </View>
-        
-        <View style={styles.buttonGroup}>
-          {event && (
-            <TouchableOpacity 
-              style={styles.deleteButton}
-              onPress={handleDelete}
-            >
-              <Ionicons name="trash" size={20} color="white" />
-              <Text style={styles.deleteButtonText}>Eliminar</Text>
-            </TouchableOpacity>
+        {/* Botones de acción */}
+        <View style={styles.actionsContainer}>
+          {isLoading ? (
+            <ActivityIndicator size="large" color={getColorValue(theme.colors.primary)} />
+          ) : (
+            <>
+              <TouchableOpacity
+                style={[
+                  styles.submitButton,
+                  { backgroundColor: getColorValue(theme.colors.primary) }
+                ]}
+                onPress={handleSubmit}
+              >
+                <Text style={styles.buttonText}>
+                  {isEditMode ? 'Guardar Cambios' : 'Crear Evento'}
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.cancelButton,
+                  { borderColor: getColorValue(theme.colors.text.secondary) }
+                ]}
+                onPress={onCancel}
+              >
+                <Text style={[styles.cancelButtonText, { color: getColorValue(theme.colors.text.secondary) }]}>
+                  Cancelar
+                </Text>
+              </TouchableOpacity>
+              
+              {isEditMode && event?.id && (
+                <TouchableOpacity
+                  style={[
+                    styles.deleteButton,
+                    { backgroundColor: getColorValue(theme.colors.error) }
+                  ]}
+                  onPress={handleDelete}
+                >
+                  <Text style={styles.buttonText}>
+                    Eliminar Evento
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </>
           )}
-          
-          <TouchableOpacity 
-            style={styles.cancelButton}
-            onPress={onCancel}
-          >
-            <Text style={styles.cancelButtonText}>Cancelar</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.saveButton}
-            onPress={handleSubmit}
-          >
-            <Text style={styles.saveButtonText}>
-              {event ? 'Actualizar evento' : 'Crear evento'}
-            </Text>
-          </TouchableOpacity>
         </View>
+        
+        {/* Mensaje de error */}
+        {error && (
+          <Text style={[styles.errorMessage, { color: getColorValue(theme.colors.error) }]}>
+            {error}
+          </Text>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
-// Función para obtener la etiqueta de la categoría
-const getCategoryLabel = (category: EventCategory): string => {
+// Utilidad para obtener el label de una categoría
+const getCategoryLabel = (category: string): string => {
   switch (category) {
-    case EventCategory.MUSIC:
-      return 'Música';
-    case EventCategory.BUSINESS:
-      return 'Negocios';
-    case EventCategory.FOOD:
-      return 'Gastronomía';
-    case EventCategory.ART:
-      return 'Arte y Cultura';
-    case EventCategory.SPORTS:
-      return 'Deportes';
-    case EventCategory.HEALTH:
-      return 'Salud y Bienestar';
-    case EventCategory.EDUCATION:
-      return 'Educación';
-    case EventCategory.TECHNOLOGY:
-      return 'Tecnología';
-    case EventCategory.OTHER:
-      return 'Otros';
+    case EventCategoryEnum.MUSIC:
+      return "Música";
+    case EventCategoryEnum.SPORTS:
+      return "Deportes";
+    case EventCategoryEnum.ARTS:
+      return "Arte y Cultura";
+    case EventCategoryEnum.BUSINESS:
+      return "Negocios";
+    case EventCategoryEnum.FOOD:
+      return "Gastronomía";
+    case EventCategoryEnum.TECHNOLOGY:
+      return "Tecnología";
+    case EventCategoryEnum.LIFESTYLE:
+      return "Estilo de Vida";
+    case EventCategoryEnum.EDUCATION:
+      return "Educación";
+    case EventCategoryEnum.OTHER:
+      return "Otro";
     default:
-      return 'Desconocido';
+      return "Categoría";
   }
 };
 
-// Función para obtener la etiqueta del tipo de evento
+// Utilidad para obtener el label del tipo de evento
 const getTypeLabel = (type: EventType): string => {
   switch (type) {
-    case EventType.IN_PERSON:
+    case EventType.INPERSON:
       return 'Presencial';
     case EventType.ONLINE:
       return 'En línea';
@@ -586,238 +783,145 @@ const getTypeLabel = (type: EventType): string => {
   }
 };
 
-// Función para obtener la etiqueta de visibilidad
-const getVisibilityLabel = (visibility: EventVisibility): string => {
-  switch (visibility) {
-    case EventVisibility.PUBLIC:
-      return 'Público';
-    case EventVisibility.PRIVATE:
-      return 'Privado';
-    case EventVisibility.UNLISTED:
-      return 'No listado';
-    default:
-      return 'Desconocido';
-  }
-};
-
+// Estilos
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
-  scrollContent: {
+  scrollContainer: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+  formTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 24,
+    textAlign: 'center',
   },
-  loadingText: {
-    marginTop: 12,
+  formSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
     fontSize: 16,
-    color: colors.textDark,
-  },
-  formGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: colors.textDark,
     marginBottom: 8,
   },
-  input: {
-    backgroundColor: colors.cardBackground,
-    borderRadius: 8,
+  textInput: {
+    height: 48,
     borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
+    borderRadius: 8,
+    paddingHorizontal: 12,
     fontSize: 16,
-    color: colors.textDark,
-  },
-  inputError: {
-    borderColor: colors.danger,
-  },
-  errorText: {
-    color: colors.danger,
-    fontSize: 14,
-    marginTop: 4,
   },
   textArea: {
-    backgroundColor: colors.cardBackground,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
-    fontSize: 16,
-    color: colors.textDark,
-    minHeight: 120,
+    height: 120,
+    paddingTop: 12,
   },
-  dateButton: {
+  datePickerButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.cardBackground,
-    borderRadius: 8,
+    height: 48,
     borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
+    borderRadius: 8,
+    paddingHorizontal: 12,
   },
-  dateButtonText: {
+  dateText: {
     fontSize: 16,
-    color: colors.textDark,
+    marginLeft: 8,
   },
   pickerContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
   categoryButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: 10,
+    marginRight: 8,
     marginBottom: 8,
-    backgroundColor: colors.cardBackground,
-  },
-  categorySelected: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primary,
   },
   categoryText: {
-    color: colors.textDark,
+    fontSize: 14,
   },
-  categoryTextSelected: {
-    color: colors.primary,
-    fontWeight: '500',
+  typeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   typeButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: 10,
-    marginBottom: 8,
-    backgroundColor: colors.cardBackground,
-  },
-  typeSelected: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primary,
+    marginHorizontal: 4,
+    alignItems: 'center',
   },
   typeText: {
-    color: colors.textDark,
-  },
-  typeTextSelected: {
-    color: colors.primary,
+    fontSize: 14,
     fontWeight: '500',
   },
   switchContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.cardBackground,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
+    alignItems: 'center',
+    marginBottom: 16,
   },
   switchLabel: {
     fontSize: 16,
-    color: colors.textDark,
   },
-  priceContainer: {
-    flexDirection: 'row',
+  actionsContainer: {
+    marginTop: 16,
+  },
+  submitButton: {
+    height: 48,
+    borderRadius: 8,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 8,
+    marginBottom: 12,
   },
-  priceInput: {
-    flex: 2,
-    backgroundColor: colors.cardBackground,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
+  buttonText: {
+    color: '#FFFFFF',
     fontSize: 16,
-    color: colors.textDark,
-    marginRight: 8,
-  },
-  currencyInput: {
-    flex: 1,
-    backgroundColor: colors.cardBackground,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 12,
-    fontSize: 16,
-    color: colors.textDark,
-  },
-  visibilityButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: 10,
-    marginBottom: 8,
-    backgroundColor: colors.cardBackground,
-  },
-  visibilitySelected: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primary,
-  },
-  visibilityText: {
-    color: colors.textDark,
-  },
-  visibilityTextSelected: {
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  buttonGroup: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 20,
-  },
-  saveButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  saveButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
   },
   cancelButton: {
-    backgroundColor: colors.grayLight,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    height: 48,
     borderRadius: 8,
-    marginRight: 10,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   cancelButtonText: {
-    color: colors.textDark,
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
   },
   deleteButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.danger,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    height: 48,
     borderRadius: 8,
-    marginRight: 'auto',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  deleteButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
-    marginLeft: 8,
+  errorText: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  errorMessage: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
+    marginHorizontal: -4,
   },
 }); 
