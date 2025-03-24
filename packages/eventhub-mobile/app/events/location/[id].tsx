@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { EventLocationScreen } from '../../../src/modules/events/screens';
+import { EventLocationScreen } from '@modules/events/screens';
 
 /**
  * Pantalla de ubicación del evento utilizando la estructura modular

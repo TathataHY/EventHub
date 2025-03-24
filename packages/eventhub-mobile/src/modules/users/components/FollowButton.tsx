@@ -1,71 +1,73 @@
 import React, { useState } from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { colors } from '@theme/base/colors';
-import { getColorValue } from '@theme/index';
+import { useTheme } from '@shared/hooks/useTheme';
+import { getColorValue } from '@theme/theme.types';
+import { userService } from '../services/user.service';
 
 interface FollowButtonProps {
   userId: string;
-  isFollowing: boolean;
-  onFollowPress: (userId: string) => Promise<{ success: boolean, error?: string }>;
-  onUnfollowPress: (userId: string) => Promise<{ success: boolean, error?: string }>;
+  isFollowing?: boolean;
+  onFollowStatusChange?: (isFollowing: boolean) => void;
 }
 
 export const FollowButton: React.FC<FollowButtonProps> = ({
   userId,
-  isFollowing,
-  onFollowPress,
-  onUnfollowPress
+  isFollowing = false,
+  onFollowStatusChange
 }) => {
+  const { theme } = useTheme();
   const [following, setFollowing] = useState(isFollowing);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  
   const handlePress = async () => {
-    setLoading(true);
-    setError(null);
-    
     try {
+      setLoading(true);
+      
       if (following) {
         // Dejar de seguir
-        const result = await onUnfollowPress(userId);
-        
-        if (result.success) {
-          setFollowing(false);
-        } else {
-          setError(result.error || 'Error al dejar de seguir');
-        }
+        await userService.unfollowUser(userId);
       } else {
-        // Comenzar a seguir
-        const result = await onFollowPress(userId);
-        
-        if (result.success) {
-          setFollowing(true);
-        } else {
-          setError(result.error || 'Error al seguir usuario');
-        }
+        // Seguir
+        await userService.followUser(userId);
       }
-    } catch (err) {
-      setError('Error al procesar la solicitud');
-      console.error('Error en FollowButton:', err);
+      
+      const newFollowingStatus = !following;
+      setFollowing(newFollowingStatus);
+      
+      if (onFollowStatusChange) {
+        onFollowStatusChange(newFollowingStatus);
+      }
+    } catch (error) {
+      console.error('Error al cambiar estado de seguimiento:', error);
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
     <TouchableOpacity
       style={[
         styles.button,
-        following ? styles.unfollowButton : styles.followButton
+        following 
+          ? { backgroundColor: 'transparent', borderColor: getColorValue(theme.colors.primary.main) }
+          : { backgroundColor: getColorValue(theme.colors.primary.main) }
       ]}
       onPress={handlePress}
       disabled={loading}
     >
       {loading ? (
-        <ActivityIndicator size="small" color="white" />
+        <ActivityIndicator 
+          size="small" 
+          color={following ? getColorValue(theme.colors.primary.main) : '#FFFFFF'} 
+        />
       ) : (
-        <Text style={styles.buttonText}>
-          {following ? 'Dejar de seguir' : 'Seguir'}
+        <Text 
+          style={[
+            styles.buttonText,
+            { color: following ? getColorValue(theme.colors.primary.main) : '#FFFFFF' }
+          ]}
+        >
+          {following ? 'Siguiendo' : 'Seguir'}
         </Text>
       )}
     </TouchableOpacity>
@@ -74,32 +76,17 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     paddingVertical: 8,
     borderRadius: 20,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
     minWidth: 120,
   },
-  followButton: {
-    backgroundColor: getColorValue(colors.primary),
-  },
-  unfollowButton: {
-    backgroundColor: getColorValue(colors.grey[500]),
-  },
   buttonText: {
-    color: 'white',
-    fontWeight: '500',
     fontSize: 14,
-  },
-  buttonOutlined: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.grey[200],
-    borderWidth: 1,
-    borderColor: colors.grey[400],
+    fontWeight: '600',
   },
 }); 

@@ -2,35 +2,16 @@
  * Servicios para la gestión de tickets
  */
 
-import { apiClient } from '../../../core/api';
-import { mockTickets } from '../../../core/mocks';
+import { apiClient } from '@core/api';
+import { mockTickets } from '@core/mocks';
+import { Ticket, TicketStatus, TicketType, TicketPurchaseData, CreateTicketData } from '@modules/tickets/types';
 
-// Tipo básico de ticket
-interface Ticket {
-  id: string;
-  eventId: string;
-  userId: string;
-  ticketNumber: string;
-  ticketType: string;
-  seat?: string;
-  price: number;
-  status: 'valid' | 'used' | 'expired' | 'cancelled';
-  purchaseDate: string;
-  qrCode: string;
-  ticketHolder: {
-    name: string;
-    email: string;
-    phone?: string;
-  };
-  event?: {
-    id: string;
-    title: string;
-    startDate: string;
-    endDate: string;
-    location: string;
-    image?: string;
-  };
-}
+// Convertir tickets mock para asegurar tipos correctos
+const typedMockTickets: Ticket[] = mockTickets.map(ticket => ({
+  ...ticket,
+  ticketType: ticket.ticketType as TicketType,
+  status: ticket.status as TicketStatus
+}));
 
 /**
  * Servicio para gestionar tickets
@@ -48,7 +29,10 @@ export const ticketService = {
       // return response.data;
       
       // Por ahora, devolvemos datos simulados
-      return mockTickets.filter(ticket => ticket.userId === userId);
+      // Si se proporciona un userId, filtrar por ese usuario, sino devolver todos
+      return userId 
+        ? typedMockTickets.filter(ticket => ticket.userId === userId) 
+        : typedMockTickets;
     } catch (error) {
       console.error('Error al obtener tickets del usuario:', error);
       return [];
@@ -67,7 +51,7 @@ export const ticketService = {
       // return response.data;
       
       // Por ahora, devolvemos datos simulados
-      const ticket = mockTickets.find(t => t.id === ticketId);
+      const ticket = typedMockTickets.find(t => t.id === ticketId);
       return ticket || null;
     } catch (error) {
       console.error('Error al obtener ticket por ID:', error);
@@ -87,7 +71,7 @@ export const ticketService = {
       // return response.data;
       
       // Por ahora, actualizamos datos simulados
-      const ticketIndex = mockTickets.findIndex(t => t.id === ticketId);
+      const ticketIndex = typedMockTickets.findIndex(t => t.id === ticketId);
       
       if (ticketIndex === -1) {
         return null;
@@ -95,12 +79,12 @@ export const ticketService = {
       
       // Actualizar estado del ticket a 'usado'
       const updatedTicket = {
-        ...mockTickets[ticketIndex],
-        status: 'used' as const
+        ...typedMockTickets[ticketIndex],
+        status: 'used' as TicketStatus
       };
       
       // Actualizar en el array de tickets simulados
-      mockTickets[ticketIndex] = updatedTicket;
+      typedMockTickets[ticketIndex] = updatedTicket;
       
       return updatedTicket;
     } catch (error) {
@@ -119,16 +103,7 @@ export const ticketService = {
   purchaseTicket: async (
     eventId: string,
     userId: string,
-    ticketData: {
-      ticketType: string;
-      price: number;
-      seat?: string;
-      ticketHolder: {
-        name: string;
-        email: string;
-        phone?: string;
-      };
-    }
+    ticketData: TicketPurchaseData
   ): Promise<Ticket | null> => {
     try {
       // En una implementación real, se haría una llamada a la API
@@ -139,23 +114,28 @@ export const ticketService = {
       // });
       // return response.data;
       
+      // Asegurar que el tipo de ticket sea válido
+      const ticketType = (ticketData.ticketType as TicketType) || 'general';
+      
       // Por ahora, creamos un ticket simulado
       const newTicket: Ticket = {
         id: `ticket-${Date.now()}`,
         eventId,
         userId,
         ticketNumber: `T-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
-        ticketType: ticketData.ticketType,
+        ticketType: ticketType,
         seat: ticketData.seat,
         price: ticketData.price,
         status: 'valid',
         purchaseDate: new Date().toISOString(),
         qrCode: `EH-${eventId}-${Date.now()}`,
-        ticketHolder: ticketData.ticketHolder
+        ticketHolder: ticketData.ticketHolder,
+        isTransferable: false,
+        validationCount: 0
       };
       
       // Agregar al array de tickets simulados
-      mockTickets.push(newTicket);
+      typedMockTickets.push(newTicket);
       
       return newTicket;
     } catch (error) {
@@ -176,7 +156,7 @@ export const ticketService = {
       // return response.data;
       
       // Por ahora, actualizamos datos simulados
-      const ticketIndex = mockTickets.findIndex(t => t.id === ticketId);
+      const ticketIndex = typedMockTickets.findIndex(t => t.id === ticketId);
       
       if (ticketIndex === -1) {
         return null;
@@ -184,12 +164,12 @@ export const ticketService = {
       
       // Actualizar estado del ticket a 'cancelado'
       const updatedTicket = {
-        ...mockTickets[ticketIndex],
-        status: 'cancelled' as const
+        ...typedMockTickets[ticketIndex],
+        status: 'cancelled' as TicketStatus
       };
       
       // Actualizar en el array de tickets simulados
-      mockTickets[ticketIndex] = updatedTicket;
+      typedMockTickets[ticketIndex] = updatedTicket;
       
       return updatedTicket;
     } catch (error) {

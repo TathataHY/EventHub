@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { ResetPasswordScreen } from '../../src/modules/auth/screens';
+import { ResetPasswordScreen } from '@modules/auth/screens';
 
 /**
  * Pantalla de restablecimiento de contraseña utilizando la estructura modular

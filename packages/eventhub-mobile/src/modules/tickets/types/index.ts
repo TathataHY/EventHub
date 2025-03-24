@@ -58,6 +58,7 @@ export interface Ticket {
   lastValidatedAt?: string;
   ticketHolder: TicketHolder;
   event?: TicketEventData;
+  currency?: string;
 }
 
 /**

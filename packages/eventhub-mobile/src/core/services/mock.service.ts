@@ -189,6 +189,19 @@ class MockService {
       mockCurrentUser.eventsOrganized.includes(event.id)
     );
   }
+
+  /**
+   * Obtiene los asistentes de un evento
+   * @param eventId ID del evento
+   * @returns Lista de usuarios asistentes
+   */
+  async getEventAttendees(eventId: string) {
+    // Simular retardo de red
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Devolver usuarios aleatorios como asistentes (en un caso real se filtrarían por el evento)
+    return mockUsers.slice(0, 10);
+  }
 }
 
 export const mockService = new MockService(); 

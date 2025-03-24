@@ -1,5 +1,5 @@
 import React from 'react';
-import { TabsLayout } from '../../src/modules/navigation/components';
+import { TabsLayout } from '@modules/navigation/components';
 
 /**
  * Layout de pestañas principales de la aplicación

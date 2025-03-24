@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle, useWindowDimensions } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 
 type BadgeVariant = 'standard' | 'dot';
@@ -32,19 +32,36 @@ export const Badge = ({
   max = 99
 }: BadgeProps) => {
   const { theme, getColorValue } = useTheme();
+  const { width, height } = useWindowDimensions();
   
   if (!visible) return null;
   
-  // Convertir tamaños preestablecidos a números
+  // Determinar el tamaño real en función del size prop
   const getBadgeSize = (): number => {
-    if (typeof size === 'number') return size;
+    const baseSizes = {
+      small: 16,
+      medium: 24,
+      large: 32
+    };
     
-    switch (size) {
-      case 'small': return 16;
-      case 'large': return 24;
-      default: return 20; // medium
+    // Si es un valor numérico, usarlo directamente
+    if (typeof size === 'number') {
+      return size;
     }
+    
+    // Si es una cadena predefinida, usar el valor correspondiente
+    return baseSizes[size || 'medium'];
   };
+  
+  // Calcular el tamaño de la fuente
+  const fontSize = (getBadgeSize() * 0.6);
+  
+  // Determinar color
+  const getColor = (colorPath: any) => {
+    return getColorValue ? getColorValue(colorPath) : String(colorPath);
+  };
+  
+  const badgeColor = color || getColor(theme.colors.primary.main);
   
   // Formatear contenido si es número
   const getContent = () => {
@@ -53,9 +70,6 @@ export const Badge = ({
     }
     return content;
   };
-  
-  // Usar color predeterminado si no se proporciona
-  const badgeColor = color || getColorValue(theme.colors.primary.main);
   
   // Renderizar variante de punto (solo un círculo)
   if (variant === 'dot') {
@@ -77,7 +91,6 @@ export const Badge = ({
   
   // Renderizar variante estándar (con texto)
   const badgeSize = getBadgeSize();
-  const fontSize = badgeSize * 0.6;
   
   return (
     <View style={[

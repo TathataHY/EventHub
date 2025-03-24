@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { NotificationsScreen } from '../../src/modules/notifications/screens';
+import { NotificationsScreen } from '@modules/notifications/screens';
 
 /**
  * Página de notificaciones que utiliza la estructura modular

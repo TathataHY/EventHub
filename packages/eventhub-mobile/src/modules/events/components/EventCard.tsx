@@ -7,23 +7,19 @@ import {
   TouchableOpacity,
   Dimensions,
   StyleProp,
-  ViewStyle
+  ViewStyle,
+  ColorValue
 } from 'react-native';
-import { Ionicons, FontAwesome } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../../shared/hooks/useTheme';
-import { Card } from '@shared/components/ui/Card';
+import { getColorValue } from '@theme/theme.types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Icon } from '../../../shared/components/ui/Icon';
+import { Event, EventLocation } from '../types';
 
-// Constantes para tipos de eventos
-const EVENT_TYPES = {
-  IN_PERSON: 'presencial',
-  ONLINE: 'online',
-  HYBRID: 'hybrid'
-};
+const { width } = Dimensions.get('window');
 
-// Tipo genérico para eventos de cualquier origen
+// Versión ampliada de EventCardProps para dar soporte a múltiples fuentes
 export interface EventCardProps {
   event: {
     id: string | number;
@@ -31,11 +27,7 @@ export interface EventCardProps {
     description?: string;
     imageUrl?: string;
     image?: string;
-    location?: {
-      name?: string;
-      address?: string;
-      city?: string;
-    } | string;
+    location?: string | EventLocation;
     startDate?: string | Date;
     endDate?: string | Date;
     date?: string | Date;
@@ -43,35 +35,60 @@ export interface EventCardProps {
     category?: string;
     categories?: string[];
     attendeesCount?: number;
-    organizerId?: string;
-    organizer?: string | { id: string; name: string };
+    organizerId?: string | number;
+    organizer?: string | { id: string | number; name: string };
   };
-  style?: ViewStyle;
-  onPress?: (event: any) => void;
+  style?: StyleProp<ViewStyle>;
+  onPress?: (eventId: string) => void;
   showDetails?: boolean;
   compact?: boolean;
+  showDistance?: boolean;
+  distance?: number;
 }
 
 /**
- * Componente reutilizable para mostrar tarjetas de eventos
+ * Componente de tarjeta de evento reutilizable
  */
-export const EventCard = ({
-  event,
-  style,
-  onPress,
-  showDetails = true,
-  compact = false
-}: EventCardProps) => {
-  const { theme, getColorValue } = useTheme();
+export const EventCard: React.FC<EventCardProps> = ({ 
+  event, 
+  style, 
+  onPress, 
+  showDetails = true, 
+  compact = false,
+  showDistance = false,
+  distance
+}) => {
+  const { theme } = useTheme();
   
-  // Obtener imagen con fallback
-  const getImageUrl = () => {
-    if (event.imageUrl) return event.imageUrl;
-    if (event.image) return event.image;
-    return 'https://via.placeholder.com/300x150?text=EventHub';
+  // Handler para el evento de press con conversión de ID a string
+  const handlePress = () => {
+    if (onPress && event.id) {
+      onPress(String(event.id));
+    }
   };
   
-  // Obtener ubicación formateada
+  // Formatear fecha
+  const formatDate = (dateString?: string | Date) => {
+    if (!dateString) return 'Fecha no disponible';
+    
+    try {
+      const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+      return format(date, "d MMM", { locale: es });
+    } catch (error) {
+      return 'Fecha inválida';
+    }
+  };
+  
+  // Obtener imagen del evento
+  const getImage = () => {
+    const imageSource = event.imageUrl || event.image;
+    if (!imageSource) {
+      return require('../../../shared/assets/images/event-placeholder.png');
+    }
+    return { uri: imageSource };
+  };
+  
+  // Obtener ubicación del evento
   const getLocation = () => {
     if (!event.location) return 'Ubicación no especificada';
     
@@ -79,228 +96,273 @@ export const EventCard = ({
       return event.location;
     }
     
-    if (event.location.name) return event.location.name;
-    if (event.location.city) return event.location.city;
-    if (event.location.address) return event.location.address;
-    
-    return 'Ubicación no especificada';
+    // Si es un objeto de ubicación
+    const { name, city, state } = event.location;
+    if (name) return name;
+    return [city, state].filter(Boolean).join(', ') || 'Ubicación no especificada';
   };
   
-  // Obtener categoría principal
-  const getCategory = () => {
-    if (event.category) return event.category;
-    
-    if (event.categories && event.categories.length > 0) {
-      return event.categories[0];
+  // Formatear precio
+  const formatPrice = () => {
+    if (event.price === 0 || event.price === '0' || event.price === 'free') {
+      return 'Gratuito';
     }
     
-    return null;
+    if (!event.price) {
+      return 'Precio no disponible';
+    }
+    
+    const price = typeof event.price === 'string' 
+      ? parseFloat(event.price) 
+      : event.price;
+    
+    if (isNaN(price)) {
+      return event.price;
+    }
+    
+    return `${price} €`;
   };
   
-  // Formatear fecha
-  const getFormattedDate = () => {
-    try {
-      // Utilizar startDate o date si está disponible
-      const startDate = event.startDate 
-        ? new Date(event.startDate) 
-        : event.date 
-          ? new Date(event.date) 
-          : null;
-          
-      if (!startDate) return 'Fecha no especificada';
-      
-      // Si hay endDate, comprobar si es el mismo día
-      const endDate = event.endDate ? new Date(event.endDate) : startDate;
-      
-      // Si es el mismo día, mostrar solo fecha y horarios
-      if (startDate.toDateString() === endDate.toDateString()) {
-        return format(startDate, "d 'de' MMMM, yyyy", { locale: es });
-      }
-      
-      // Si son días diferentes, mostrar ambas fechas
-      return `${format(startDate, "d 'de' MMMM", { locale: es })} - ${format(endDate, "d 'de' MMMM, yyyy", { locale: es })}`;
-    } catch (error) {
-      return 'Fecha no disponible';
+  // Obtener color de icono
+  const getIconColor = (type: string): ColorValue => {
+    switch (type) {
+      case 'info':
+        return getColorValue(theme.colors.info.main);
+      case 'success':
+        return getColorValue(theme.colors.success.main);
+      case 'warning':
+        return getColorValue(theme.colors.warning.main);
+      default:
+        return getColorValue(theme.colors.text.secondary);
     }
   };
-  
-  const handlePress = () => {
-    if (onPress) {
-      onPress(event);
-    }
-  };
-  
-  // Diseño compacto
-  if (compact) {
-    return (
-      <TouchableOpacity
-        style={[styles.compactContainer, style]}
-        onPress={handlePress}
-        activeOpacity={0.7}
-      >
-        <Image 
-          source={{ uri: getImageUrl() }}
-          style={styles.compactImage}
-          resizeMode="cover"
-        />
-        <View style={styles.compactContent}>
-          <Text 
-            style={[styles.compactTitle, { color: getColorValue(theme.colors.text.primary) }]}
-            numberOfLines={2}
-          >
-            {event.title}
-          </Text>
-          <Text 
-            style={[styles.compactInfo, { color: getColorValue(theme.colors.text.secondary) }]}
-            numberOfLines={1}
-          >
-            {getFormattedDate()}
-          </Text>
-        </View>
-      </TouchableOpacity>
-    );
-  }
-  
-  // Diseño normal
+
+  // Renderizar tarjeta de evento
   return (
     <TouchableOpacity
-      style={[styles.container, style]}
+      style={[
+        styles.container,
+        compact ? styles.compactContainer : null,
+        style
+      ]}
       onPress={handlePress}
-      activeOpacity={0.7}
+      activeOpacity={0.8}
     >
-      <Image 
-        source={{ uri: getImageUrl() }}
-        style={styles.image}
-        resizeMode="cover"
-      />
+      <View style={compact ? styles.compactContentLayout : styles.imageContainer}>
+        <Image 
+          source={getImage()} 
+          style={compact ? styles.compactImage : styles.image}
+          resizeMode="cover"
+        />
+        
+        {!compact && event.category && (
+          <View style={[
+            styles.categoryLabel,
+            { backgroundColor: getColorValue(theme.colors.primary.main) }
+          ]}>
+            <Text style={styles.categoryText}>{event.category}</Text>
+          </View>
+        )}
+
+        {showDistance && distance !== undefined && (
+          <View style={[
+            styles.distanceLabel,
+            { backgroundColor: getColorValue(theme.colors.info.main) }
+          ]}>
+            <Ionicons 
+              name="location" 
+              size={12} 
+              color={getColorValue(theme.colors.common.white)}
+              style={styles.distanceIcon}
+            />
+            <Text style={styles.distanceText}>
+              {distance < 1 ? `${Math.round(distance * 1000)} m` : `${distance.toFixed(1)} km`}
+            </Text>
+          </View>
+        )}
+      </View>
       
-      <View style={styles.content}>
+      <View style={compact ? styles.compactInfoContainer : styles.infoContainer}>
         <Text 
-          style={[styles.title, { color: getColorValue(theme.colors.text.primary) }]}
-          numberOfLines={2}
+          style={[
+            styles.title, 
+            compact ? { fontSize: 14, marginBottom: 2 } : null,
+            { color: getColorValue(theme.colors.text.primary) }
+          ]}
+          numberOfLines={compact ? 1 : 2}
         >
           {event.title}
         </Text>
         
         {showDetails && (
-          <View style={styles.details}>
-            <View style={styles.detailRow}>
-              <Icon name="calendar-outline" size={16} color={getColorValue(theme.colors.text.secondary)} />
-              <Text style={[styles.detailText, { color: getColorValue(theme.colors.text.secondary) }]}>
-                {getFormattedDate()}
-              </Text>
-            </View>
-            
-            <View style={styles.detailRow}>
-              <Icon name="location-outline" size={16} color={getColorValue(theme.colors.text.secondary)} />
-              <Text 
-                style={[styles.detailText, { color: getColorValue(theme.colors.text.secondary) }]}
-                numberOfLines={1}
-              >
-                {getLocation()}
-              </Text>
-            </View>
-            
-            {getCategory() && (
-              <View style={[
-                styles.category, 
-                { backgroundColor: getColorValue(theme.colors.primary.light) }
-              ]}>
-                <Text style={[
-                  styles.categoryText, 
-                  { color: getColorValue(theme.colors.primary.main) }
-                ]}>
-                  {getCategory()}
+          <>
+            <View style={styles.dateLocationContainer}>
+              <View style={styles.iconTextContainer}>
+                <Ionicons 
+                  name="calendar-outline" 
+                  size={14} 
+                  color={getIconColor('info')}
+                  style={styles.icon}
+                />
+                <Text 
+                  style={[
+                    styles.subtitle,
+                    { color: getColorValue(theme.colors.text.secondary) }
+                  ]}
+                  numberOfLines={1}
+                >
+                  {formatDate(event.startDate || event.date)}
                 </Text>
               </View>
-            )}
-          </View>
+              
+              <View style={styles.iconTextContainer}>
+                <Ionicons 
+                  name="location-outline" 
+                  size={14} 
+                  color={getIconColor('info')}
+                  style={styles.icon}
+                />
+                <Text 
+                  style={[
+                    styles.subtitle,
+                    { color: getColorValue(theme.colors.text.secondary) }
+                  ]}
+                  numberOfLines={1}
+                >
+                  {getLocation()}
+                </Text>
+              </View>
+              
+              {event.price !== undefined && (
+                <View style={styles.iconTextContainer}>
+                  <Ionicons 
+                    name="pricetag-outline" 
+                    size={14} 
+                    color={getIconColor('info')}
+                    style={styles.icon}
+                  />
+                  <Text 
+                    style={[
+                      styles.subtitle,
+                      { color: getColorValue(theme.colors.text.secondary) }
+                    ]}
+                  >
+                    {formatPrice()}
+                  </Text>
+                </View>
+              )}
+              
+              {event.attendeesCount !== undefined && (
+                <View style={styles.iconTextContainer}>
+                  <Ionicons 
+                    name="people-outline" 
+                    size={14} 
+                    color={getIconColor('info')}
+                    style={styles.icon}
+                  />
+                  <Text 
+                    style={[
+                      styles.subtitle,
+                      { color: getColorValue(theme.colors.text.secondary) }
+                    ]}
+                  >
+                    {event.attendeesCount} asistentes
+                  </Text>
+                </View>
+              )}
+            </View>
+          </>
         )}
       </View>
     </TouchableOpacity>
   );
 };
 
-const { width } = Dimensions.get('window');
-const cardWidth = width / 2 - 24; // Para mostrar 2 por fila con margen
-
 const styles = StyleSheet.create({
   container: {
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: '#fff',
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    marginBottom: 16,
+    width: width - 32,
+  },
+  compactContainer: {
+    width: width * 0.7,
+    marginRight: 12,
   },
   image: {
-    width: '100%',
     height: 150,
-    backgroundColor: '#e1e1e1',
+    width: '100%',
   },
-  content: {
-    padding: 16,
+  compactImage: {
+    height: 120,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  details: {
-    marginTop: 8,
-  },
-  detailRow: {
+  imageContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
   },
-  detailText: {
-    fontSize: 14,
-    marginLeft: 8,
+  compactContentLayout: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  category: {
-    alignSelf: 'flex-start',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+  categoryLabel: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    padding: 4,
     borderRadius: 4,
-    marginTop: 4,
   },
   categoryText: {
     fontSize: 12,
     fontWeight: '500',
   },
-  compactContainer: {
+  distanceLabel: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    padding: 4,
+    borderRadius: 4,
     flexDirection: 'row',
-    borderRadius: 8,
-    overflow: 'hidden',
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-    marginBottom: 12,
-    height: 80,
+    alignItems: 'center',
   },
-  compactImage: {
-    width: 80,
-    height: 80,
-    backgroundColor: '#e1e1e1',
+  distanceIcon: {
+    marginRight: 4,
   },
-  compactContent: {
+  distanceText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  infoContainer: {
     flex: 1,
     padding: 12,
-    justifyContent: 'center',
   },
-  compactTitle: {
-    fontSize: 14,
+  compactInfoContainer: {
+    padding: 12,
+  },
+  title: {
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  compactInfo: {
+  subtitle: {
     fontSize: 12,
+    marginLeft: 6,
+    flex: 1,
+  },
+  dateLocationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  iconTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  icon: {
+    marginRight: 6,
   },
 }); 

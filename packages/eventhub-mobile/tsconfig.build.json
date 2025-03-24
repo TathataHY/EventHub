@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "skipLibCheck": true,
+    "noEmit": true,
+    "allowJs": true,
+    "checkJs": false,
+    "resolveJsonModule": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "strictPropertyInitialization": false,
+    "noImplicitOverride": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "exactOptionalPropertyTypes": false,
+    "useUnknownInCatchVariables": false,
+    "ignoreDeprecations": "5.0",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "files": [],
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": [
+    "src/modules/auth/hooks/useAuth.ts",
+    "src/modules/users/types/index.ts"
+  ]
+} 

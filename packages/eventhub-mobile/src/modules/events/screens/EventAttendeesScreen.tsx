@@ -4,13 +4,25 @@ import { useLocalSearchParams } from 'expo-router';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 
 // Importaciones de servicios y componentes necesarios
-import { mockService } from '../../../core/services/mock.service';
-import { eventService } from '../services/event.service';
-import { Avatar } from '../../../shared/components/common/Avatar';
-import { Card } from '../../../shared/components/common/Card';
-import { Empty } from '../../../shared/components/common/Empty';
-import { ErrorMessage } from '../../../shared/components/common/ErrorMessage';
-import { theme } from '../../../theme';
+import { mockService } from '@core/services/mock.service';
+import { eventService } from '@modules/events/services/event.service';
+import { Avatar, Card, EmptyState as Empty, Loading as ErrorMessage } from '@shared/components/ui';
+import { theme } from '@theme/index';
+
+// Definición de interfaces para tipos
+interface Attendee {
+  id: string;
+  name: string;
+  profileImage: string;
+  isConfirmed: boolean;
+}
+
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  // Otros campos necesarios
+}
 
 /**
  * Pantalla que muestra la lista de asistentes a un evento
@@ -19,10 +31,10 @@ export const EventAttendeesScreen = () => {
   const { id } = useLocalSearchParams();
   const eventId = typeof id === 'string' ? id : '';
   
-  const [attendees, setAttendees] = useState([]);
+  const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [event, setEvent] = useState(null);
+  const [event, setEvent] = useState<Event | null>(null);
   
   useEffect(() => {
     loadAttendees();
@@ -35,11 +47,20 @@ export const EventAttendeesScreen = () => {
       
       // En producción, esto debe usar el servicio real
       const eventData = await mockService.getEventById(eventId);
-      setEvent(eventData);
+      setEvent(eventData as Event);
       
       // En producción, esto debe usar el servicio real
       const attendeesData = await mockService.getEventAttendees(eventId);
-      setAttendees(attendeesData);
+      
+      // Convertir los datos de usuarios a formato de Attendee
+      const formattedAttendees: Attendee[] = attendeesData.map(user => ({
+        id: user.id,
+        name: user.name,
+        profileImage: user.profileImage,
+        isConfirmed: true // Asumimos que todos están confirmados para el mock
+      }));
+      
+      setAttendees(formattedAttendees);
     } catch (err) {
       console.error('Error cargando asistentes:', err);
       setError('No se pudieron cargar los asistentes');
@@ -60,7 +81,6 @@ export const EventAttendeesScreen = () => {
     return (
       <ErrorMessage 
         message={error} 
-        onRetry={loadAttendees}
       />
     );
   }
@@ -68,6 +88,7 @@ export const EventAttendeesScreen = () => {
   if (!attendees.length) {
     return (
       <Empty 
+        title="Sin asistentes"
         message="No hay asistentes registrados para este evento" 
         icon="users-slash"
       />
@@ -162,12 +183,12 @@ const styles = StyleSheet.create({
   },
   attendeeName: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    marginBottom: 4,
     color: theme.colors.text,
   },
   attendeeStatus: {
     fontSize: 14,
-    marginTop: 4,
   },
   confirmed: {
     color: theme.colors.success,

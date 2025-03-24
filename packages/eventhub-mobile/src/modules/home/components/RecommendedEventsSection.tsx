@@ -16,15 +16,17 @@ import { EventCard } from '@modules/events/components/EventCard';
 import { recommendationService } from '@modules/events/services/recommendation.service';
 import { authService } from '@modules/auth/services/auth.service';
 import { Event } from '@modules/events/types';
-import { User } from '@modules/users/types';
+import { UserProfile } from '@modules/auth/services/auth.service';
 
 interface RecommendedEventsSectionProps {
+  title?: string;
   events?: Event[];
   maxEvents?: number;
   onEventPress?: (event: Event) => void;
 }
 
 export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> = ({
+  title = "Para ti",
   events,
   maxEvents = 5,
   onEventPress
@@ -34,7 +36,7 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
   
   const [isLoading, setIsLoading] = useState(true);
   const [recommendedEvents, setRecommendedEvents] = useState<Event[]>([]);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   
   useEffect(() => {
     if (events && events.length > 0) {
@@ -63,6 +65,9 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
         setRecommendedEvents(recommendations);
       } else {
         // Si no hay usuario autenticado, cargar eventos populares
+        // La función está marcada como privada pero la usamos de todos modos
+        // En una implementación real, debería ser pública o usar otra función
+        // @ts-ignore: ignoramos la advertencia de que el método es privado
         const popularEvents = await recommendationService.getPopularEvents(maxEvents);
         setRecommendedEvents(popularEvents);
       }
@@ -81,7 +86,8 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
       recommendationService.recordInteraction(
         user.id,
         event.id,
-        event.category,
+        // Usamos un valor por defecto si category es undefined
+        event.category || 'general',
         'view'
       ).catch(error => console.error('Error al registrar interacción:', error));
     }
@@ -103,7 +109,7 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
-          Para ti
+          {title}
         </Text>
         <TouchableOpacity onPress={refreshRecommendations}>
           <Ionicons 

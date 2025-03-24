@@ -10,6 +10,7 @@ import {
   DimensionValue
 } from 'react-native';
 import { useTheme } from '../../../shared/hooks/useTheme';
+import { getColorValue } from '@theme/theme.types';
 
 export interface PickerItem {
   label: string;
@@ -46,7 +47,7 @@ export const ScrollPicker = ({
   itemWidth = 120,
   maxVisibleItems = 5
 }: ScrollPickerProps) => {
-  const { theme, getColorValue } = useTheme();
+  const { theme } = useTheme();
   const [selectedItem, setSelectedItem] = useState<string | number | undefined>(selectedValue);
   
   useEffect(() => {
@@ -84,6 +85,43 @@ export const ScrollPicker = ({
     };
   };
   
+  // Función para renderizar cada ítem
+  const renderItem = ({ item, index }: { item: any; index: number }) => {
+    const value = typeof item === 'object' ? item.value : item;
+    const label = typeof item === 'object' ? item.label : item;
+    const isItemSelected = isSelected(value);
+
+    return (
+      <TouchableOpacity
+        key={index}
+        style={[
+          styles.item,
+          {
+            backgroundColor: isItemSelected ? getColorValue(theme.colors.primary.main) : getColorValue(theme.colors.background.default),
+            borderWidth: isItemSelected ? 1 : 0,
+            borderColor: isItemSelected ? getColorValue(theme.colors.primary.main) : getColorValue(theme.colors.grey[300]),
+          },
+          getItemStyle(value),
+        ]}
+        onPress={() => handleSelect(value)}
+        accessibilityLabel={`Opción ${label}`}
+      >
+        <Text
+          style={[
+            styles.itemText,
+            {
+              color: isSelected(value) ? getColorValue(theme.colors.primary.contrastText) : getColorValue(theme.colors.text.primary),
+              fontWeight: isSelected(value) ? 'bold' : 'normal',
+            },
+            getTextStyle(value),
+          ]}
+        >
+          {label}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+  
   return (
     <View style={[styles.container, style]}>
       {label && (
@@ -104,18 +142,7 @@ export const ScrollPicker = ({
           horizontal ? styles.horizontalContent : styles.verticalContent
         ]}
       >
-        {items.map((item) => (
-          <TouchableOpacity
-            key={item.value.toString()}
-            style={[styles.item, getItemStyle(item.value)]}
-            onPress={() => handleSelect(item.value)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.itemText, getTextStyle(item.value)]}>
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {items.map((item, index) => renderItem({ item, index }))}
       </ScrollView>
     </View>
   );

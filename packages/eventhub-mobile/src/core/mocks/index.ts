@@ -10,12 +10,14 @@ export const mockTickets = [
     eventId: 'event-1',
     userId: 'user-1',
     ticketNumber: 'T-0001',
-    ticketType: 'VIP',
+    ticketType: 'vip',
     seat: 'A1',
     price: 100,
     status: 'valid',
     purchaseDate: '2023-07-15T10:30:00Z',
     qrCode: 'EH-event-1-123456',
+    isTransferable: true,
+    validationCount: 0,
     ticketHolder: {
       name: 'Juan Pérez',
       email: 'juan@example.com',
@@ -27,11 +29,13 @@ export const mockTickets = [
     eventId: 'event-2',
     userId: 'user-1',
     ticketNumber: 'T-0002',
-    ticketType: 'General',
+    ticketType: 'general',
     price: 50,
     status: 'valid',
     purchaseDate: '2023-08-10T15:45:00Z',
     qrCode: 'EH-event-2-234567',
+    isTransferable: true,
+    validationCount: 0,
     ticketHolder: {
       name: 'Juan Pérez',
       email: 'juan@example.com'
@@ -42,16 +46,17 @@ export const mockTickets = [
     eventId: 'event-3',
     userId: 'user-1',
     ticketNumber: 'T-0003',
-    ticketType: 'Palco',
+    ticketType: 'premium',
     seat: 'B5',
     price: 75,
     status: 'used',
     purchaseDate: '2023-06-20T09:15:00Z',
     qrCode: 'EH-event-3-345678',
+    isTransferable: false,
+    validationCount: 1,
     ticketHolder: {
       name: 'Juan Pérez',
-      email: 'juan@example.com',
-      phone: '+34600123456'
+      email: 'juan@example.com'
     }
   },
   {
@@ -59,11 +64,13 @@ export const mockTickets = [
     eventId: 'event-4',
     userId: 'user-2',
     ticketNumber: 'T-0004',
-    ticketType: 'VIP',
+    ticketType: 'vip',
     price: 120,
     status: 'valid',
     purchaseDate: '2023-09-05T18:30:00Z',
     qrCode: 'EH-event-4-456789',
+    isTransferable: true,
+    validationCount: 0,
     ticketHolder: {
       name: 'María López',
       email: 'maria@example.com',
@@ -75,11 +82,13 @@ export const mockTickets = [
     eventId: 'event-5',
     userId: 'user-2',
     ticketNumber: 'T-0005',
-    ticketType: 'General',
+    ticketType: 'general',
     price: 40,
     status: 'cancelled',
     purchaseDate: '2023-09-10T14:20:00Z',
     qrCode: 'EH-event-5-567890',
+    isTransferable: true,
+    validationCount: 0,
     ticketHolder: {
       name: 'María López',
       email: 'maria@example.com'

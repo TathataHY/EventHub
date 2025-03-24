@@ -1,53 +1,86 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
-import { colors } from '@theme/base/colors';
-import { getColorValue } from '@theme/index';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useTheme } from '@shared/hooks/useTheme';
+import { getColorValue } from '@theme/theme.types';
 
 interface UserStatsProps {
-  followersCount: number;
-  followingCount: number;
-  eventsAttended: number;
-  eventsOrganized: number;
-  style?: ViewStyle;
-  onFollowersPress?: () => void;
-  onFollowingPress?: () => void;
-  onEventsPress?: () => void;
-  onOrganizedPress?: () => void;
+  eventsCreated?: number;
+  eventsAttended?: number;
+  followersCount?: number;
+  followingCount?: number;
+  onItemPress?: (type: 'events' | 'attended' | 'followers' | 'following') => void;
 }
 
 export const UserStats: React.FC<UserStatsProps> = ({
-  followersCount,
-  followingCount,
-  eventsAttended,
-  eventsOrganized,
-  style,
-  onFollowersPress,
-  onFollowingPress,
-  onEventsPress,
-  onOrganizedPress
+  eventsCreated = 0,
+  eventsAttended = 0,
+  followersCount = 0,
+  followingCount = 0,
+  onItemPress
 }) => {
-  // Renderizar un único elemento de estadística
-  const renderStat = (
-    label: string, 
-    value: number, 
-    onPress?: () => void
-  ) => (
-    <TouchableOpacity 
-      style={styles.statItem} 
-      onPress={onPress}
-      disabled={!onPress}
-    >
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </TouchableOpacity>
-  );
-
+  const { theme } = useTheme();
+  
+  const handleItemPress = (type: 'events' | 'attended' | 'followers' | 'following') => {
+    if (onItemPress) {
+      onItemPress(type);
+    }
+  };
+  
   return (
-    <View style={[styles.container, style]}>
-      {renderStat('Seguidores', followersCount, onFollowersPress)}
-      {renderStat('Siguiendo', followingCount, onFollowingPress)}
-      {renderStat('Eventos', eventsAttended, onEventsPress)}
-      {renderStat('Organizados', eventsOrganized, onOrganizedPress)}
+    <View style={[styles.container, { backgroundColor: getColorValue(theme.colors.background.paper) }]}>
+      <TouchableOpacity 
+        style={styles.statItem}
+        onPress={() => handleItemPress('events')}
+      >
+        <Text style={[styles.statValue, { color: getColorValue(theme.colors.text.primary) }]}>
+          {eventsCreated}
+        </Text>
+        <Text style={[styles.statLabel, { color: getColorValue(theme.colors.text.secondary) }]}>
+          Creados
+        </Text>
+      </TouchableOpacity>
+      
+      <View style={[styles.divider, { backgroundColor: getColorValue(theme.colors.text.disabled) }]} />
+      
+      <TouchableOpacity 
+        style={styles.statItem}
+        onPress={() => handleItemPress('attended')}
+      >
+        <Text style={[styles.statValue, { color: getColorValue(theme.colors.text.primary) }]}>
+          {eventsAttended}
+        </Text>
+        <Text style={[styles.statLabel, { color: getColorValue(theme.colors.text.secondary) }]}>
+          Asistidos
+        </Text>
+      </TouchableOpacity>
+      
+      <View style={[styles.divider, { backgroundColor: getColorValue(theme.colors.text.disabled) }]} />
+      
+      <TouchableOpacity 
+        style={styles.statItem}
+        onPress={() => handleItemPress('followers')}
+      >
+        <Text style={[styles.statValue, { color: getColorValue(theme.colors.text.primary) }]}>
+          {followersCount}
+        </Text>
+        <Text style={[styles.statLabel, { color: getColorValue(theme.colors.text.secondary) }]}>
+          Seguidores
+        </Text>
+      </TouchableOpacity>
+      
+      <View style={[styles.divider, { backgroundColor: getColorValue(theme.colors.text.disabled) }]} />
+      
+      <TouchableOpacity 
+        style={styles.statItem}
+        onPress={() => handleItemPress('following')}
+      >
+        <Text style={[styles.statValue, { color: getColorValue(theme.colors.text.primary) }]}>
+          {followingCount}
+        </Text>
+        <Text style={[styles.statLabel, { color: getColorValue(theme.colors.text.secondary) }]}>
+          Siguiendo
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -55,31 +88,26 @@ export const UserStats: React.FC<UserStatsProps> = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
     paddingVertical: 12,
-    backgroundColor: 'white',
     borderRadius: 8,
-    marginHorizontal: 16,
-    marginVertical: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
+    marginVertical: 8,
   },
   statItem: {
+    flex: 1,
     alignItems: 'center',
-    paddingHorizontal: 12,
+    justifyContent: 'center',
   },
   statValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: getColorValue(colors.text),
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: getColorValue(colors.grey[500]),
   },
+  divider: {
+    width: 1,
+    height: '70%',
+    alignSelf: 'center',
+  }
 }); 

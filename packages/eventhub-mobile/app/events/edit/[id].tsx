@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { EventFormScreen } from '../../../src/modules/events/screens';
+import { EventFormScreen } from '@modules/events/screens';
 
 /**
  * Pantalla de edición de evento utilizando la estructura modular

@@ -14,11 +14,21 @@ import { useNavigation } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Card, TabView, Button } from '../../../shared/components';
 import { useUser } from '../hooks/useUser';
-import { UserProfile } from '../types';
+import { UserProfile, ProfileUpdateData } from '../types';
 import { Event } from '../../events/types';
 import { EventCard } from '../../events/components/EventCard';
 import { typography, spacing, getColorValue, convertTypographyStyle } from '@theme/index';
 import { colors } from '@theme/base/colors';
+
+/**
+ * Interfaz extendida para obtener las propiedades adicionales desde ProfileUpdateData
+ */
+interface ExtendedUserProfile extends UserProfile {
+  website?: string;
+  avatar?: string;
+  coverImage?: string;
+  joinDate?: string;
+}
 
 /**
  * Pantalla principal de perfil de usuario
@@ -33,6 +43,9 @@ export function ProfileScreen() {
   const [createdEvents, setCreatedEvents] = useState<Event[]>([]);
   const [attendingEvents, setAttendingEvents] = useState<Event[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
+  
+  // Tratar currentUser como ExtendedUserProfile para usar propiedades adicionales
+  const extendedUser = currentUser as ExtendedUserProfile;
   
   // Cargar eventos creados y a los que asiste el usuario
   useEffect(() => {
@@ -70,7 +83,7 @@ export function ProfileScreen() {
   
   // Navegar a la pantalla de edición de perfil
   const handleEditProfile = () => {
-    navigation.navigate('ProfileEdit');
+    navigation.navigate('ProfileEdit' as never);
   };
   
   // Mostrar indicador de carga mientras se cargan los datos del usuario
@@ -111,9 +124,9 @@ export function ProfileScreen() {
         <Card style={styles.profileCard}>
           {/* Imagen de portada */}
           <View style={styles.coverContainer}>
-            {currentUser?.coverImage ? (
+            {extendedUser?.coverImage ? (
               <Image
-                source={{ uri: currentUser.coverImage }}
+                source={{ uri: extendedUser.coverImage }}
                 style={styles.coverImage}
                 resizeMode="cover"
               />
@@ -125,9 +138,9 @@ export function ProfileScreen() {
           {/* Avatar y detalles */}
           <View style={styles.profileHeader}>
             <View style={styles.avatarContainer}>
-              {currentUser?.avatar ? (
+              {extendedUser?.avatar ? (
                 <Image
-                  source={{ uri: currentUser.avatar }}
+                  source={{ uri: extendedUser.avatar }}
                   style={styles.avatar}
                   resizeMode="cover"
                 />
@@ -150,27 +163,31 @@ export function ProfileScreen() {
                 {currentUser?.location && (
                   <View style={styles.infoItem}>
                     <Ionicons name="location-outline" size={16} color={getColorValue(colors.grey[500])} />
-                    <Text style={styles.infoText}>{currentUser.location}</Text>
+                    <Text style={styles.infoText}>
+                      {typeof currentUser.location === 'string' 
+                        ? currentUser.location 
+                        : currentUser.location.city || 'Ubicación no especificada'}
+                    </Text>
                   </View>
                 )}
                 
-                {currentUser?.website && (
+                {extendedUser?.website && (
                   <View style={styles.infoItem}>
                     <Ionicons name="globe-outline" size={16} color={getColorValue(colors.grey[500])} />
                     <Text 
                       style={[styles.infoText, styles.websiteText]}
                       numberOfLines={1}
                     >
-                      {currentUser.website}
+                      {extendedUser.website}
                     </Text>
                   </View>
                 )}
                 
-                {currentUser?.joinDate && (
+                {extendedUser?.joinDate && (
                   <View style={styles.infoItem}>
                     <Ionicons name="calendar-outline" size={16} color={getColorValue(colors.grey[500])} />
                     <Text style={styles.infoText}>
-                      Miembro desde {new Date(currentUser.joinDate).toLocaleDateString()}
+                      Miembro desde {new Date(extendedUser.joinDate).toLocaleDateString()}
                     </Text>
                   </View>
                 )}
@@ -197,17 +214,21 @@ export function ProfileScreen() {
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{currentUser?.eventsAttending || 0}</Text>
+              <Text style={styles.statValue}>{currentUser?.eventsAttended || 0}</Text>
               <Text style={styles.statLabel}>Asistidos</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{currentUser?.followers || 0}</Text>
+              <Text style={styles.statValue}>{typeof currentUser?.followers === 'number' 
+                ? currentUser.followers 
+                : (currentUser?.followers ? currentUser.followers.length : 0)}</Text>
               <Text style={styles.statLabel}>Seguidores</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{currentUser?.following || 0}</Text>
+              <Text style={styles.statValue}>{typeof currentUser?.following === 'number' 
+                ? currentUser.following 
+                : (currentUser?.following ? currentUser.following.length : 0)}</Text>
               <Text style={styles.statLabel}>Siguiendo</Text>
             </View>
           </View>
@@ -244,7 +265,7 @@ export function ProfileScreen() {
                     <Text style={styles.emptyStateText}>No has creado ningún evento aún</Text>
                     <Button
                       title="Crear evento"
-                      onPress={() => navigation.navigate('CreateEvent')}
+                      onPress={() => navigation.navigate('CreateEvent' as never)}
                       containerStyle={styles.createEventButton}
                     />
                   </View>
@@ -262,8 +283,8 @@ export function ProfileScreen() {
                     <Text style={styles.emptyStateText}>No estás asistiendo a ningún evento</Text>
                     <Button
                       title="Explorar eventos"
-                      onPress={() => navigation.navigate('Events')}
-                      containerStyle={styles.exploreEventsButton}
+                      onPress={() => navigation.navigate('Events' as never)}
+                      containerStyle={styles.createEventButton}
                     />
                   </View>
                 )
@@ -452,9 +473,6 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   }),
   createEventButton: {
-    width: 200,
-  },
-  exploreEventsButton: {
     width: 200,
   },
 }); 

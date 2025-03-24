@@ -4,6 +4,9 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { eventService } from '@modules/events/services/event.service';
 
+// Importar el enum para el tipo de trigger
+import { SchedulableTriggerInputTypes } from 'expo-notifications';
+
 // Configurar el comportamiento de las notificaciones
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -220,6 +223,7 @@ class NotificationService {
           },
           trigger: {
             date: oneDayBefore,
+            type: SchedulableTriggerInputTypes.DATE
           },
         });
       }
@@ -237,6 +241,7 @@ class NotificationService {
           },
           trigger: {
             date: oneHourBefore,
+            type: SchedulableTriggerInputTypes.DATE
           },
         });
       }

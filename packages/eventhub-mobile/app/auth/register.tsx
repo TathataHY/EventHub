@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { RegisterScreen } from '../../src/modules/auth/screens';
+import { RegisterScreen } from '@modules/auth/screens';
 
 /**
  * Pantalla de registro utilizando la estructura modular

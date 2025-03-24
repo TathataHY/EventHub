@@ -1,5 +1,5 @@
 import React from 'react';
-import { TicketsLayout } from '../../src/modules/tickets/components';
+import { TicketsLayout } from '@modules/tickets/components';
 
 /**
  * Layout para las rutas de tickets

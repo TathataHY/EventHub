@@ -1,127 +1,194 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Formik } from 'formik';
+import {
+  View,
+  Text,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator
+} from 'react-native';
+import { Formik, FormikHelpers, FormikErrors } from 'formik';
 import * as Yup from 'yup';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { authService } from '../services';
+import { useTheme, getColorValue, getIconColor } from '../../../core/theme';
 
-// Componentes compartidos
-import { Button } from '../../../shared/components/ui/Button';
-import { Input } from '../../../shared/components/ui/Input';
-import { Card } from '../../../shared/components/ui/Card';
-import { theme } from '../../../theme';
+interface ForgotPasswordValues {
+  email: string;
+}
 
-// Servicios y hooks
-import { useAuth } from '../hooks/useAuth';
-
-// Esquema de validación del formulario
-const ForgotPasswordSchema = Yup.object().shape({
-  email: Yup.string()
-    .email('Correo electrónico inválido')
-    .required('El correo electrónico es obligatorio'),
-});
-
-/**
- * Pantalla de recuperación de contraseña
- */
-export const ForgotPasswordScreen = () => {
-  const router = useRouter();
-  const { requestPasswordReset } = useAuth();
+export const ForgotPasswordScreen: React.FC = () => {
+  const navigation = useNavigation();
+  const { theme } = useTheme();
   const [emailSent, setEmailSent] = useState(false);
 
-  const handleForgotPassword = async (values, { setSubmitting, setErrors }) => {
+  const validationSchema = Yup.object({
+    email: Yup.string()
+      .email('Ingresa un correo electrónico válido')
+      .required('El correo electrónico es obligatorio')
+  });
+  
+  const initialValues: ForgotPasswordValues = {
+    email: ''
+  };
+
+  const handleForgotPassword = async (
+    values: ForgotPasswordValues, 
+    { setSubmitting, setErrors }: FormikHelpers<ForgotPasswordValues>
+  ) => {
     try {
-      await requestPasswordReset(values.email);
+      // Llamada al servicio de restablecimiento de contraseña
+      await authService.requestPasswordReset(values.email);
+      
+      // Mostrar información al usuario que el correo fue enviado
       setEmailSent(true);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        setErrors({ email: 'No existe una cuenta con este correo electrónico' });
+    } catch (error: any) {
+      // Manejar diferentes tipos de errores
+      console.error('Error al solicitar restablecimiento de contraseña:', error);
+      
+      if (error.response?.data?.message) {
+        // Error específico del servidor
+        setErrors({ email: error.response.data.message });
+      } else if (error.message) {
+        // Error general
+        setErrors({ email: error.message });
       } else {
-        setErrors({ auth: 'Error al procesar tu solicitud. Por favor, inténtalo de nuevo.' });
+        // Error desconocido
+        setErrors({ 
+          email: 'Ocurrió un error al procesar tu solicitud. Inténtalo nuevamente.'
+        });
       }
-      console.error('Error al solicitar recuperación de contraseña:', error);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const navigateToLogin = () => {
-    router.push('/auth/login');
-  };
-
-  if (emailSent) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.successContainer}>
-          <Ionicons name="checkmark-circle" size={80} color={theme.colors.success} style={styles.successIcon} />
-          <Text style={styles.successTitle}>Correo enviado</Text>
-          <Text style={styles.successMessage}>
-            Hemos enviado instrucciones para restablecer tu contraseña a tu correo electrónico.
-            Por favor, revisa tu bandeja de entrada.
-          </Text>
-          <Button
-            title="Volver a iniciar sesión"
-            onPress={navigateToLogin}
-            style={styles.loginButton}
-          />
-        </View>
-      </View>
-    );
-  }
-
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={[styles.container, { backgroundColor: getColorValue(theme.colors.background) }]}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>¿Olvidaste tu contraseña?</Text>
-          <Text style={styles.subtitle}>Ingresa tu correo electrónico para recibir instrucciones</Text>
+          <Text style={[styles.title, { color: getColorValue(theme.colors.text.primary) }]}>
+            Recupera tu contraseña
+          </Text>
+          <Text style={[styles.subtitle, { color: getColorValue(theme.colors.text.secondary) }]}>
+            Introduce tu correo electrónico y te enviaremos instrucciones para restablecer tu contraseña
+          </Text>
         </View>
 
-        <Card style={styles.formCard}>
+        {emailSent ? (
+          <View style={styles.successContainer}>
+            <Ionicons 
+              name="mail" 
+              size={64} 
+              color={getIconColor(theme.colors.success)} 
+              style={styles.icon}
+            />
+            <Text style={[styles.successTitle, { color: getColorValue(theme.colors.text.primary) }]}>
+              ¡Correo enviado!
+            </Text>
+            <Text style={[styles.successText, { color: getColorValue(theme.colors.text.secondary) }]}>
+              Hemos enviado instrucciones para restablecer tu contraseña a tu dirección de correo electrónico. 
+              Por favor, revisa tu bandeja de entrada.
+            </Text>
+            <TouchableOpacity 
+              style={[
+                styles.backButton, 
+                { backgroundColor: getColorValue(theme.colors.primary) }
+              ]}
+              onPress={() => navigation.navigate('Login' as never)}
+            >
+              <Text style={styles.backButtonText}>
+                Volver al inicio de sesión
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
           <Formik
-            initialValues={{ email: '' }}
-            validationSchema={ForgotPasswordSchema}
+            initialValues={initialValues}
+            validationSchema={validationSchema}
             onSubmit={handleForgotPassword}
           >
-            {({ handleChange, handleBlur, handleSubmit, values, errors, touched, isSubmitting }) => (
-              <View style={styles.form}>
-                <Input
-                  label="Correo electrónico"
-                  placeholder="tu@email.com"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  value={values.email}
-                  onChangeText={handleChange('email')}
-                  onBlur={handleBlur('email')}
-                  error={touched.email && errors.email}
-                  leftIcon={<Ionicons name="mail-outline" size={18} color={theme.colors.text} />}
-                />
+            {({ 
+              handleChange, 
+              handleBlur, 
+              handleSubmit, 
+              values, 
+              errors, 
+              touched, 
+              isSubmitting 
+            }) => (
+              <View style={styles.formContainer}>
+                <View style={styles.inputContainer}>
+                  <Text style={[styles.label, { color: getColorValue(theme.colors.text.primary) }]}>
+                    Correo electrónico
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        borderColor: touched.email && errors.email
+                          ? getColorValue(theme.colors.error)
+                          : getColorValue(theme.colors.text.secondary + '40'),
+                        color: getColorValue(theme.colors.text.primary)
+                      }
+                    ]}
+                    placeholder="tu@email.com"
+                    placeholderTextColor={getColorValue(theme.colors.text.secondary + '80')}
+                    onChangeText={handleChange('email')}
+                    onBlur={handleBlur('email')}
+                    value={values.email}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                  {touched.email && errors.email && (
+                    <Text style={[styles.errorText, { color: getColorValue(theme.colors.error) }]}>
+                      {errors.email}
+                    </Text>
+                  )}
+                </View>
 
-                {errors.auth && (
-                  <Text style={styles.errorText}>{errors.auth}</Text>
-                )}
-
-                <Button
-                  title={isSubmitting ? 'Enviando...' : 'Recuperar contraseña'}
-                  onPress={handleSubmit}
+                <TouchableOpacity
+                  style={[
+                    styles.submitButton,
+                    { backgroundColor: getColorValue(theme.colors.primary) }
+                  ]}
+                  onPress={() => handleSubmit()}
                   disabled={isSubmitting}
-                  loading={isSubmitting}
-                  style={styles.submitButton}
-                />
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.submitButtonText}>
+                      Enviar instrucciones
+                    </Text>
+                  )}
+                </TouchableOpacity>
               </View>
             )}
           </Formik>
-        </Card>
+        )}
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>¿Recordaste tu contraseña?</Text>
-          <TouchableOpacity onPress={navigateToLogin}>
-            <Text style={styles.loginLink}>Iniciar sesión</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.backContainer}
+          onPress={() => navigation.navigate('Login' as never)}
+        >
+          <Ionicons 
+            name="arrow-back" 
+            size={20} 
+            color={getIconColor(theme.colors.primary)} 
+          />
+          <Text style={[styles.backText, { color: getColorValue(theme.colors.primary) }]}>
+            Volver al inicio de sesión
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -130,7 +197,6 @@ export const ForgotPasswordScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -138,71 +204,89 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   header: {
-    marginBottom: 30,
+    marginBottom: 32,
     alignItems: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: theme.colors.primary,
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: theme.colors.textSecondary,
-    marginBottom: 20,
     textAlign: 'center',
+    marginBottom: 16,
   },
-  formCard: {
-    padding: 20,
-    marginBottom: 20,
+  formContainer: {
+    marginBottom: 32,
   },
-  form: {
-    gap: 16,
+  inputContainer: {
+    marginBottom: 24,
   },
-  submitButton: {
-    marginTop: 24,
+  label: {
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  input: {
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
   },
   errorText: {
-    color: theme.colors.error,
-    fontSize: 14,
-    marginTop: 8,
+    fontSize: 12,
+    marginTop: 4,
   },
-  footer: {
-    flexDirection: 'row',
+  submitButton: {
+    height: 48,
+    borderRadius: 8,
     justifyContent: 'center',
-    marginTop: 20,
+    alignItems: 'center',
   },
-  footerText: {
-    color: theme.colors.textSecondary,
-    marginRight: 5,
-  },
-  loginLink: {
-    color: theme.colors.primary,
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: 'bold',
   },
   successContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-  },
-  successIcon: {
-    marginBottom: 20,
-  },
-  successTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-    marginBottom: 16,
-  },
-  successMessage: {
-    fontSize: 16,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
     marginBottom: 32,
   },
-  loginButton: {
-    minWidth: 200,
+  icon: {
+    marginBottom: 16,
   },
+  successTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  successText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  backButton: {
+    height: 48,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  backButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  backContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backText: {
+    fontSize: 16,
+    marginLeft: 8,
+  }
 }); 

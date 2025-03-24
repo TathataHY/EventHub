@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Formik } from 'formik';
+import { Formik, FormikHelpers, FormikErrors } from 'formik';
 import * as Yup from 'yup';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -9,7 +9,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button } from '../../../shared/components/ui/Button';
 import { Input } from '../../../shared/components/ui/Input';
 import { Card } from '../../../shared/components/ui/Card';
-import { Checkbox } from '../../../shared/components/ui/Checkbox';
 import { theme } from '../../../theme';
 
 // Servicios y hooks
@@ -28,10 +27,16 @@ const RegisterSchema = Yup.object().shape({
     .required('La contraseña es obligatoria'),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref('password')], 'Las contraseñas no coinciden')
-    .required('Debes confirmar la contraseña'),
-  acceptTerms: Yup.boolean()
-    .oneOf([true], 'Debes aceptar los términos y condiciones')
+    .required('Confirma tu contraseña'),
 });
+
+// Interfaz para valores del formulario
+interface RegisterFormValues {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
 
 /**
  * Pantalla de registro
@@ -42,21 +47,28 @@ export const RegisterScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const handleRegister = async (values, { setSubmitting, setErrors }) => {
+  const handleRegister = async (
+    values: RegisterFormValues, 
+    { setSubmitting, setErrors }: FormikHelpers<RegisterFormValues>
+  ) => {
     try {
       await register({
         name: values.name,
         email: values.email,
-        password: values.password
+        password: values.password,
+        confirmPassword: values.confirmPassword
       });
+      // Redirigir al usuario a la pantalla principal tras registro exitoso
       router.replace('/(tabs)');
-    } catch (error) {
-      if (error.message.includes('email')) {
-        setErrors({ email: 'Este correo electrónico ya está registrado' });
+    } catch (error: any) {
+      if (error.message?.includes('email')) {
+        setErrors({ email: 'Este correo electrónico ya está en uso' });
       } else {
-        setErrors({ auth: 'Error al registrar. Por favor, inténtalo de nuevo.' });
+        setErrors({ 
+          auth: 'Error al crear la cuenta. Por favor, inténtalo de nuevo.' 
+        } as FormikErrors<RegisterFormValues> & { auth?: string });
       }
-      console.error('Error al registrarse:', error);
+      console.error('Error al registrar:', error);
     } finally {
       setSubmitting(false);
     }
@@ -81,31 +93,26 @@ export const RegisterScreen = () => {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>Crear Cuenta</Text>
-          <Text style={styles.subtitle}>Regístrate para descubrir eventos increíbles</Text>
+          <Text style={styles.title}>Crear cuenta</Text>
+          <Text style={styles.subtitle}>Únete a EventHub y descubre eventos increíbles</Text>
         </View>
 
         <Card style={styles.formCard}>
           <Formik
-            initialValues={{ 
-              name: '', 
-              email: '', 
-              password: '', 
-              confirmPassword: '',
-              acceptTerms: false
-            }}
+            initialValues={{ name: '', email: '', password: '', confirmPassword: '' }}
             validationSchema={RegisterSchema}
             onSubmit={handleRegister}
           >
-            {({ handleChange, handleBlur, handleSubmit, setFieldValue, values, errors, touched, isSubmitting }) => (
+            {({ handleChange, handleBlur, handleSubmit, values, errors, touched, isSubmitting }) => (
               <View style={styles.form}>
                 <Input
                   label="Nombre completo"
                   placeholder="Tu nombre"
+                  autoCapitalize="words"
                   value={values.name}
                   onChangeText={handleChange('name')}
                   onBlur={handleBlur('name')}
-                  error={touched.name && errors.name}
+                  error={touched.name && errors.name ? errors.name : undefined}
                   leftIcon={<Ionicons name="person-outline" size={18} color={theme.colors.text} />}
                 />
 
@@ -117,18 +124,18 @@ export const RegisterScreen = () => {
                   value={values.email}
                   onChangeText={handleChange('email')}
                   onBlur={handleBlur('email')}
-                  error={touched.email && errors.email}
+                  error={touched.email && errors.email ? errors.email : undefined}
                   leftIcon={<Ionicons name="mail-outline" size={18} color={theme.colors.text} />}
                 />
 
                 <Input
                   label="Contraseña"
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Contraseña"
                   secureTextEntry={!showPassword}
                   value={values.password}
                   onChangeText={handleChange('password')}
                   onBlur={handleBlur('password')}
-                  error={touched.password && errors.password}
+                  error={touched.password && errors.password ? errors.password : undefined}
                   leftIcon={<Ionicons name="lock-closed-outline" size={18} color={theme.colors.text} />}
                   rightIcon={
                     <TouchableOpacity onPress={toggleShowPassword}>
@@ -143,12 +150,12 @@ export const RegisterScreen = () => {
 
                 <Input
                   label="Confirmar contraseña"
-                  placeholder="Repite tu contraseña"
+                  placeholder="Confirma tu contraseña"
                   secureTextEntry={!showConfirmPassword}
                   value={values.confirmPassword}
                   onChangeText={handleChange('confirmPassword')}
                   onBlur={handleBlur('confirmPassword')}
-                  error={touched.confirmPassword && errors.confirmPassword}
+                  error={touched.confirmPassword && errors.confirmPassword ? errors.confirmPassword : undefined}
                   leftIcon={<Ionicons name="lock-closed-outline" size={18} color={theme.colors.text} />}
                   rightIcon={
                     <TouchableOpacity onPress={toggleShowConfirmPassword}>
@@ -161,21 +168,12 @@ export const RegisterScreen = () => {
                   }
                 />
 
-                <View style={styles.termsContainer}>
-                  <Checkbox
-                    value={values.acceptTerms}
-                    onValueChange={value => setFieldValue('acceptTerms', value)}
-                    label="Acepto los términos y condiciones"
-                    error={touched.acceptTerms && errors.acceptTerms}
-                  />
-                </View>
-
-                {errors.auth && (
-                  <Text style={styles.errorText}>{errors.auth}</Text>
+                {(errors as any).auth && (
+                  <Text style={styles.errorText}>{(errors as any).auth}</Text>
                 )}
 
                 <Button
-                  title={isSubmitting ? 'Registrando...' : 'Registrarme'}
+                  title={isSubmitting ? 'Creando cuenta...' : 'Crear cuenta'}
                   onPress={handleSubmit}
                   disabled={isSubmitting}
                   loading={isSubmitting}
@@ -189,7 +187,7 @@ export const RegisterScreen = () => {
         <View style={styles.footer}>
           <Text style={styles.footerText}>¿Ya tienes una cuenta?</Text>
           <TouchableOpacity onPress={navigateToLogin}>
-            <Text style={styles.loginLink}>Inicia sesión aquí</Text>
+            <Text style={styles.loginLink}>Iniciar sesión</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -229,9 +227,6 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 16,
-  },
-  termsContainer: {
-    marginTop: 8,
   },
   submitButton: {
     marginTop: 24,

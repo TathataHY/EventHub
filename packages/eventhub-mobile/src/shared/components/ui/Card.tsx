@@ -20,15 +20,23 @@ export const Card = ({
 }: CardProps) => {
   const { theme, getColorValue } = useTheme();
   
+  // Determinar color
+  const getColor = (colorPath: any) => {
+    return getColorValue ? getColorValue(colorPath) : String(colorPath);
+  };
+  
+  // Calcular estilos combinados
   const cardStyle = {
-    backgroundColor: getColorValue(theme.colors.background.default),
-    borderColor: outlined ? getColorValue(theme.colors.grey[300]) : 'transparent',
-    shadowOpacity: outlined ? 0 : 0.1,
-    elevation: outlined ? 0 : elevation,
+    ...styles.card,
+    backgroundColor: getColor(theme.colors.background.default),
+    borderColor: outlined ? getColor(theme.colors.grey[300]) : 'transparent',
+    borderWidth: outlined ? 1 : 0,
+    elevation: elevation,
+    ...style
   };
   
   return (
-    <View style={[styles.card, cardStyle, style]}>
+    <View style={[cardStyle]}>
       {children}
     </View>
   );

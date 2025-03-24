@@ -71,12 +71,14 @@ export interface EventTicketInfo {
 
 // Métricas y estadísticas del evento
 export interface EventMetrics {
-  views: number;
-  shares: number;
-  favorites: number;
-  attendees: number;
+  views?: number;
+  shares?: number;
+  favorites?: number;
+  attendees?: number;
   maxCapacity?: number;
-  registrations: number;
+  registrations?: number;
+  registeredAttendees?: number;
+  checkedInAttendees?: number;
 }
 
 // Contacto del organizador
@@ -213,4 +215,13 @@ export interface CreateEventParams {
 }
 
 // Tipo para actualizaciones parciales
-export type UpdateEventParams = Partial<CreateEventParams>; 
+export type UpdateEventParams = Partial<CreateEventParams>;
+
+/**
+ * Representa al organizador de un evento
+ */
+export interface Organizer {
+  id: string;
+  name: string;
+  profilePicture?: string;
+} 

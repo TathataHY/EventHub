@@ -1,6 +1,8 @@
 import { useContext } from 'react';
 import { ColorValue } from 'react-native';
 import React from 'react';
+import { ThemeContext, ThemeContextType } from '@core/context/ThemeContext';
+import { lightTheme } from '../../theme/variants/light';
 
 /**
  * Estructura mínima esperada para el tema
@@ -86,26 +88,31 @@ const defaultTheme: Theme = {
   },
 };
 
-// Creamos un contexto simple para soportar la implementación
-export const ThemeContext = React.createContext<Theme>(defaultTheme);
+// Hook para acceder al tema actual y a las funciones para modificarlo
+export const useTheme = () => {
+  return useContext(ThemeContext);
+};
 
 /**
  * Hook para acceder al tema actual y utilidades relacionadas con colores
  */
-export const useTheme = () => {
+export const useThemeColor = () => {
   // Usamos un try-catch para manejar casos donde useContext falla
-  let theme: Theme;
+  let themeContext: ThemeContextType;
   try {
-    const contextTheme = useContext(ThemeContext);
-    theme = contextTheme || defaultTheme;
+    themeContext = useContext(ThemeContext);
   } catch (error) {
     console.warn('Error al acceder al contexto de tema, usando tema predeterminado', error);
-    theme = defaultTheme;
+    themeContext = {
+      theme: lightTheme,
+      isDark: false,
+      toggleTheme: () => {},
+      changeTheme: () => {}
+    };
   }
 
   /**
    * Obtiene el valor de color desde la ruta especificada
-   * Ejemplo: getColorValue(theme.colors.primary.main)
    */
   const getColorValue = (colorOrPath: string | ColorValue): string => {
     if (!colorOrPath) return '#000000';
@@ -120,7 +127,7 @@ export const useTheme = () => {
 
   // Devolvemos el tema y las utilidades
   return {
-    theme,
+    ...themeContext,
     getColorValue,
   };
 }; 

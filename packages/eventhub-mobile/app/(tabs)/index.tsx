@@ -20,7 +20,7 @@ import { eventService } from '@modules/events/services/event.service';
 import { EventsList } from '@modules/events/components/EventsList';
 import { NearbyEventsSection } from '@modules/home/components/NearbyEventsSection';
 import { RecommendedEventsSection } from '@modules/home/components/RecommendedEventsSection';
-import HomeScreen from '@modules/home/components/HomeScreen';
+import { HomeScreen } from '@modules/home/index';
 
 /**
  * Página de inicio (home) que utiliza la estructura modular

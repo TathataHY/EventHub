@@ -98,6 +98,24 @@ class CommentService {
     }
   }
 
+  // Obtener comentarios de un evento con opciones de límite
+  async getCommentsByEventId(eventId: string, options: { limit?: number } = {}): Promise<Comment[]> {
+    try {
+      // Obtener todos los comentarios para este evento
+      const comments = await this.getEventComments(eventId);
+      
+      // Si hay un límite, aplicarlo
+      if (options.limit && options.limit > 0) {
+        return comments.slice(0, options.limit);
+      }
+      
+      return comments;
+    } catch (error) {
+      console.error('Error al obtener comentarios:', error);
+      return [];
+    }
+  }
+
   // Añadir un comentario
   async addComment(
     eventId: string, 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { EventAttendeesScreen } from '../../../src/modules/events/screens';
+import { EventAttendeesScreen } from '@modules/events/screens';
 
 /**
  * Pantalla de asistentes del evento utilizando la estructura modular

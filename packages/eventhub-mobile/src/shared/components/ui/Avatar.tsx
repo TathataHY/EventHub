@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { Icon } from './Icon';
+import { getColorValue } from '@theme/theme.types';
 
 type AvatarSize = 'tiny' | 'small' | 'medium' | 'large' | 'xlarge' | number;
 type AvatarShape = 'circle' | 'square' | 'rounded';
@@ -21,6 +22,8 @@ type FontWeightType = "normal" | "bold" | "100" | "200" | "300" | "400" | "500" 
 
 interface AvatarProps {
   source?: string | null;
+  imageUrl?: string | null; // Alias para compatibilidad
+  uri?: string | null; // Otro alias para compatibilidad
   name?: string;
   size?: number;
   style?: ViewStyle;
@@ -33,13 +36,18 @@ interface AvatarProps {
  */
 export const Avatar = ({
   source,
+  imageUrl,
+  uri,
   name = '',
   size = 40,
   style,
   showStatus = false,
   isOnline = false,
 }: AvatarProps) => {
-  const { theme, getColorValue } = useTheme();
+  const { theme } = useTheme();
+  
+  // Usar cualquiera de las propiedades disponibles para la URL de la imagen
+  const imageSource = source || imageUrl || uri;
   
   // Obtener iniciales del nombre
   const getInitials = () => {
@@ -75,29 +83,58 @@ export const Avatar = ({
       : getColorValue(theme.colors.grey[400]),
   };
   
-  return (
-    <View style={[styles.container, style]}>
-      {source ? (
+  // Determinar el color del borde en función del estado
+  const borderColor = isOnline !== undefined 
+    ? isOnline 
+      ? getColorValue(theme.colors.success.main)
+      : getColorValue(theme.colors.grey[400])
+    : 'transparent';
+
+  // Resolver la imagen a mostrar
+  const resolveImage = () => {
+    if (uri) {
+      return (
         <Image
-          source={{ uri: source }}
-          style={[styles.image, containerStyle]}
+          source={{ uri }}
+          style={[
+            styles.image,
+            containerStyle,
+            {
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              borderColor: borderColor,
+              borderWidth: 1
+            }
+          ]}
           resizeMode="cover"
         />
-      ) : (
-        <View style={[
-          styles.placeholder, 
-          containerStyle, 
-          { backgroundColor: getColorValue(theme.colors.primary.light) }
+      );
+    }
+    
+    // Si no hay imagen, mostrar iniciales
+    return (
+      <View style={[
+        styles.placeholder,
+        containerStyle,
+        {
+          backgroundColor: getColorValue(theme.colors.primary.light)
+        }
+      ]}>
+        <Text style={[
+          styles.initials,
+          textStyle,
+          { color: getColorValue(theme.colors.primary.main) }
         ]}>
-          <Text style={[
-            styles.initials, 
-            textStyle,
-            { color: getColorValue(theme.colors.primary.main) }
-          ]}>
-            {getInitials()}
-          </Text>
-        </View>
-      )}
+          {getInitials()}
+        </Text>
+      </View>
+    );
+  };
+  
+  return (
+    <View style={[styles.container, style]}>
+      {resolveImage()}
       
       {showStatus && (
         <View style={[styles.statusIndicator, statusStyle]} />

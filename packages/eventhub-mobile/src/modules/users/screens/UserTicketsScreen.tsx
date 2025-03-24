@@ -20,23 +20,15 @@ import { appColors, appTypography, appSpacing, convertTypographyStyle } from '@t
 import { Card } from '@shared/components/ui';
 import { userService } from '../services/user.service';
 import { ticketService } from '@modules/tickets/services/ticket.service';
+import { Ticket, TicketStatus } from '@modules/tickets/types';
 
-// Definir la interfaz Ticket
-interface Ticket {
-  id: string;
-  eventId: string;
-  eventName: string;
-  eventDate: string;
+// Tipo local para manejar tickets con datos ampliados
+interface ExtendedTicket extends Ticket {
+  eventName?: string;
+  eventDate?: string;
   eventImage?: string;
-  userId: string;
-  purchaseDate: string;
-  status: string;
-  qrCode: string;
-  price: number;
-  currency: string;
-  ticketType: string;
-  location: string;
-  time: string;
+  location?: string;
+  time?: string;
 }
 
 /**
@@ -44,7 +36,7 @@ interface Ticket {
  */
 export const UserTicketsScreen = () => {
   const router = useRouter();
-  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [tickets, setTickets] = useState<ExtendedTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -59,15 +51,22 @@ export const UserTicketsScreen = () => {
       const currentUser = await userService.getCurrentUserProfile();
       // Obtener sus tickets
       const userTickets = await ticketService.getUserTickets(currentUser.id);
-      // Añadir propiedades adicionales para cumplir con la interfaz Ticket
-      const completeTickets = userTickets.map((ticket) => ({
-        ...ticket,
-        eventName: ticket.eventName || 'Evento sin nombre',
-        eventDate: ticket.eventDate || new Date().toISOString(),
-        ticketType: ticket.ticketType || 'General',
-        location: ticket.location || 'Por definir',
-        time: ticket.time || '00:00'
-      }));
+      // Añadir propiedades adicionales para cumplir con la interfaz ExtendedTicket
+      const completeTickets: ExtendedTicket[] = userTickets.map((ticket) => {
+        const eventName = ticket.event?.title || 'Evento sin nombre';
+        const eventDate = ticket.event?.startDate || new Date().toISOString();
+        const eventImage = ticket.event?.image;
+        const location = ticket.event?.location || 'Por definir';
+        
+        return {
+          ...ticket,
+          eventName,
+          eventDate,
+          eventImage,
+          location,
+          time: formatTime(eventDate)
+        };
+      });
       setTickets(completeTickets);
     } catch (error) {
       console.error('Error al cargar tickets del usuario:', error);
@@ -90,14 +89,27 @@ export const UserTicketsScreen = () => {
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const formatTime = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      return format(date, "HH:mm", { locale: es });
+    } catch (error) {
+      return '00:00';
+    }
+  };
+
+  const getStatusColor = (status: TicketStatus | string) => {
     switch (status.toLowerCase()) {
+      case 'used':
       case 'usado':
         return appColors.grey[500];
+      case 'valid':
       case 'activo':
         return appColors.success.main;
+      case 'cancelled':
       case 'cancelado':
         return appColors.error.main;
+      case 'expired':
       case 'expirado':
         return appColors.warning.main;
       default:
@@ -105,11 +117,26 @@ export const UserTicketsScreen = () => {
     }
   };
 
+  const getStatusText = (status: TicketStatus | string): string => {
+    switch (status.toLowerCase()) {
+      case 'valid':
+        return 'Activo';
+      case 'used':
+        return 'Usado';
+      case 'expired':
+        return 'Expirado';
+      case 'cancelled':
+        return 'Cancelado';
+      default:
+        return status;
+    }
+  };
+
   const handleTicketPress = (ticketId: string) => {
     router.push(`/profile/tickets/${ticketId}`);
   };
 
-  const renderTicket = ({ item }: { item: Ticket }) => {
+  const renderTicket = ({ item }: { item: ExtendedTicket }) => {
     return (
       <TouchableOpacity 
         style={styles.ticketContainer}
@@ -132,10 +159,10 @@ export const UserTicketsScreen = () => {
             </View>
             
             <View style={styles.ticketInfo}>
-              <Text style={styles.eventName} numberOfLines={1}>{item.eventName}</Text>
-              <Text style={styles.eventDate}>{formatDate(item.eventDate)}</Text>
+              <Text style={styles.eventName} numberOfLines={1}>{item.eventName || item.event?.title}</Text>
+              <Text style={styles.eventDate}>{formatDate(item.eventDate || item.event?.startDate || '')}</Text>
               <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-                <Text style={styles.statusText}>{item.status}</Text>
+                <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
               </View>
             </View>
           </View>
@@ -143,7 +170,7 @@ export const UserTicketsScreen = () => {
           <View style={styles.ticketFooter}>
             <View style={styles.ticketDetail}>
               <Ionicons name="location-outline" size={16} color={appColors.grey[600]} />
-              <Text style={styles.detailText} numberOfLines={1}>{item.location}</Text>
+              <Text style={styles.detailText} numberOfLines={1}>{item.location || item.event?.location}</Text>
             </View>
             
             <View style={styles.ticketDetail}>
@@ -152,7 +179,7 @@ export const UserTicketsScreen = () => {
             </View>
             
             <View style={styles.ticketDetail}>
-              <Ionicons name="pricetag-outline" size={16} color={appColors.grey[600]} />
+              <Ionicons name="ticket-outline" size={16} color={appColors.grey[600]} />
               <Text style={styles.detailText}>{item.ticketType}</Text>
             </View>
           </View>

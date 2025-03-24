@@ -14,23 +14,45 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { QRCode } from '@shared/components/scanner/QRCode';
 
-import { useTheme } from '../../../theme/ThemeContext';
-import { Divider } from '../../../shared/components/ui/Divider';
+import { useTheme } from '@core/context/ThemeContext';
+import { Divider } from '@shared/components/ui';
+import { Ticket, TicketStatus } from '@modules/tickets/types';
 
-// Tipos de datos para entradas de eventos
-interface Ticket {
-  id: string;
-  eventId: string;
+// Datos extendidos del ticket para la pantalla de detalle
+interface ExtendedTicket extends Ticket {
   eventName: string;
   eventDate: string;
   eventLocation: string;
   eventImage: string;
   ticketCode: string;
-  qrCode: string;
-  status: 'valid' | 'used' | 'expired';
   entryTime?: string;
 }
+
+// Datos temporales para mostrar mientras se carga desde la API
+const mockTicket: ExtendedTicket = {
+  id: 'ticket123',
+  eventId: 'event456',
+  userId: 'user1',
+  ticketNumber: 'EH-2023-A12345',
+  ticketType: 'vip',
+  price: 100,
+  status: 'valid',
+  purchaseDate: '2023-07-15T10:30:00Z',
+  qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=EH-2023-A12345',
+  isTransferable: true,
+  validationCount: 0,
+  ticketHolder: {
+    name: 'Juan Pérez',
+    email: 'juan@example.com'
+  },
+  eventName: 'Festival de Música Urbana',
+  eventDate: '2023-12-15T20:00:00Z',
+  eventLocation: 'Palacio de Deportes, Madrid',
+  eventImage: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80',
+  ticketCode: 'EH-2023-A12345',
+};
 
 export function TicketDetailScreen() {
   const { theme, isDark } = useTheme();
@@ -39,7 +61,7 @@ export function TicketDetailScreen() {
   const { id } = params;
   
   const [loading, setLoading] = useState(true);
-  const [ticket, setTicket] = useState<Ticket | null>(null);
+  const [ticket, setTicket] = useState<ExtendedTicket | null>(null);
 
   // Cargar datos de entrada
   useEffect(() => {
@@ -53,20 +75,31 @@ export function TicketDetailScreen() {
           
           // Verificar que sea la entrada correcta
           if (parsedTicket.id === id) {
-            setTicket(parsedTicket);
+            setTicket(parsedTicket as ExtendedTicket);
           } else {
             // Si no es la misma entrada, simular una carga (en producción se haría una petición a la API)
             setTimeout(() => {
               setTicket({
                 id: id as string,
                 eventId: '101',
+                userId: 'user1',
+                ticketNumber: 'JAZZ-2023-00123',
+                ticketType: 'premium',
+                price: 75,
+                status: 'valid',
+                purchaseDate: new Date().toISOString(),
+                qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=JAZZ-2023-00123',
+                isTransferable: true,
+                validationCount: 0,
+                ticketHolder: {
+                  name: 'Usuario EventHub',
+                  email: 'usuario@eventhub.com'
+                },
                 eventName: 'Festival de Jazz 2023',
                 eventDate: new Date(Date.now() + 86400000 * 5).toISOString(),
                 eventLocation: 'Auditorio Nacional, Madrid',
                 eventImage: 'https://source.unsplash.com/random/800x600/?jazz',
-                ticketCode: 'JAZZ-2023-00123',
-                qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=JAZZ-2023-00123',
-                status: 'valid'
+                ticketCode: 'JAZZ-2023-00123'
               });
             }, 1000);
           }
@@ -76,13 +109,24 @@ export function TicketDetailScreen() {
             setTicket({
               id: id as string,
               eventId: '101',
+              userId: 'user1',
+              ticketNumber: 'JAZZ-2023-00123',
+              ticketType: 'premium',
+              price: 75,
+              status: 'valid',
+              purchaseDate: new Date().toISOString(),
+              qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=JAZZ-2023-00123',
+              isTransferable: true,
+              validationCount: 0,
+              ticketHolder: {
+                name: 'Usuario EventHub',
+                email: 'usuario@eventhub.com'
+              },
               eventName: 'Festival de Jazz 2023',
               eventDate: new Date(Date.now() + 86400000 * 5).toISOString(),
               eventLocation: 'Auditorio Nacional, Madrid',
               eventImage: 'https://source.unsplash.com/random/800x600/?jazz',
-              ticketCode: 'JAZZ-2023-00123',
-              qrCode: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=JAZZ-2023-00123',
-              status: 'valid'
+              ticketCode: 'JAZZ-2023-00123'
             });
           }, 1000);
         }
@@ -120,10 +164,10 @@ export function TicketDetailScreen() {
   // Obtener color según estado de la entrada
   const getStatusColor = (status: Ticket['status']): string => {
     switch (status) {
-      case 'valid': return theme.colors.success;
-      case 'used': return theme.colors.secondary;
-      case 'expired': return theme.colors.error;
-      default: return theme.colors.secondaryText;
+      case 'valid': return theme.colors.success.main;
+      case 'used': return theme.colors.secondary.main;
+      case 'expired': return theme.colors.error.main;
+      default: return theme.colors.secondary.main;
     }
   };
 
@@ -160,11 +204,11 @@ export function TicketDetailScreen() {
 
   if (loading || !ticket) {
     return (
-      <View style={[styles.centered, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.centered, { backgroundColor: theme.colors.background.default }]}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={[styles.loadingText, { color: theme.colors.secondaryText }]}>
-          Cargando datos de la entrada...
+        <ActivityIndicator size="large" color={theme.colors.primary.main} />
+        <Text style={[styles.loadingText, { color: theme.colors.text.primary }]}>
+          Cargando detalles del boleto...
         </Text>
       </View>
     );
@@ -173,48 +217,43 @@ export function TicketDetailScreen() {
   const isPastEvent = new Date(ticket.eventDate) < new Date();
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background.default }]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
-          <View style={styles.eventImageContainer}>
+        <View style={[styles.card, { backgroundColor: theme.colors.background.paper }]}>
+          {ticket.eventImage ? (
             <Image
               source={{ uri: ticket.eventImage }}
               style={styles.eventImage}
               resizeMode="cover"
             />
-            <View 
-              style={[styles.statusContainer, { backgroundColor: getStatusColor(ticket.status) }]}
-            >
-              <Text style={styles.statusText}>
-                {getStatusText(ticket.status)}
-              </Text>
-            </View>
-          </View>
+          ) : (
+            <View style={styles.eventImagePlaceholder} />
+          )}
           
           <View style={styles.eventInfo}>
-            <Text style={[styles.eventName, { color: theme.colors.text }]}>
+            <Text style={[styles.eventName, { color: theme.colors.text.primary }]}>
               {ticket.eventName}
             </Text>
             
             <View style={styles.infoRow}>
-              <Ionicons name="calendar-outline" size={20} color={theme.colors.secondaryText} />
-              <Text style={[styles.infoText, { color: theme.colors.secondaryText }]}>
+              <Ionicons name="calendar-outline" size={20} color={theme.colors.text.primary} />
+              <Text style={[styles.infoText, { color: theme.colors.text.primary }]}>
                 {formatDate(ticket.eventDate)}
               </Text>
             </View>
             
             <View style={styles.infoRow}>
-              <Ionicons name="time-outline" size={20} color={theme.colors.secondaryText} />
-              <Text style={[styles.infoText, { color: theme.colors.secondaryText }]}>
+              <Ionicons name="time-outline" size={20} color={theme.colors.text.primary} />
+              <Text style={[styles.infoText, { color: theme.colors.text.primary }]}>
                 {formatTime(ticket.eventDate)}
               </Text>
             </View>
             
             <View style={styles.infoRow}>
-              <Ionicons name="location-outline" size={20} color={theme.colors.secondaryText} />
-              <Text style={[styles.infoText, { color: theme.colors.secondaryText }]}>
+              <Ionicons name="location-outline" size={20} color={theme.colors.text.primary} />
+              <Text style={[styles.infoText, { color: theme.colors.text.primary }]}>
                 {ticket.eventLocation}
               </Text>
             </View>
@@ -222,36 +261,65 @@ export function TicketDetailScreen() {
           
           <Divider style={{ marginVertical: 16 }} />
           
-          <View style={styles.ticketInfo}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-              Información del Ticket
+          <View style={styles.qrSection}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
+              Tu Boleto Digital
             </Text>
             
-            <View style={styles.ticketCode}>
-              <Text style={[styles.codeLabel, { color: theme.colors.secondaryText }]}>
-                Código de Entrada:
-              </Text>
-              <Text style={[styles.codeValue, { color: theme.colors.text }]}>
-                {ticket.ticketCode}
-              </Text>
-            </View>
-            
             <View style={styles.qrContainer}>
-              <Image
-                source={{ uri: ticket.qrCode }}
-                style={styles.qrImage}
-                resizeMode="contain"
+              <Text style={[styles.codeLabel, { color: theme.colors.text.primary }]}>
+                CÓDIGO DE ENTRADA
+              </Text>
+              <Text style={[styles.codeValue, { color: theme.colors.text.primary }]}>
+                {ticket.ticketNumber}
+              </Text>
+              
+              <QRCode
+                value={ticket.ticketCode || ticket.id}
+                size={200}
+                color={theme.colors.text.primary}
+                backgroundColor={theme.colors.background.default}
               />
-              <Text style={[styles.qrInstructions, { color: theme.colors.secondaryText }]}>
-                Presenta este código QR en la entrada del evento
+              <Text style={[styles.qrInstructions, { color: theme.colors.text.primary }]}>
+                Muestra este código al personal del evento para ingresar
+              </Text>
+              
+              <View style={[styles.entryTimeBox, { backgroundColor: theme.colors.background.default }]}>
+                <Ionicons name="time-outline" size={18} color={theme.colors.success.main} />
+                <Text style={[styles.entryTimeText, { color: theme.colors.text.primary }]}>
+                  Entrada válida desde: {formatTime(ticket.eventDate)}
+                </Text>
+              </View>
+            </View>
+          </View>
+          
+          <View style={styles.attendeeSection}>
+            <View style={styles.attendeeHeader}>
+              <Ionicons name="person-outline" size={20} color={theme.colors.primary.main} />
+              <Text style={[styles.attendeeTitle, { color: theme.colors.primary.main }]}>
+                Datos del asistente
               </Text>
             </View>
             
-            {ticket.status === 'used' && ticket.entryTime && (
-              <View style={[styles.entryTimeBox, { backgroundColor: theme.colors.cardAlt }]}>
-                <Ionicons name="checkmark-circle" size={20} color={theme.colors.success} />
-                <Text style={[styles.entryTimeText, { color: theme.colors.text }]}>
-                  Entrada escaneada el {formatDate(ticket.entryTime)} a las {formatTime(ticket.entryTime)}
+            <View style={styles.attendeeInfo}>
+              <Text style={[styles.attendeeLabel, { color: theme.colors.text.secondary }]}>Nombre:</Text>
+              <Text style={[styles.attendeeValue, { color: theme.colors.text.primary }]}>
+                {ticket.ticketHolder.name}
+              </Text>
+            </View>
+            
+            <View style={styles.attendeeInfo}>
+              <Text style={[styles.attendeeLabel, { color: theme.colors.text.secondary }]}>Email:</Text>
+              <Text style={[styles.attendeeValue, { color: theme.colors.text.primary }]}>
+                {ticket.ticketHolder.email}
+              </Text>
+            </View>
+            
+            {ticket.ticketHolder.phone && (
+              <View style={styles.attendeeInfo}>
+                <Text style={[styles.attendeeLabel, { color: theme.colors.text.secondary }]}>Teléfono:</Text>
+                <Text style={[styles.attendeeValue, { color: theme.colors.text.primary }]}>
+                  {ticket.ticketHolder.phone}
                 </Text>
               </View>
             )}
@@ -262,7 +330,7 @@ export function TicketDetailScreen() {
           <TouchableOpacity 
             style={[
               styles.actionButton, 
-              { backgroundColor: theme.colors.primary },
+              { backgroundColor: theme.colors.primary.main },
               isPastEvent && { opacity: 0.6 }
             ]}
             onPress={viewEvent}
@@ -275,7 +343,7 @@ export function TicketDetailScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: theme.colors.secondary }]}
+            style={[styles.actionButton, { backgroundColor: theme.colors.secondary.main }]}
             onPress={shareTicket}
           >
             <Ionicons name="share-social" size={20} color="#FFFFFF" />
@@ -286,14 +354,14 @@ export function TicketDetailScreen() {
         </View>
         
         <View style={styles.helpSection}>
-          <Text style={[styles.helpTitle, { color: theme.colors.text }]}>
+          <Text style={[styles.helpTitle, { color: theme.colors.text.primary }]}>
             ¿Necesitas ayuda?
           </Text>
-          <Text style={[styles.helpText, { color: theme.colors.secondaryText }]}>
-            Si tienes problemas con tu entrada o necesitas información adicional, por favor contacta con el organizador del evento o nuestro servicio de atención al cliente.
+          <Text style={[styles.helpText, { color: theme.colors.text.primary }]}>
+            Si tienes algún problema con tu boleto, contacta al organizador o al soporte técnico.
           </Text>
           <TouchableOpacity style={styles.helpButton}>
-            <Text style={[styles.helpButtonText, { color: theme.colors.primary }]}>
+            <Text style={[styles.helpButtonText, { color: theme.colors.primary.main }]}>
               Contactar Soporte
             </Text>
           </TouchableOpacity>
@@ -449,6 +517,41 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   helpButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  eventImagePlaceholder: {
+    height: 200,
+    width: '100%',
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  qrSection: {
+    padding: 16,
+  },
+  attendeeSection: {
+    padding: 16,
+  },
+  attendeeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  attendeeTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  attendeeInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  attendeeLabel: {
+    fontSize: 14,
+  },
+  attendeeValue: {
     fontSize: 14,
     fontWeight: 'bold',
   },

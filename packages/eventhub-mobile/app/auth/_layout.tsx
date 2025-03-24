@@ -1,5 +1,5 @@
 import React from 'react';
-import { AuthLayout } from '../../src/modules/auth/components';
+import { AuthLayout } from '@modules/auth/components';
 
 /**
  * Layout para las rutas de autenticación

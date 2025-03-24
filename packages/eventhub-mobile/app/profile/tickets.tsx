@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { UserTicketsScreen } from '../../src/modules/users/screens';
+import { UserTicketsScreen } from '@modules/users/screens';
 
 export default function TicketsRoute() {
   return (

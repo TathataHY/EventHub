@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { EventFormScreen } from '../../src/modules/events/screens';
+import { EventFormScreen } from '@modules/events/screens';
 
 /**
  * Pantalla de creación de evento utilizando la estructura modular

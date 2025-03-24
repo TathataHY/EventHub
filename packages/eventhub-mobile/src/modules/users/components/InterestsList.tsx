@@ -6,11 +6,11 @@ import { colors } from '@theme/base/colors';
 import { getColorValue } from '@theme/index';
 
 interface InterestsListProps {
-  interests: InterestCategory[];
+  interests: (InterestCategory | string)[];
   style?: ViewStyle;
   editable?: boolean;
   onAddPress?: () => void;
-  onRemovePress?: (interest: InterestCategory) => void;
+  onRemovePress?: (interest: InterestCategory | string) => void;
 }
 
 export const InterestsList: React.FC<InterestsListProps> = ({
@@ -21,7 +21,7 @@ export const InterestsList: React.FC<InterestsListProps> = ({
   onRemovePress
 }) => {
   // Obtener un color basado en la categoría de interés
-  const getInterestColor = (interest: InterestCategory): ColorValue => {
+  const getInterestColor = (interest: InterestCategory | string): ColorValue => {
     const colorMap: Record<string, ColorValue> = {
       [InterestCategory.MUSIC]: getColorValue(colors.primary),
       [InterestCategory.SPORTS]: '#4CAF50',
@@ -34,11 +34,11 @@ export const InterestsList: React.FC<InterestsListProps> = ({
       [InterestCategory.SOCIAL]: '#E91E63',
     };
     
-    return colorMap[interest] || getColorValue(colors.grey[400]);
+    return colorMap[interest as string] || getColorValue(colors.grey[400]);
   };
 
   // Obtener un ícono basado en la categoría de interés
-  const getInterestIcon = (interest: InterestCategory): string => {
+  const getInterestIcon = (interest: InterestCategory | string): string => {
     const iconMap: Record<string, string> = {
       [InterestCategory.MUSIC]: 'musical-notes',
       [InterestCategory.SPORTS]: 'basketball',
@@ -51,11 +51,11 @@ export const InterestsList: React.FC<InterestsListProps> = ({
       [InterestCategory.SOCIAL]: 'people',
     };
     
-    return iconMap[interest] || 'star';
+    return iconMap[interest as string] || 'star';
   };
 
   // Obtener etiqueta para mostrar en español
-  const getInterestLabel = (interest: InterestCategory): string => {
+  const getInterestLabel = (interest: InterestCategory | string): string => {
     const labelMap: Record<string, string> = {
       [InterestCategory.MUSIC]: 'Música',
       [InterestCategory.SPORTS]: 'Deportes',
@@ -68,7 +68,7 @@ export const InterestsList: React.FC<InterestsListProps> = ({
       [InterestCategory.SOCIAL]: 'Social',
     };
     
-    return labelMap[interest] || interest;
+    return labelMap[interest as string] || String(interest);
   };
 
   return (
@@ -82,7 +82,7 @@ export const InterestsList: React.FC<InterestsListProps> = ({
         )}
       </View>
       
-      <ScrollView 
+      <ScrollView
         horizontal 
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}

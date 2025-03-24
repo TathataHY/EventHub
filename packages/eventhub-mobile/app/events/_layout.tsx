@@ -1,5 +1,5 @@
 import React from 'react';
-import { EventsLayout } from '../../src/modules/events/components';
+import { EventsLayout } from '@modules/events/components';
 import { Slot } from 'expo-router';
 
 /**

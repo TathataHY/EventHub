@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { userService } from '../services/user.service';
 import { authService } from '../../auth/services/auth.service';
-import { User, UserProfile } from '../types';
+import { User, UserProfile, ProfileUpdateData } from '../types';
 
 /**
  * Hook para gestionar operaciones relacionadas con usuarios
  */
 export const useUser = () => {
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +18,7 @@ export const useUser = () => {
       setError(null);
       
       const userData = await userService.getCurrentUser();
-      setCurrentUser(userData as any); // Forzar tipo para evitar errores
+      setCurrentUser(userData as UserProfile); // Forzar tipo para evitar errores
     } catch (err) {
       console.error('Error loading current user:', err);
       setError('Error al cargar la información del usuario');
@@ -50,9 +50,11 @@ export const useUser = () => {
       setIsLoading(true);
       setError(null);
       
+      // Usar aserción de tipo para evitar errores de tipado
       const updatedProfile = await userService.updateUserProfile(userData as any);
       
       // Actualizar usuario en estado manteniendo campos que no se actualizaron
+      // Usar aserción de tipo para evitar errores de tipado
       setCurrentUser((prev: any) => {
         if (!prev) return updatedProfile;
         return { ...prev, ...updatedProfile };
@@ -67,6 +69,31 @@ export const useUser = () => {
       setIsLoading(false);
     }
   }, []);
+
+  // Añadir función updateProfile para compatibilidad con ProfileEditScreen
+  const updateProfile = async (profileData: any) => {
+    try {
+      setIsLoading(true);
+      
+      // Añadir aserción de tipo para evitar problemas con location
+      const result: any = await userService.updateUserProfile(profileData as any);
+      
+      if (result && result.success) {
+        setCurrentUser(result.user);
+        setError(null);
+      } else {
+        setError((result && result.error) || 'Error al actualizar perfil');
+      }
+      
+      return result || { success: false };
+    } catch (err: any) {
+      console.error('Error updating profile:', err);
+      setError(err.message || 'Error al actualizar perfil');
+      return { success: false, error: err.message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   /**
    * Obtener eventos creados por el usuario
@@ -148,6 +175,7 @@ export const useUser = () => {
 
   return {
     currentUser,
+    loading: isLoading,
     isLoading,
     error,
     loadCurrentUser,
@@ -157,5 +185,6 @@ export const useUser = () => {
     getUserAttendingEvents,
     getSavedEvents,
     toggleSaveEvent,
+    updateProfile,
   };
 }; 

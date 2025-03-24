@@ -14,13 +14,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
-import { useUser } from '@modules/auth/hooks';
+import { useAuth } from '@modules/auth/hooks/useAuth';
 import { useTheme } from '../../../shared/hooks/useTheme';
-import { bookmarkService } from '@modules/events/services/bookmark.service';
+import { userService } from '@modules/users/services/user.service';
 import { eventService } from '@modules/events/services/event.service';
 import { authService } from '@modules/auth/services/auth.service';
 import { EventCard } from '@modules/events/components';
-import { formatCurrency, formatDate } from '@shared/utils';
+import { formatDate } from '@shared/utils';
 import { EmptyState } from '@shared/components/ui/EmptyState';
 import { LoadingState } from '../../../shared/components/ui/LoadingState';
 
@@ -37,31 +37,44 @@ interface Event {
   organizer: string;
 }
 
-export function SavedEventsScreen() {
+export const SavedEventsScreen = () => {
   const { theme } = useTheme();
   const router = useRouter();
-  const { currentUser, isLoading, getSavedEvents } = useUser();
+  const { currentUser, isLoading } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
-  const [savedEvents, setSavedEvents] = useState<any[]>([]);
+  const [savedEvents, setSavedEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Cargar eventos guardados
   useEffect(() => {
-    loadSavedEvents();
-  }, []);
+    fetchSavedEvents();
+  }, [currentUser]);
 
-  const loadSavedEvents = async () => {
+  const fetchSavedEvents = async () => {
+    if (!currentUser) {
+      setLoading(false);
+      return;
+    }
+    
     try {
-      const events = await getSavedEvents();
-      setSavedEvents(events || []);
-    } catch (error) {
-      console.error('Error loading saved events:', error);
+      setLoading(true);
+      // Usar userService en lugar de eventService para obtener eventos guardados
+      const events = await userService.getSavedEvents((currentUser as any).id);
+      setSavedEvents(events);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || 'Error al cargar eventos guardados');
+      setSavedEvents([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadSavedEvents();
-    setRefreshing(false);
+    await fetchSavedEvents();
   };
 
   const handleBrowseEvents = () => {
@@ -70,7 +83,7 @@ export function SavedEventsScreen() {
   };
 
   // Renderizado condicional basado en el estado
-  if (isLoading && !refreshing) {
+  if (loading && !refreshing) {
     return (
       <LoadingState message="Cargando eventos guardados..." />
     );

@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router'; 
-import { SettingsScreen } from '../src/modules/settings/components/SettingsScreen';
+import { SettingsScreen } from '@modules/settings/components/SettingsScreen';
 
 /**
  * Pantalla de configuración utilizando la estructura modular

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { UserAchievementsScreen } from '../../src/modules/users/screens';
+import { UserAchievementsScreen } from '@modules/users/screens';
 
 export default function AchievementsRoute() {
   return (

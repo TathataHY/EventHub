@@ -46,11 +46,11 @@ export const EventCategoryIcon: React.FC<EventCategoryIconProps> = ({
       },
       'technology': { 
         icon: 'code-slash', 
-        color: theme.colors.info.dark 
+        color: theme.colors.info.main
       },
       'education': { 
         icon: 'school', 
-        color: theme.colors.primary.dark 
+        color: theme.colors.primary.main
       },
       'networking': { 
         icon: 'people', 
@@ -58,19 +58,19 @@ export const EventCategoryIcon: React.FC<EventCategoryIconProps> = ({
       },
       'conference': { 
         icon: 'mic', 
-        color: theme.colors.success.dark 
+        color: theme.colors.success.main
       },
       'workshop': { 
         icon: 'construct', 
-        color: theme.colors.warning.dark 
+        color: theme.colors.warning.main
       },
       'social': { 
         icon: 'chatbubbles', 
-        color: theme.colors.info.light 
+        color: theme.colors.info.main
       },
       'outdoor': { 
         icon: 'leaf', 
-        color: theme.colors.success.light 
+        color: theme.colors.success.main
       },
       'entertainment': { 
         icon: 'film', 

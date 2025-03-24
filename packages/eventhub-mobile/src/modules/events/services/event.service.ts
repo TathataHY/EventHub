@@ -2,48 +2,63 @@ import { apiClient } from '@core/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { recommendationService } from './recommendation.service';
 import { authService } from '@modules/auth/services/auth.service';
-import { Event as EventType, EventSearchParams as EventSearchParamsType } from '../types/event.types';
+import { 
+  Event, 
+  EventFilters as EventSearchParamsType,
+  CreateEventData 
+} from '../types';
 
-// Interfaces para compatibilidad - Usar para migración gradual
-export interface Event {
-  id: number | string;
-  title: string;
-  description: string;
-  location: any;
-  startDate: string;
-  endDate?: string;
-  category: string;
-  imageUrl?: string;
-  organizerId: number | string;
-  organizerName?: string;
-  price?: number;
-  capacity?: number;
-  attendees?: number;
-  status?: string;
-  isAttending?: boolean;
-  isFavorite?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-  tags?: string[];
-  isVirtual?: boolean;
-  virtualUrl?: string;
+// Para compatibilidad legacy, aceptamos id como string o número
+export interface ServiceEvent extends Omit<Event, 'id' | 'organizerId'> {
+  id: string | number;
+  organizerId: string | number;
+  distance?: number;
+  recommendationScore?: number;
+  // Propiedades adicionales para compatibilidad con componentes
   latitude?: number;
   longitude?: number;
-  recommendationScore?: number;
-  distance?: number;
+  type?: string;
+  metrics?: {
+    maxCapacity?: number;
+    registeredAttendees?: number;
+  };
+  ticketInfo?: {
+    price?: number;
+    availableTickets?: number;
+    isFree?: boolean;
+    currency?: string;
+  };
 }
 
-export interface EventSearchParams extends Partial<EventSearchParamsType> {
+// Extendemos la interfaz de parámetros de búsqueda con campos adicionales
+export interface EventSearchParams {
   query?: string;
   category?: string;
   startDate?: string;
   endDate?: string;
-  location?: string;
+  location?: {
+    latitude?: number;
+    longitude?: number;
+    radius?: number;
+  };
+  // Incluimos también los campos de EventFilters para compatibilidad
+  categories?: string[];
+  date?: {
+    from?: Date;
+    to?: Date;
+  };
+  price?: {
+    min?: number;
+    max?: number;
+  };
+  keywords?: string[];
+  isVirtual?: boolean;
+  isFree?: boolean;
 }
 
 class EventService {
   // Obtener todos los eventos
-  async getAllEvents(): Promise<Event[]> {
+  async getAllEvents(): Promise<ServiceEvent[]> {
     try {
       const response = await apiClient.get('/events');
       return response.data;
@@ -64,7 +79,7 @@ class EventService {
   }
 
   // Buscar eventos
-  async searchEvents(query: string): Promise<Event[]> {
+  async searchEvents(query: string): Promise<ServiceEvent[]> {
     try {
       const response = await apiClient.get(`/events/search?q=${encodeURIComponent(query)}`);
       return response.data;
@@ -110,7 +125,7 @@ class EventService {
   }
 
   // Crear un nuevo evento
-  async createEvent(eventData: Partial<Event>): Promise<Event> {
+  async createEvent(eventData: Partial<ServiceEvent>): Promise<ServiceEvent> {
     try {
       const response = await apiClient.post('/events', eventData);
       return response.data;
@@ -121,7 +136,7 @@ class EventService {
   }
 
   // Actualizar un evento
-  async updateEvent(id: string, eventData: Partial<Event>): Promise<Event> {
+  async updateEvent(id: string, eventData: Partial<ServiceEvent>): Promise<ServiceEvent> {
     try {
       const response = await apiClient.put(`/events/${id}`, eventData);
       return response.data;
@@ -175,7 +190,7 @@ class EventService {
   }
 
   // Obtener mis eventos (organizados por el usuario)
-  async getMyEvents(): Promise<Event[]> {
+  async getMyEvents(): Promise<ServiceEvent[]> {
     try {
       const response = await apiClient.get('/events/my-events');
       return response.data;
@@ -186,7 +201,7 @@ class EventService {
   }
 
   // Obtener eventos a los que asiste el usuario
-  async getEventsAttending(): Promise<Event[]> {
+  async getEventsAttending(): Promise<ServiceEvent[]> {
     try {
       const response = await apiClient.get('/events/attending');
       return response.data;
@@ -196,7 +211,7 @@ class EventService {
     }
   }
 
-  async getEventsByCategory(category: string): Promise<Event[]> {
+  async getEventsByCategory(category: string): Promise<ServiceEvent[]> {
     try {
       const response = await apiClient.get(`/events?category=${encodeURIComponent(category)}`);
       return response.data;
@@ -206,7 +221,7 @@ class EventService {
     }
   }
 
-  async advancedSearch(params: EventSearchParams): Promise<Event[]> {
+  async advancedSearch(params: EventSearchParams): Promise<ServiceEvent[]> {
     try {
       // Construir la URL con los parámetros de búsqueda
       const queryParams = new URLSearchParams();
@@ -215,7 +230,11 @@ class EventService {
       if (params.category) queryParams.append('category', params.category);
       if (params.startDate) queryParams.append('startDate', params.startDate);
       if (params.endDate) queryParams.append('endDate', params.endDate);
-      if (params.location) queryParams.append('location', params.location);
+      if (params.location) {
+        // Convertir la ubicación a un string JSON para enviarlo como parámetro
+        const locationParam = JSON.stringify(params.location);
+        queryParams.append('location', locationParam);
+      }
       
       const response = await apiClient.get(`/events/search?${queryParams.toString()}`);
       return response.data;
@@ -299,7 +318,7 @@ class EventService {
   }
 
   // Obtener eventos destacados
-  async getFeaturedEvents(limit: number = 5): Promise<Event[]> {
+  async getFeaturedEvents(limit: number = 5): Promise<ServiceEvent[]> {
     try {
       const response = await apiClient.get(`/events/featured?limit=${limit}`);
       return response.data;
@@ -310,16 +329,36 @@ class EventService {
     }
   }
 
-  // Obtener eventos cercanos
-  async getNearbyEvents(limit: number = 5): Promise<Event[]> {
-    try {
-      const response = await apiClient.get(`/events/nearby?limit=${limit}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching nearby events:', error);
-      // Datos simulados para desarrollo
-      return [];
-    }
+  /**
+   * Obtiene eventos cercanos basados en coordenadas y radio
+   * @param latitude Latitud del usuario
+   * @param longitude Longitud del usuario
+   * @param radius Radio en kilómetros para buscar eventos cercanos
+   * @returns Lista de eventos cercanos con distancia calculada
+   */
+  async getNearbyEvents(latitude: number, longitude: number, radius: number = 10): Promise<ServiceEvent[]> {
+    // Por ahora simulamos la obtención de eventos cercanos
+    const events = await this.getAllEvents();
+    
+    // Simulamos el cálculo de distancia para cada evento
+    const nearbyEvents = events.map(event => {
+      // Asignamos coordenadas aleatorias cercanas si el evento no tiene coordenadas
+      const eventLatitude = event.latitude || latitude + (Math.random() * 0.01 - 0.005);
+      const eventLongitude = event.longitude || longitude + (Math.random() * 0.01 - 0.005);
+      
+      // Calculamos una distancia simulada
+      const distance = Math.random() * radius;
+      
+      return {
+        ...event,
+        latitude: eventLatitude,
+        longitude: eventLongitude,
+        distance
+      };
+    });
+    
+    // Filtramos eventos que estén dentro del radio especificado
+    return nearbyEvents.filter(event => event.distance <= radius);
   }
 
   // Obtener categorías de eventos
@@ -335,7 +374,7 @@ class EventService {
   }
 
   // Obtener todos los eventos (alias para compatibilidad)
-  async getEvents(): Promise<Event[]> {
+  async getEvents(): Promise<ServiceEvent[]> {
     return this.getAllEvents();
   }
 
@@ -351,7 +390,7 @@ class EventService {
   }
 
   // Obtener eventos a los que ha asistido un usuario
-  async getUserAttendedEvents(userId: string): Promise<Event[]> {
+  async getUserAttendedEvents(userId: string): Promise<ServiceEvent[]> {
     try {
       const response = await apiClient.get(`/users/${userId}/events/attended`);
       return response.data;

@@ -23,10 +23,14 @@ export const MOCK_USER_PROFILE: UserProfile = {
     InterestCategory.TECHNOLOGY,
     InterestCategory.FOOD
   ],
-  followersCount: 128,
-  followingCount: 85,
-  eventsAttended: 24,
-  eventsOrganized: 3,
+  followers: ['2', '3', '4'],
+  following: ['2', '3'],
+  stats: {
+    followersCount: 128,
+    followingCount: 45,
+    eventsAttended: 12,
+    eventsCreated: 5
+  },
   createdAt: '2023-01-15T10:30:00Z',
   updatedAt: '2023-03-20T18:45:00Z'
 };
@@ -53,11 +57,15 @@ export const MOCK_USERS: UserProfile[] = [
       InterestCategory.BUSINESS,
       InterestCategory.EDUCATION
     ],
-    followersCount: 342,
-    followingCount: 127,
-    eventsAttended: 18,
-    eventsOrganized: 12,
-    createdAt: '2022-08-05T14:20:00Z',
+    followers: ['1', '3', '5'],
+    following: ['1'],
+    stats: {
+      followersCount: 342,
+      followingCount: 78,
+      eventsAttended: 25,
+      eventsCreated: 10
+    },
+    createdAt: '2023-02-20T14:45:00Z',
     updatedAt: '2023-02-28T09:15:00Z'
   },
   {
@@ -77,11 +85,15 @@ export const MOCK_USERS: UserProfile[] = [
       InterestCategory.ARTS,
       InterestCategory.SOCIAL
     ],
-    followersCount: 215,
-    followingCount: 198,
-    eventsAttended: 37,
-    eventsOrganized: 5,
-    createdAt: '2022-11-12T11:50:00Z',
+    followers: ['1', '2'],
+    following: ['1'],
+    stats: {
+      followersCount: 215,
+      followingCount: 120,
+      eventsAttended: 18,
+      eventsCreated: 8
+    },
+    createdAt: '2023-03-10T09:15:00Z',
     updatedAt: '2023-04-05T16:30:00Z'
   }
 ]; 

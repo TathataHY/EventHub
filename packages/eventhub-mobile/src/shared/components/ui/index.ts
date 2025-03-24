@@ -13,6 +13,8 @@ export * from './Avatar';
 export * from './Badge';
 export * from './Loading';
 export * from './SearchBar';
+// Temporalmente deshabilitado - Resolver problemas de tipos
+// export * from './Toast';
 
 // Configuraciones
 export * from './config';

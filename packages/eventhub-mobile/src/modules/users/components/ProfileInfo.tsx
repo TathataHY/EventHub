@@ -5,15 +5,18 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   TextInput,
-  ScrollView
+  ScrollView,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { User, UpdateProfileParams } from '../types/user.types';
+import { Card, Divider } from '@shared/components/ui';
+import { theme } from '@theme/index';
+import { UpdateProfileParams, UserProfile } from '@modules/users/types/user.types';
 import { colors } from '@theme/base/colors';
 import { getColorValue } from '@theme/index';
 
 interface ProfileInfoProps {
-  user: User;
+  user: UserProfile;
   isEditable?: boolean;
   onSave?: (profileData: UpdateProfileParams) => Promise<{ success: boolean, error?: string }>;
 }
@@ -24,8 +27,8 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({
   onSave
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [fullName, setFullName] = useState(user.fullName);
-  const [username, setUsername] = useState(user.username);
+  const [fullName, setFullName] = useState(user.fullName || user.name || '');
+  const [username, setUsername] = useState(user.username || '');
   const [bio, setBio] = useState(user.bio || '');
   const [phoneNumber, setPhoneNumber] = useState(user.phoneNumber || '');
   const [city, setCity] = useState(user.location?.city || '');
@@ -42,8 +45,8 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({
   // Manejar cancelación de edición
   const handleCancel = () => {
     setIsEditing(false);
-    setFullName(user.fullName);
-    setUsername(user.username);
+    setFullName(user.fullName || user.name || '');
+    setUsername(user.username || '');
     setBio(user.bio || '');
     setPhoneNumber(user.phoneNumber || '');
     setCity(user.location?.city || '');
@@ -166,17 +169,17 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({
         ) : (
           // Modo de visualización
           <>
-            {renderField('Nombre Completo', user.fullName)}
-            {renderField('Nombre de Usuario', user.username)}
-            {renderField('Email', user.email)}
-            {renderField('Biografía', user.bio)}
-            {renderField('Teléfono', user.phoneNumber)}
+            {renderField('Nombre Completo', user.fullName || user.name || '')}
+            {renderField('Nombre de Usuario', user.username || '')}
+            {renderField('Email', user.email || '')}
+            {renderField('Biografía', user.bio || '')}
+            {renderField('Teléfono', user.phoneNumber || '')}
             {renderField('Ubicación', [
               user.location?.city, 
               user.location?.state, 
               user.location?.country
             ].filter(Boolean).join(', '))}
-            {renderField('Miembro desde', new Date(user.createdAt).toLocaleDateString('es-ES', {
+            {user.createdAt && renderField('Miembro desde', new Date(user.createdAt).toLocaleDateString('es-ES', {
               year: 'numeric',
               month: 'long',
               day: 'numeric'

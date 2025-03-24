@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Image } from 'react-native';
-import { useTheme } from '../../../shared/hooks/useTheme';
+import { useTheme } from '@core/context/ThemeContext';
 import { TicketStatus } from '@modules/tickets/types';
 import QR from 'qrcode-svg';
 
@@ -28,14 +28,14 @@ export const TicketQRCode: React.FC<TicketQRCodeProps> = ({
   const getStatusColor = () => {
     switch (status) {
       case 'valid':
-        return theme.colors.success.main;
+        return theme.colors.success.main || '#4CAF50';
       case 'used':
-        return theme.colors.warning.main;
+        return theme.colors.warning.main || '#FFC107';
       case 'expired':
       case 'cancelled':
-        return theme.colors.error.main;
+        return theme.colors.error.main || '#F44336';
       default:
-        return theme.colors.primary.main;
+        return theme.colors.primary.main || '#2196F3';
     }
   };
 

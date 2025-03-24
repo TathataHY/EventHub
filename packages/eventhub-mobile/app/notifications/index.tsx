@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { NotificationsScreen } from '../../src/modules/notifications/screens';
+import { NotificationsScreen } from '@modules/notifications/screens';
 
 export default function NotificationsPage() {
   return (

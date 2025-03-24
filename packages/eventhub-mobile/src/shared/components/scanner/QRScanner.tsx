@@ -14,9 +14,9 @@ import { BarCodeScannerResult } from 'expo-barcode-scanner';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera } from 'expo-camera';
-import { useTheme } from '../../../shared/hooks/useTheme';
+import { useTheme } from '@core/context/ThemeContext';
 
-import { getColorValue } from '@theme/index';
+import { getColorValue } from '@shared/utils/color.utils';
 import { colors } from '@theme/base/colors';
 
 interface QRScannerProps {
@@ -76,9 +76,9 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   // Renderizar según el estado de los permisos
   if (hasPermission === null) {
     return (
-      <View style={[styles.permissionContainer, { backgroundColor: '#FFFFFF' }]}>
-        <ActivityIndicator size="large" color={getColorValue(colors.primary)} />
-        <Text style={[styles.permissionText, { color: '#000000' }]}>
+      <View style={[styles.permissionContainer, { backgroundColor: theme.colors.background.default }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary.main} />
+        <Text style={[styles.permissionText, { color: theme.colors.text.primary }]}>
           Solicitando permisos de cámara...
         </Text>
       </View>
@@ -87,16 +87,16 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   
   if (hasPermission === false) {
     return (
-      <View style={[styles.permissionContainer, { backgroundColor: '#FFFFFF' }]}>
-        <Ionicons name="camera-outline" size={64} color={getColorValue(colors.error)} />
-        <Text style={[styles.permissionTitle, { color: '#000000' }]}>
+      <View style={[styles.permissionContainer, { backgroundColor: theme.colors.background.default }]}>
+        <Ionicons name="camera-outline" size={64} color={theme.colors.error.main} />
+        <Text style={[styles.permissionTitle, { color: theme.colors.text.primary }]}>
           No hay acceso a la cámara
         </Text>
-        <Text style={[styles.permissionText, { color: '#000000' }]}>
+        <Text style={[styles.permissionText, { color: theme.colors.text.primary }]}>
           Para escanear códigos QR, debes permitir el acceso a la cámara en la configuración de tu dispositivo.
         </Text>
         <TouchableOpacity
-          style={[styles.closeButton, { backgroundColor: getColorValue(colors.primary) }]}
+          style={[styles.closeButton, { backgroundColor: theme.colors.primary.main }]}
           onPress={onClose}
         >
           <Text style={styles.closeButtonText}>Cerrar</Text>
@@ -130,10 +130,10 @@ export const QRScanner: React.FC<QRScannerProps> = ({
             
             <View style={styles.scannerContainer}>
               {/* Esquinas del marco */}
-              <View style={[styles.corner, styles.topLeftCorner, { borderColor: getColorValue(colors.primary) }]} />
-              <View style={[styles.corner, styles.topRightCorner, { borderColor: getColorValue(colors.primary) }]} />
-              <View style={[styles.corner, styles.bottomLeftCorner, { borderColor: getColorValue(colors.primary) }]} />
-              <View style={[styles.corner, styles.bottomRightCorner, { borderColor: getColorValue(colors.primary) }]} />
+              <View style={[styles.corner, styles.topLeftCorner, { borderColor: theme.colors.primary.main }]} />
+              <View style={[styles.corner, styles.topRightCorner, { borderColor: theme.colors.primary.main }]} />
+              <View style={[styles.corner, styles.bottomLeftCorner, { borderColor: theme.colors.primary.main }]} />
+              <View style={[styles.corner, styles.bottomRightCorner, { borderColor: theme.colors.primary.main }]} />
             </View>
             
             <View style={[styles.sideSection, { backgroundColor: 'rgba(0, 0, 0, 0.7)' }]} />

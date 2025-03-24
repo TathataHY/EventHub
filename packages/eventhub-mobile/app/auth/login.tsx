@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { LoginScreen } from '../../src/modules/auth/screens';
+import { LoginScreen } from '@modules/auth/screens';
 
 /**
  * Pantalla de inicio de sesión utilizando la estructura modular

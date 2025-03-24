@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { ProfileEditScreen } from '../../src/modules/users/screens';
+import { ProfileEditScreen } from '@modules/users/screens';
 
 /**
  * Ruta para la edición del perfil de usuario

@@ -14,20 +14,25 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { getDistance } from 'geolib';
 
-import { useTheme } from '../../../shared/hooks/useTheme';
+import { useTheme } from '../../../core/context';
 import { EventCard } from '@modules/events/components/EventCard';
-import { eventService } from '@modules/events/services/event.service';
+import { eventService, ServiceEvent } from '@modules/events/services/event.service';
 import { Event } from '@modules/events/types';
+import { getColorValue, getIconColor } from '../../../shared/utils/color.utils';
 
 interface NearbyEventsSectionProps {
-  events?: Event[];
+  title?: string;
   maxEvents?: number;
+  showLocation?: boolean;
+  events?: ServiceEvent[];
   onEventPress?: (event: Event) => void;
 }
 
 export const NearbyEventsSection: React.FC<NearbyEventsSectionProps> = ({
-  events,
-  maxEvents = 3,
+  title = 'Eventos cerca de ti',
+  maxEvents = 5,
+  showLocation = true,
+  events: externalEvents,
   onEventPress
 }) => {
   const { theme } = useTheme();
@@ -35,242 +40,263 @@ export const NearbyEventsSection: React.FC<NearbyEventsSectionProps> = ({
   
   const [isLoading, setIsLoading] = useState(true);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [nearbyEvents, setNearbyEvents] = useState<Event[]>([]);
+  const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [nearbyEvents, setNearbyEvents] = useState<ServiceEvent[]>([]);
   
   useEffect(() => {
-    if (events && events.length > 0) {
-      setNearbyEvents(events.slice(0, maxEvents));
+    // Si se proporcionan eventos externos, usarlos directamente
+    if (externalEvents && externalEvents.length > 0) {
+      setNearbyEvents(externalEvents.slice(0, maxEvents));
       setIsLoading(false);
-    } else {
-      getLocationAndEvents();
+      return;
     }
-  }, [events, maxEvents]);
+
+    // Si no hay eventos externos, cargar desde la ubicación
+    const getLocationAsync = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setLocationError('No se ha concedido permiso para acceder a la ubicación');
+          loadRandomEvents();
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        setUserLocation(location);
+        loadNearbyEvents(location);
+      } catch (error) {
+        console.error('Error al obtener la ubicación:', error);
+        setLocationError('No se pudo obtener tu ubicación actual');
+        loadRandomEvents();
+      }
+    };
+
+    getLocationAsync();
+  }, []);
   
-  // Solicitar permisos de ubicación y cargar eventos cercanos
-  const getLocationAndEvents = async () => {
+  const loadNearbyEvents = async (location: Location.LocationObject) => {
     try {
       setIsLoading(true);
+      // Obtener eventos de la API o servicio
+      const allEvents = await eventService.getAllEvents();
       
-      // Solicitar permisos de ubicación
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      setHasLocationPermission(status === 'granted');
-      
-      if (status !== 'granted') {
-        // Si no hay permisos, mostrar eventos aleatorios
-        loadRandomEvents();
+      if (!allEvents || allEvents.length === 0) {
+        setNearbyEvents([]);
         return;
       }
+
+      // Calcular distancia para cada evento
+      const eventsWithDistance = allEvents
+        .filter(event => event.latitude && event.longitude)
+        .map(event => {
+          const distance = getDistance(
+            { latitude: location.coords.latitude, longitude: location.coords.longitude },
+            { latitude: event.latitude || 0, longitude: event.longitude || 0 }
+          );
+          
+          return {
+            ...event,
+            distance: Math.round(distance / 1000) // Convertir a km
+          };
+        });
+
+      // Ordenar por distancia
+      const sortedEvents = eventsWithDistance.sort((a, b) => (a.distance || 0) - (b.distance || 0));
       
-      // Obtener ubicación actual
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced
-      });
+      // Establecer eventos cercanos
+      setNearbyEvents(sortedEvents.slice(0, maxEvents).map(event => {
+        return {
+          ...event,
+          id: String(event.id),
+          organizerId: String(event.organizerId)
+        };
+      }));
       
-      setUserLocation({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude
-      });
-      
-      // Cargar eventos cercanos
-      await loadNearbyEvents(location.coords.latitude, location.coords.longitude);
     } catch (error) {
-      console.error('Error al obtener ubicación:', error);
-      // Si hay un error, mostrar eventos aleatorios
+      console.error('Error al cargar eventos cercanos:', error);
       loadRandomEvents();
     } finally {
       setIsLoading(false);
     }
   };
   
-  // Cargar eventos cercanos
-  const loadNearbyEvents = async (latitude: number, longitude: number) => {
-    try {
-      // Obtener todos los eventos
-      const allEvents = await eventService.getAllEvents();
-      
-      // Filtrar eventos que tienen ubicación
-      const eventsWithLocation = allEvents.filter(
-        event => event.location?.latitude && event.location?.longitude
-      );
-      
-      // Calcular distancia a cada evento
-      const eventsWithDistance = eventsWithLocation.map(event => {
-        const distance = getDistance(
-          { latitude, longitude },
-          { latitude: event.location.latitude, longitude: event.location.longitude }
-        );
-        
-        return {
-          ...event,
-          distance // Distancia en metros
-        };
-      });
-      
-      // Ordenar por distancia
-      const sortedEvents = eventsWithDistance.sort((a, b) => a.distance - b.distance);
-      
-      // Tomar solo los más cercanos
-      setNearbyEvents(sortedEvents.slice(0, maxEvents));
-    } catch (error) {
-      console.error('Error al cargar eventos cercanos:', error);
-      setNearbyEvents([]);
-    }
-  };
-  
-  // Cargar eventos aleatorios (si no hay permisos de ubicación)
   const loadRandomEvents = async () => {
     try {
+      setIsLoading(true);
       const allEvents = await eventService.getAllEvents();
-      // Elegir algunos eventos aleatoriamente
+      
+      // Tomar algunos eventos aleatorios
       const shuffled = [...allEvents].sort(() => 0.5 - Math.random());
-      setNearbyEvents(shuffled.slice(0, maxEvents));
+      setNearbyEvents(shuffled.slice(0, maxEvents).map(event => {
+        return {
+          ...event,
+          id: String(event.id),
+          organizerId: String(event.organizerId)
+        };
+      }));
     } catch (error) {
       console.error('Error al cargar eventos aleatorios:', error);
-      setNearbyEvents([]);
+    } finally {
+      setIsLoading(false);
     }
   };
   
-  // Navegar a la pantalla de mapa
-  const navigateToMap = () => {
-    router.push('/map');
-  };
-  
-  // Formatear distancia
-  const formatDistance = (meters: number) => {
-    if (meters < 1000) {
-      return `${meters.toFixed(0)} m`;
-    } else {
-      return `${(meters / 1000).toFixed(1)} km`;
-    }
+  const navigateToEventDetails = (eventId: string) => {
+    router.push(`/events/${eventId}`);
   };
 
-  // Manejar la selección de un evento
   const handleEventPress = (event: Event) => {
     if (onEventPress) {
       onEventPress(event);
     } else {
-      router.push(`/events/${event.id}`);
+      navigateToEventDetails(event.id);
     }
   };
-  
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator color={getColorValue(theme.colors.primary)} size="large" />
+      </View>
+    );
+  }
+
+  if (nearbyEvents.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={[styles.emptyText, { color: getColorValue(theme.colors.text.secondary) }]}>
+          No hay eventos cercanos disponibles
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text.primary }]}>
-          {hasLocationPermission ? 'Eventos cercanos' : 'Eventos destacados'}
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: getColorValue(theme.colors.text.primary) }]}>
+          {title}
         </Text>
-        <TouchableOpacity onPress={navigateToMap}>
-          <Text style={[styles.viewAllText, { color: theme.colors.primary.main }]}>
-            Ver mapa
+        <TouchableOpacity onPress={() => router.push('/events/search?filter=nearby')}>
+          <Text style={[styles.viewAll, { color: getColorValue(theme.colors.primary) }]}>
+            Ver todos
           </Text>
         </TouchableOpacity>
       </View>
       
-      {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color={theme.colors.primary.main} />
-        </View>
-      ) : nearbyEvents.length > 0 ? (
-        <FlatList
-          data={nearbyEvents}
-          keyExtractor={(item) => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.eventsList}
-          renderItem={({ item }) => (
-            <TouchableOpacity 
-              style={styles.eventCardContainer}
-              onPress={() => handleEventPress(item)}
-            >
-              <EventCard event={item} />
-              
-              {userLocation && item.distance && (
-                <View style={[styles.distanceBadge, { backgroundColor: theme.colors.background.default }]}>
-                  <Ionicons name="location" size={12} color={theme.colors.primary.main} />
-                  <Text style={[styles.distanceText, { color: theme.colors.text.secondary }]}>
-                    {/* @ts-ignore: Ignorar errores de tipo en la propiedad distance */}
-                    {formatDistance(item.distance)}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          )}
-        />
-      ) : (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="location-outline" size={32} color={theme.colors.text.secondary} />
-          <Text style={[styles.emptyText, { color: theme.colors.text.secondary }]}>
-            No hay eventos cercanos
+      {locationError && (
+        <View style={styles.warningContainer}>
+          <Ionicons name="warning-outline" size={14} color={getIconColor(theme.colors.warning)} />
+          <Text style={[styles.warningText, { color: getColorValue(theme.colors.text.secondary) }]}>
+            {locationError}
           </Text>
         </View>
       )}
+      
+      <FlatList
+        data={nearbyEvents}
+        keyExtractor={(item) => item.id.toString()}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => (
+          <EventCard
+            event={{
+              id: item.id.toString(),
+              title: item.title,
+              description: item.description,
+              image: item.image,
+              location: item.location,
+              startDate: item.startDate,
+              endDate: item.endDate,
+              price: item.price,
+              organizer: {
+                id: item.organizerId ? item.organizerId.toString() : '',
+                name: item.organizer?.name || 'Organizador'
+              },
+              category: item.category
+            }}
+            onPress={() => handleEventPress({
+              id: item.id.toString(),
+              title: item.title,
+              description: item.description,
+              image: item.image,
+              location: item.location,
+              startDate: item.startDate,
+              endDate: item.endDate,
+              price: item.price,
+              organizer: {
+                id: item.organizerId ? item.organizerId.toString() : '',
+                name: item.organizer?.name || 'Organizador'
+              },
+              category: item.category,
+              organizerId: item.organizerId ? item.organizerId.toString() : ''
+            })}
+            style={styles.card}
+            showDistance={showLocation && typeof item.distance === 'number'}
+            distance={item.distance}
+          />
+        )}
+      />
     </View>
   );
 };
 
-const { width } = Dimensions.get('window');
-
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginVertical: 16,
   },
-  headerContainer: {
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
-    paddingHorizontal: 16,
+    marginHorizontal: 16,
   },
-  sectionTitle: {
+  title: {
     fontSize: 18,
     fontWeight: 'bold',
   },
-  viewAllText: {
+  viewAll: {
     fontSize: 14,
     fontWeight: '600',
   },
+  list: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  card: {
+    width: 280,
+    marginRight: 16,
+  },
   loadingContainer: {
-    height: 150,
+    minHeight: 200,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  eventsList: {
-    paddingLeft: 16,
-    paddingRight: 8,
-  },
-  eventCardContainer: {
-    width: width * 0.75,
-    marginRight: 8,
-    position: 'relative',
-  },
-  distanceBadge: {
-    position: 'absolute',
-    bottom: 8,
-    right: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  distanceText: {
-    fontSize: 10,
-    fontWeight: '500',
-    marginLeft: 4,
   },
   emptyContainer: {
-    height: 150,
+    minHeight: 100,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    margin: 16,
   },
   emptyText: {
-    marginTop: 8,
-  }
+    fontSize: 14,
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
+  warningContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 204, 0, 0.1)',
+    borderRadius: 8,
+    padding: 12,
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  warningText: {
+    fontSize: 14,
+    marginLeft: 8,
+  },
 }); 

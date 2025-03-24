@@ -165,7 +165,7 @@ export const EventComments: React.FC<EventCommentsProps> = ({
               { 
                 backgroundColor: theme.colors.background.default,
                 color: theme.colors.text.primary,
-                borderColor: theme.colors.divider
+                borderColor: theme.colors.text.secondary + '20'
               }
             ]}
             placeholder="Escribe tu comentario..."

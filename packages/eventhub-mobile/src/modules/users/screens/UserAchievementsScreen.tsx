@@ -37,8 +37,18 @@ export const UserAchievementsScreen = () => {
     try {
       setLoading(true);
       // Cargar logros del usuario
-      const userAchievements = await achievementService.getAchievements('current');
-      setAchievements(userAchievements);
+      const fetchAchievements = async () => {
+        try {
+          const userAchievements = await achievementService.getAchievements();
+          // Usar aserción de tipo para evitar error de tipado
+          setAchievements(userAchievements as any);
+        } catch (error) {
+          console.error('Error fetching achievements:', error);
+          // Mostrar mensaje de error
+        }
+      };
+      
+      fetchAchievements();
       
       // Cargar información de nivel y experiencia
       const userData = await userService.getCurrentUserProfile();

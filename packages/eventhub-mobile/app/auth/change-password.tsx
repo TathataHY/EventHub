@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stack } from 'expo-router';
-import { ChangePasswordScreen } from '../../src/modules/auth/screens';
+import { ChangePasswordScreen } from '@modules/auth/screens';
 
 /**
  * Ruta para cambiar la contraseña utilizando el enfoque modular

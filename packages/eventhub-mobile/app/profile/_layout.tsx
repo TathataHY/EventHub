@@ -1,5 +1,5 @@
 import React from 'react';
-import { ProfileLayout } from '../../src/modules/users/components';
+import { ProfileLayout } from '@modules/users/components';
 
 /**
  * Layout para las rutas de perfil

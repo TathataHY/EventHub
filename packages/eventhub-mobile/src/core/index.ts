@@ -21,4 +21,7 @@ export * from './storage';
 export * from './mocks';
 
 // Exportar proveedores
-export * from './providers'; 
+export * from './providers';
+
+// Exportar utilidades
+export * from './utils'; 

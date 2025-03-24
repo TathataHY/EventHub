@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { notificationService, Notification } from '../services/notification.service';
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigation = useNavigation();
+  const router = useRouter();
 
   // Cargar notificaciones
   const loadNotifications = useCallback(async () => {
@@ -75,11 +75,11 @@ export function useNotifications() {
 
     // Navegar según el tipo y datos de la notificación
     if (notification.data?.eventId) {
-      navigation.navigate('EventDetail' as never, { eventId: notification.data.eventId } as never);
+      router.push(`/events/${notification.data.eventId}`);
     } else if (notification.data?.userId) {
-      navigation.navigate('UserProfile' as never, { userId: notification.data.userId } as never);
+      router.push(`/profile/${notification.data.userId}`);
     }
-  }, [markAsRead, navigation]);
+  }, [markAsRead, router]);
 
   // Obtener el conteo de notificaciones no leídas
   const unreadCount = notifications.filter(notification => !notification.read).length;

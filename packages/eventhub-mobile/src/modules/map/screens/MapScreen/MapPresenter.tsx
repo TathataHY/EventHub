@@ -11,7 +11,7 @@ import { useTheme } from '../../../../shared/hooks/useTheme';
 import { Divider } from '@shared/components/ui/Divider';
 import { LoadingState } from '@shared/components/ui/LoadingState';
 import { CategoryFilters, EventMarker } from '../../components';
-import { Event } from '../../../events/types';
+import { Event } from '../../hooks/useMapEvents';
 
 interface MapPresenterProps {
   isLoading: boolean;

@@ -10,6 +10,7 @@ import {
 import { EventCard, EventCardProps } from './EventCard';
 import { EmptyState } from '../../../shared/components/ui/EmptyState';
 import { useTheme } from '../../../shared/hooks/useTheme';
+import { getColorValue } from '@theme/theme.types';
 
 export interface EventCardListProps {
   events: EventCardProps['event'][];
@@ -51,13 +52,13 @@ export const EventCardList = ({
   numColumns = 1,
   compact = false,
 }: EventCardListProps) => {
-  const { theme, getColorValue } = useTheme();
+  const { theme } = useTheme();
   
   // Renderizar cada elemento de la lista
   const renderItem = ({ item }: { item: EventCardProps['event'] }) => (
     <EventCard
       event={item}
-      onPress={() => onEventPress && onEventPress(item)}
+      onPress={(eventId) => onEventPress && onEventPress(item)}
       compact={compact}
     />
   );
@@ -104,7 +105,7 @@ export const EventCardList = ({
     <FlatList
       data={events}
       renderItem={renderItem}
-      keyExtractor={(item) => item.id.toString()}
+      keyExtractor={(item) => String(item.id)}
       ListEmptyComponent={renderEmpty}
       refreshing={refreshing}
       onRefresh={onRefresh}

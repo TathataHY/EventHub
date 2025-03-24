@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { StatusBar } from 'expo-status-bar';
 
-import { appColors, appTypography, appSpacing } from '../../../theme';
+import { useTheme, getColorValue, getIconColor } from '../../../core/theme';
 import { Button } from '../../../shared/components/ui';
 
 /**
@@ -12,6 +12,7 @@ import { Button } from '../../../shared/components/ui';
  */
 export const WelcomeScreen = () => {
   const router = useRouter();
+  const { theme } = useTheme();
 
   // Navegar a la pantalla de login
   const handleLogin = () => {
@@ -29,122 +30,128 @@ export const WelcomeScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
+    <View style={[styles.container, { backgroundColor: getColorValue(theme.colors.background) }]}>
+      <StatusBar style="auto" />
       
       <View style={styles.header}>
-        <Ionicons name="calendar" size={40} color={appColors.primary} />
-        <Text style={styles.title}>EventHub</Text>
-        <Text style={styles.subtitle}>Descubre y gestiona eventos a tu alrededor</Text>
-      </View>
-      
-      <View style={styles.imageContainer}>
-        <Image 
-          source={{ 
-            uri: 'https://img.freepik.com/free-vector/people-celebrating-party-illustration_52683-23027.jpg' 
-          }} 
-          style={styles.image}
+        <Image
+          source={require('../../../assets/images/logo.png')}
+          style={styles.logo}
           resizeMode="contain"
         />
       </View>
       
-      <View style={styles.features}>
-        <View style={styles.featureItem}>
-          <Ionicons name="search" size={24} color={appColors.primary} />
-          <Text style={styles.featureText}>Encuentra eventos cercanos</Text>
+      <View style={styles.content}>
+        <View style={styles.iconContainer}>
+          <Ionicons name="calendar" size={40} color={getIconColor(theme.colors.primary)} />
         </View>
-        <View style={styles.featureItem}>
-          <Ionicons name="ticket" size={24} color={appColors.primary} />
-          <Text style={styles.featureText}>Gestiona tus entradas</Text>
-        </View>
-        <View style={styles.featureItem}>
-          <Ionicons name="notifications" size={24} color={appColors.primary} />
-          <Text style={styles.featureText}>Recibe notificaciones</Text>
+        
+        <Text style={[styles.title, { color: getColorValue(theme.colors.text.primary) }]}>
+          EventHub
+        </Text>
+        
+        <Text style={[styles.subtitle, { color: getColorValue(theme.colors.text.secondary) }]}>
+          Encuentra, organiza y asiste a los mejores eventos en tu ciudad
+        </Text>
+        
+        <View style={styles.features}>
+          <View style={styles.featureItem}>
+            <Ionicons name="search" size={24} color={getIconColor(theme.colors.primary)} />
+            <Text style={[styles.featureText, { color: getColorValue(theme.colors.text.secondary) }]}>
+              Encuentra eventos cerca de ti
+            </Text>
+          </View>
+          
+          <View style={styles.featureItem}>
+            <Ionicons name="ticket" size={24} color={getIconColor(theme.colors.primary)} />
+            <Text style={[styles.featureText, { color: getColorValue(theme.colors.text.secondary) }]}>
+              Compra entradas directamente
+            </Text>
+          </View>
+          
+          <View style={styles.featureItem}>
+            <Ionicons name="notifications" size={24} color={getIconColor(theme.colors.primary)} />
+            <Text style={[styles.featureText, { color: getColorValue(theme.colors.text.secondary) }]}>
+              Recibe recordatorios de eventos
+            </Text>
+          </View>
         </View>
       </View>
       
-      <View style={styles.buttonContainer}>
+      <View style={styles.footer}>
         <Button
-          title="Iniciar Sesión"
-          onPress={handleLogin}
-          style={styles.loginButton}
-        />
-        
-        <Button
-          title="Registrarse"
-          variant="outline"
+          title="Crear Cuenta"
           onPress={handleRegister}
           style={styles.registerButton}
         />
         
-        <Button
-          title="Explorar sin cuenta"
-          variant="text"
-          onPress={handleExplore}
-          style={styles.exploreButton}
-        />
+        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+          <Text style={[styles.loginText, { color: getColorValue(theme.colors.primary) }]}>
+            Ya tengo una cuenta
+          </Text>
+        </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: appColors.background,
-    padding: appSpacing.md,
   },
   header: {
     alignItems: 'center',
-    marginTop: appSpacing.xl,
+    paddingTop: 60,
+    paddingBottom: 20,
+  },
+  logo: {
+    width: 150,
+    height: 60,
+  },
+  content: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+  },
+  iconContainer: {
+    marginBottom: 24,
   },
   title: {
-    ...appTypography.h1,
-    color: appColors.text,
-    marginTop: appSpacing.sm,
-    marginBottom: appSpacing.xs,
+    fontSize: 32,
+    fontWeight: '700',
+    marginBottom: 12,
+    textAlign: 'center',
   },
   subtitle: {
-    ...appTypography.body1,
-    color: appColors.gray[600],
+    fontSize: 16,
     textAlign: 'center',
-    paddingHorizontal: appSpacing.lg,
-  },
-  imageContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: appSpacing.lg,
-  },
-  image: {
-    width: '100%',
-    height: 300,
-    borderRadius: 20,
+    marginBottom: 48,
   },
   features: {
-    marginBottom: appSpacing.xl,
+    width: '100%',
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: appSpacing.sm,
+    marginBottom: 20,
   },
   featureText: {
-    ...appTypography.body2,
-    color: appColors.text,
-    marginLeft: appSpacing.sm,
+    fontSize: 16,
+    marginLeft: 12,
   },
-  buttonContainer: {
-    width: '100%',
-    marginBottom: appSpacing.xl,
-  },
-  loginButton: {
-    marginBottom: appSpacing.sm,
+  footer: {
+    padding: 32,
   },
   registerButton: {
-    marginBottom: appSpacing.sm,
+    marginBottom: 16,
   },
-  exploreButton: {
-    marginTop: appSpacing.xs,
+  loginButton: {
+    alignItems: 'center',
+    padding: 12,
+  },
+  loginText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 }); 

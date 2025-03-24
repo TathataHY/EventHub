@@ -6,8 +6,9 @@ import {
   ScrollView, 
   TouchableOpacity 
 } from 'react-native';
-import { useTheme } from '@core/context/ThemeContext';
+import { useTheme } from '../../../shared/hooks/useTheme';
 import { Ionicons } from '@expo/vector-icons';
+import { getColorValue } from '@theme/theme.types';
 
 interface CategoryFiltersProps {
   selectedCategory: string | null;
@@ -35,7 +36,7 @@ export function CategoryFilters({
   ];
   
   return (
-    <View style={[styles.filtersContainer, { backgroundColor: theme.colors.background.paper }]}>
+    <View style={[styles.filtersContainer, { backgroundColor: getColorValue(theme.colors.background.paper) }]}>
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
@@ -44,14 +45,14 @@ export function CategoryFilters({
         <TouchableOpacity
           style={[
             styles.filterChip,
-            { backgroundColor: !selectedCategory ? theme.colors.primary.main : theme.colors.background.default }
+            { backgroundColor: !selectedCategory ? getColorValue(theme.colors.primary.main) : getColorValue(theme.colors.background.default) }
           ]}
           onPress={() => onCategorySelect(null)}
         >
           <Text
             style={[
               styles.filterChipText,
-              { color: !selectedCategory ? '#FFF' : theme.colors.text.primary }
+              { color: !selectedCategory ? '#FFF' : getColorValue(theme.colors.text.primary) }
             ]}
           >
             Todos
@@ -63,14 +64,14 @@ export function CategoryFilters({
             key={category}
             style={[
               styles.filterChip,
-              { backgroundColor: selectedCategory === category ? getCategoryColor(category) : theme.colors.background.default }
+              { backgroundColor: selectedCategory === category ? getCategoryColor(category) : getColorValue(theme.colors.background.default) }
             ]}
             onPress={() => onCategorySelect(category)}
           >
             <Text
               style={[
                 styles.filterChipText,
-                { color: selectedCategory === category ? '#FFF' : theme.colors.text.primary }
+                { color: selectedCategory === category ? '#FFF' : getColorValue(theme.colors.text.primary) }
               ]}
             >
               {category}

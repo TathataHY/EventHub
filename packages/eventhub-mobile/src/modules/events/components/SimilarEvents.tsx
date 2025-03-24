@@ -73,10 +73,21 @@ export const SimilarEvents: React.FC<SimilarEventsProps> = ({
     if (user) {
       const event = similarEvents.find(e => e.id === eventId);
       if (event) {
+        let categoryValue = '';
+        
+        // Handle different category formats
+        if (typeof event.category === 'string') {
+          categoryValue = event.category;
+        } else if (event.category && typeof event.category === 'object') {
+          // Using optional chaining and type assertion to avoid type errors
+          const categoryObject = event.category as {name?: string};
+          categoryValue = categoryObject.name || '';
+        }
+
         recommendationService.recordInteraction(
           user.id,
           eventId,
-          typeof event.category === 'string' ? event.category : event.category.name,
+          categoryValue,
           'view'
         ).catch(error => console.error('Error al registrar interacción:', error));
       }

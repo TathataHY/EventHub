@@ -32,6 +32,8 @@ export interface UserLocation {
   city?: string;
   state?: string;
   country?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 // Información del usuario
@@ -39,39 +41,44 @@ export interface User {
   id: string;
   email: string;
   username: string;
-  fullName: string;
-  phoneNumber?: string;
-  photoURL?: string;
-  bio?: string;
-  location?: UserLocation;
-  role: UserRole;
-  status: AccountStatus;
-  interests: InterestCategory[];
-  followersCount: number;
-  followingCount: number;
-  eventsAttended: number;
-  eventsOrganized: number;
-  createdAt: string;
-  updatedAt: string;
+  role?: UserRole;
+  status?: AccountStatus;
 }
 
 // Perfil completo del usuario para uso interno
-export interface UserProfile {
-  id: string;
-  email: string;
-  username: string;
+export interface UserProfile extends User {
   fullName: string;
-  phoneNumber?: string;
+  name?: string;
   photoURL?: string;
+  profilePicture?: string;
+  phoneNumber?: string;
   bio?: string;
   location?: UserLocation;
-  interests: InterestCategory[];
-  followersCount: number;
-  followingCount: number;
-  eventsAttended: number;
-  eventsOrganized: number;
-  createdAt: string;
-  updatedAt: string;
+  socialLinks?: {
+    twitter?: string;
+    instagram?: string;
+    linkedin?: string;
+    facebook?: string;
+  };
+  followers?: string[];
+  following?: string[];
+  interests?: InterestCategory[];
+  createdAt?: string;
+  updatedAt?: string;
+  preferences?: {
+    categoryPreferences?: string[];
+    notificationSettings?: {
+      email?: boolean;
+      push?: boolean;
+      sms?: boolean;
+    };
+    privacySettings?: {
+      profileVisibility?: 'public' | 'private' | 'followers';
+      allowTagging?: boolean;
+      allowMessages?: boolean;
+    };
+  };
+  stats?: UserStats;
 }
 
 // Perfil público visible para otros usuarios
@@ -158,6 +165,7 @@ export interface SavedEventResponse {
   eventId: string;
   userId: string;
   createdAt: string;
+  saved: boolean;
 }
 
 // Respuesta con eventos del usuario
@@ -167,12 +175,26 @@ export interface UserEventsResponse {
   saved: any[];
 }
 
-// Estadísticas del usuario
+/**
+ * Estadísticas del usuario
+ */
 export interface UserStats {
-  eventsAttended: number;
-  eventsOrganized: number;
-  followers: number;
-  following: number;
-  totalInteractions: number;
-  savedEvents: number;
+  followersCount?: number;
+  followingCount?: number;
+  eventsAttended?: number;
+  eventsCreated?: number;
+  eventsSaved?: number;
+  eventsOrganized?: number;
+  averageRating?: number;
+  comments?: number;
+  likes?: number;
+  shares?: number;
+  badges?: number;
+  level?: number;
+  experience?: number;
+  gameStats?: {
+    level: number;
+    experience: number;
+    nextLevelXP: number;
+  };
 } 

@@ -5,17 +5,24 @@
  * incluyendo inicio de sesión, registro, recuperación de contraseña, etc.
  */
 
-// Exportar componentes de pantalla
-export * from './screens';
+// Exportar componentes específicos en lugar de todo el módulo
+export { LoginScreen } from './screens/LoginScreen';
+export { RegisterScreen } from './screens/RegisterScreen';
+export { ForgotPasswordScreen } from './screens/ForgotPasswordScreen';
+export { ResetPasswordScreen } from './screens/ResetPasswordScreen';
+export { WelcomeScreen } from './screens/WelcomeScreen';
 
-// Exportar hooks
-export * from './hooks';
+// Exportar servicios específicos
+export { authService } from './services/auth.service';
 
-// Exportar servicios
-export * from './services';
+// Exportar hooks explícitamente
+export { useAuth } from './hooks/useAuth';
 
-// Exportar tipos
-export * from './types';
-
-// Exportar componentes
-export * from './components';
+// Exportar tipos explícitos para evitar duplicados
+export type { 
+  User, 
+  UserProfile, 
+  LoginCredentials, 
+  RegisterData, 
+  AuthResponse 
+} from './types/auth.types';

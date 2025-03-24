@@ -1,106 +1,155 @@
-import axios from 'axios';
-import { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { API_TIMEOUT } from '../config';
-import { User, UserProfile } from '../../modules/users/types';
-import { Event } from '../../modules/events/types';
+import { User, UserProfile, PublicUserProfile, UserRole, AccountStatus, InterestCategory } from '../../modules/users/types/user.types';
+import { Event, EventStatus, EventType, EventCategory, EventVisibility, Organizer, EventMetrics } from '../../modules/events/types';
+
+// Extender AxiosInstance para incluir nuestros métodos auxiliares
+interface MockApiClient extends AxiosInstance {
+  _getMockUsers: () => UserProfile[];
+}
 
 /**
  * Cliente API simulado para el modo de desarrollo
  * Intercepta todas las peticiones y devuelve datos mock en lugar de hacer peticiones reales
  */
-const mockApiClient: AxiosInstance = axios.create({
+const mockApiClient = axios.create({
   timeout: API_TIMEOUT,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-});
+}) as MockApiClient;
 
-// Datos mock para usuarios
+/**
+ * Ejemplos de usuarios para desarrollo
+ */
 const mockUsers: UserProfile[] = [
   {
-    id: 'user1',
-    name: 'Juan Pérez',
-    email: 'juan@ejemplo.com',
+    id: '1',
+    email: 'juan@example.com',
     username: 'juanperez',
-    role: 'user',
-    bio: 'Entusiasta de los eventos tecnológicos y culturales',
-    location: 'Madrid, España',
-    website: 'https://juanperez.dev',
-    phone: '+34 612 345 678',
-    avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
-    followers: 243,
-    following: 112,
-    eventsCreated: 5,
-    eventsAttending: 12,
-    joinDate: '2023-01-15',
+    fullName: 'Juan Pérez',
+    photoURL: 'https://randomuser.me/api/portraits/men/1.jpg',
+    bio: 'Amante de la tecnología y los eventos de networking',
+    location: { city: 'Madrid', country: 'España' },
     socialLinks: {
-      twitter: '@juanperez',
-      instagram: 'juanperez.dev',
-    }
+      twitter: 'juanperez',
+      instagram: 'juanperez_insta',
+      linkedin: 'juanperez_linkedin',
+      facebook: 'juanperez_fb',
+    },
+    preferences: {
+      categoryPreferences: ['tecnología', 'networking', 'educación'],
+      notificationSettings: {
+        email: true,
+        push: true,
+        sms: false,
+      },
+      privacySettings: {
+        profileVisibility: 'public',
+        allowTagging: true,
+        allowMessages: true,
+      },
+    },
+    stats: {
+      followersCount: 120,
+      followingCount: 85,
+      eventsAttended: 25,
+      eventsCreated: 10,
+      eventsSaved: 15,
+      averageRating: 4.8,
+    },
   },
   {
-    id: 'user2',
-    name: 'María García',
-    email: 'maria@ejemplo.com',
+    id: '2',
+    email: 'maria@example.com',
     username: 'mariagarcia',
-    role: 'organizer',
-    bio: 'Organizadora de eventos y conferencias sobre tecnología',
-    location: 'Barcelona, España',
-    website: 'https://mariagarcia.es',
-    phone: '+34 623 456 789',
-    avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
-    followers: 567,
-    following: 234,
-    eventsCreated: 15,
-    eventsAttending: 8,
-    joinDate: '2022-10-05',
+    fullName: 'María García',
+    photoURL: 'https://randomuser.me/api/portraits/women/1.jpg',
+    bio: 'Organizadora de eventos culturales y amante del arte',
+    location: { city: 'Barcelona', country: 'España' },
     socialLinks: {
-      twitter: '@mariagarcia',
-      instagram: 'mariagarcia.tech',
-      linkedin: 'mariagarcia'
-    }
-  }
+      twitter: 'mariagarcia',
+      instagram: 'mariagarcia_insta',
+      linkedin: 'mariagarcia_linkedin',
+      facebook: 'mariagarcia_fb',
+    },
+    preferences: {
+      categoryPreferences: ['arte', 'cultura', 'música'],
+      notificationSettings: {
+        email: true,
+        push: true,
+        sms: true,
+      },
+      privacySettings: {
+        profileVisibility: 'public',
+        allowTagging: true,
+        allowMessages: true,
+      },
+    },
+    stats: {
+      followersCount: 250,
+      followingCount: 120,
+      eventsAttended: 35,
+      eventsCreated: 15,
+      eventsSaved: 20,
+      averageRating: 4.9,
+    },
+  },
 ];
 
-// Datos mock para eventos
+/**
+ * Ejemplos de eventos para desarrollo
+ */
 const mockEvents: Event[] = [
   {
-    id: 'event1',
-    title: 'Conferencia de Desarrollo Web 2023',
-    description: 'La conferencia anual sobre las últimas tendencias en desarrollo web.',
-    location: 'Madrid, España',
-    startDate: '2023-11-15T10:00:00',
-    endDate: '2023-11-15T18:00:00',
-    organizerId: 'user2',
-    organizerName: 'María García',
-    imageUrl: 'https://picsum.photos/800/400?random=1',
-    category: 'tech',
-    price: 25.0,
-    capacity: 200,
-    attendees: 120,
-    status: 'active',
-    createdAt: '2023-09-01T12:00:00',
-    updatedAt: '2023-09-10T14:30:00'
+    id: '1',
+    title: 'Festival de Música Indie',
+    description: 'Disfruta de los mejores artistas indie del momento en un ambiente único.',
+    image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
+    startDate: '2023-06-15T18:00:00.000Z',
+    endDate: '2023-06-15T23:00:00.000Z',
+    location: {
+      name: 'Parque Central',
+      address: 'Calle Principal 123, Ciudad',
+      coordinates: {
+        latitude: 40.7128,
+        longitude: -74.006,
+      },
+    },
+    category: 'music',
+    organizer: {
+      id: '1',
+      name: 'Promotora Cultural',
+      description: 'Organizadores de eventos culturales',
+      logo: 'https://placehold.co/400',
+    },
+    organizerId: '1',
   },
   {
-    id: 'event2',
-    title: 'Workshop de React Native',
-    description: 'Aprende a construir aplicaciones móviles con React Native en un día.',
-    location: 'Barcelona, España',
-    startDate: '2023-12-05T09:00:00',
-    endDate: '2023-12-05T17:00:00',
-    organizerId: 'user2',
-    organizerName: 'María García',
-    imageUrl: 'https://picsum.photos/800/400?random=2',
-    category: 'workshop',
-    price: 50.0,
-    capacity: 30,
-    attendees: 20,
-    status: 'active',
-    createdAt: '2023-10-05T15:20:00',
-    updatedAt: '2023-10-05T15:20:00'
-  }
+    id: '2',
+    title: 'Conferencia de Tecnología',
+    description: 'Descubre las últimas tendencias en inteligencia artificial y desarrollo web.',
+    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
+    startDate: '2023-07-20T09:00:00.000Z',
+    endDate: '2023-07-21T18:00:00.000Z',
+    location: {
+      name: 'Centro de Convenciones',
+      address: 'Avenida Tecnológica 456, Ciudad',
+      coordinates: {
+        latitude: 37.7749,
+        longitude: -122.4194,
+      },
+    },
+    category: 'technology',
+    organizer: {
+      id: '2',
+      name: 'TechEvents Inc.',
+      description: 'Expertos en eventos tecnológicos',
+      logo: 'https://placehold.co/400',
+    },
+    organizerId: '2',
+  },
 ];
 
 // Interceptor para simular respuestas
@@ -125,7 +174,7 @@ mockApiClient.interceptors.response.use(
       } else if (url.includes('/profile') && method === 'put') {
         const userData = JSON.parse(data || '{}');
         responseData = { ...mockUsers[0], ...userData };
-      } else if (url.match(/\/users\/[a-zA-Z0-9]+$/)) {
+      } else if (url.match(/\/users\/[a-zA-Z0-9-]+$/)) {
         const userId = url.split('/').pop();
         responseData = mockUsers.find(u => u.id === userId) || null;
         if (!responseData) status = 404;
@@ -172,5 +221,8 @@ mockApiClient.interceptors.response.use(
   },
   error => Promise.reject(error)
 );
+
+// Método auxiliar para tests y desarrollo
+mockApiClient._getMockUsers = () => mockUsers;
 
 export { mockApiClient }; 

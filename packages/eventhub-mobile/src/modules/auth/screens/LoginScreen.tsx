@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Formik } from 'formik';
+import { Formik, FormikHelpers, FormikErrors } from 'formik';
 import * as Yup from 'yup';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -24,6 +24,12 @@ const LoginSchema = Yup.object().shape({
     .required('La contraseña es obligatoria'),
 });
 
+// Definición de tipos para el formulario
+interface LoginFormValues {
+  email: string;
+  password: string;
+}
+
 /**
  * Pantalla de inicio de sesión
  */
@@ -32,12 +38,17 @@ export const LoginScreen = () => {
   const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async (values, { setSubmitting, setErrors }) => {
+  const handleLogin = async (
+    values: LoginFormValues, 
+    { setSubmitting, setErrors }: FormikHelpers<LoginFormValues>
+  ) => {
     try {
       await login(values.email, values.password);
       router.replace('/(tabs)');
     } catch (error) {
-      setErrors({ auth: 'Credenciales incorrectas. Por favor, inténtalo de nuevo.' });
+      setErrors({ 
+        auth: 'Credenciales incorrectas. Por favor, inténtalo de nuevo.' 
+      } as FormikErrors<LoginFormValues> & { auth?: string });
       console.error('Error al iniciar sesión:', error);
     } finally {
       setSubmitting(false);
@@ -83,7 +94,7 @@ export const LoginScreen = () => {
                   value={values.email}
                   onChangeText={handleChange('email')}
                   onBlur={handleBlur('email')}
-                  error={touched.email && errors.email}
+                  error={touched.email && errors.email ? errors.email : undefined}
                   leftIcon={<Ionicons name="mail-outline" size={18} color={theme.colors.text} />}
                 />
 
@@ -94,7 +105,7 @@ export const LoginScreen = () => {
                   value={values.password}
                   onChangeText={handleChange('password')}
                   onBlur={handleBlur('password')}
-                  error={touched.password && errors.password}
+                  error={touched.password && errors.password ? errors.password : undefined}
                   leftIcon={<Ionicons name="lock-closed-outline" size={18} color={theme.colors.text} />}
                   rightIcon={
                     <TouchableOpacity onPress={toggleShowPassword}>
@@ -107,8 +118,8 @@ export const LoginScreen = () => {
                   }
                 />
 
-                {errors.auth && (
-                  <Text style={styles.errorText}>{errors.auth}</Text>
+                {(errors as any).auth && (
+                  <Text style={styles.errorText}>{(errors as any).auth}</Text>
                 )}
 
                 <TouchableOpacity 
