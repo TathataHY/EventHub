@@ -35,7 +35,7 @@ export const WelcomeScreen = () => {
       
       <View style={styles.header}>
         <Image
-          source={require('../../../assets/images/logo.png')}
+          source={require('@assets/icon.png')}
           style={styles.logo}
           resizeMode="contain"
         />
