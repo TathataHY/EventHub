@@ -1,14 +1,44 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeSelector } from './ThemeSelector';
 import { SettingsOption } from './SettingsOption';
 import { useTheme } from '../../../shared/hooks/useTheme';
+import { useAuth } from '../../../modules/auth/hooks/useAuth';
 
 export const SettingsScreen = () => {
   const navigation = useNavigation<any>();
+  const router = useRouter();
   const { theme } = useTheme();
+  const { logout } = useAuth();
+  
+  const handleLogout = () => {
+    Alert.alert(
+      "Cerrar sesión",
+      "¿Estás seguro de que deseas cerrar sesión?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel"
+        },
+        { 
+          text: "Sí, cerrar sesión", 
+          onPress: async () => {
+            try {
+              await logout();
+              router.replace('/auth/login');
+            } catch (error) {
+              console.error('Error al cerrar sesión:', error);
+              Alert.alert('Error', 'No se pudo cerrar sesión. Inténtalo de nuevo.');
+            }
+          },
+          style: "destructive"
+        }
+      ]
+    );
+  };
   
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.colors.background.default }]}>
@@ -84,7 +114,7 @@ export const SettingsScreen = () => {
       
       <TouchableOpacity 
         style={[styles.logoutButton, { backgroundColor: theme.colors.error.main }]}
-        onPress={() => alert('Cerrando sesión...')}
+        onPress={handleLogout}
       >
         <Ionicons name="log-out-outline" size={20} color="white" style={styles.logoutIcon} />
         <Text style={styles.logoutText}>Cerrar sesión</Text>

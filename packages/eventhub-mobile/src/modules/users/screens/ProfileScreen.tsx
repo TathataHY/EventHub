@@ -8,7 +8,8 @@ import {
   ActivityIndicator,
   Image,
   useWindowDimensions,
-  RefreshControl
+  RefreshControl,
+  Alert
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -19,6 +20,7 @@ import { Event } from '../../events/types';
 import { EventCard } from '../../events/components/EventCard';
 import { typography, spacing, getColorValue, convertTypographyStyle } from '@theme/index';
 import { colors } from '@theme/base/colors';
+import { useAuth } from '../../auth/hooks/useAuth';
 
 /**
  * Interfaz extendida para obtener las propiedades adicionales desde ProfileUpdateData
@@ -43,6 +45,8 @@ export function ProfileScreen() {
   const [createdEvents, setCreatedEvents] = useState<Event[]>([]);
   const [attendingEvents, setAttendingEvents] = useState<Event[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
+  
+  const { logout } = useAuth();
   
   // Tratar currentUser como ExtendedUserProfile para usar propiedades adicionales
   const extendedUser = currentUser as ExtendedUserProfile;
@@ -86,6 +90,31 @@ export function ProfileScreen() {
     navigation.navigate('ProfileEdit' as never);
   };
   
+  // Función para manejar el cierre de sesión
+  const handleLogout = async () => {
+    Alert.alert(
+      "Cerrar sesión",
+      "¿Estás seguro de que deseas cerrar sesión?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Cerrar sesión", 
+          onPress: async () => {
+            try {
+              // Usar la función logout ya obtenida en el componente
+              await logout();
+              navigation.navigate('Login' as never);
+            } catch (error) {
+              console.error('Error al cerrar sesión:', error);
+              Alert.alert('Error', 'No se pudo cerrar la sesión. Inténtalo de nuevo.');
+            }
+          },
+          style: "destructive"
+        }
+      ]
+    );
+  };
+  
   // Mostrar indicador de carga mientras se cargan los datos del usuario
   if (loading && !currentUser) {
     return (
@@ -122,6 +151,14 @@ export function ProfileScreen() {
       >
         {/* Cabecera del perfil */}
         <Card style={styles.profileCard}>
+          {/* Añadir botón de configuración en la esquina superior derecha */}
+          <TouchableOpacity 
+            style={styles.settingsButton}
+            onPress={() => navigation.navigate('Settings' as never)}
+          >
+            <Ionicons name="settings-outline" size={24} color={getColorValue(colors.grey[600])} />
+          </TouchableOpacity>
+          
           {/* Imagen de portada */}
           <View style={styles.coverContainer}>
             {extendedUser?.coverImage ? (
@@ -292,6 +329,17 @@ export function ProfileScreen() {
             )}
           </View>
         </Card>
+        
+        {/* Botón de cerrar sesión */}
+        <View style={styles.logoutSection}>
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={handleLogout}
+          >
+            <Ionicons name="log-out-outline" size={20} color="#FFFFFF" style={styles.logoutIcon} />
+            <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -474,5 +522,35 @@ const styles = StyleSheet.create({
   }),
   createEventButton: {
     width: 200,
+  },
+  settingsButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    zIndex: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 20,
+    padding: 8,
+  },
+  logoutSection: {
+    marginTop: 32,
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  logoutButton: {
+    backgroundColor: getColorValue(colors.error.main),
+    borderRadius: 8,
+    padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoutIcon: {
+    marginRight: 8,
+  },
+  logoutButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 }); 

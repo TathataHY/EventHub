@@ -98,16 +98,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContent: {
-    padding: 8,
-    paddingBottom: 24,
+    padding: 12,
+    paddingBottom: 32,
     flexGrow: 1,
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
-    minHeight: 200,
+    padding: 40,
+    minHeight: 250,
   },
   emptyText: {
     fontSize: 16,
@@ -117,11 +117,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
-    minHeight: 200,
+    padding: 40,
+    minHeight: 250,
   },
   loaderText: {
-    marginTop: 12,
+    marginTop: 16,
     fontSize: 16,
   },
 }); 

@@ -84,17 +84,17 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 48,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 56,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 12,
   },
   input: {
     flex: 1,
@@ -103,6 +103,6 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   clearButton: {
-    padding: 4,
+    padding: 6,
   },
 }); 

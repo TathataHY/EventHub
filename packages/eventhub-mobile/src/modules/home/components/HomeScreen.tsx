@@ -104,11 +104,19 @@ export function HomeScreen() {
   
   // Manejar press en un evento destacado
   const handleFeaturedEventPress = (event: Event) => {
+    console.log('HomeScreen - handleFeaturedEventPress - Navigating to event:', {
+      id: event.id,
+      title: event.title
+    });
     router.push(`/events/${event.id}`);
   };
   
   // Manejar press en un evento cercano
   const handleNearbyEventPress = (event: Event) => {
+    console.log('HomeScreen - handleNearbyEventPress - Navigating to event:', {
+      id: event.id,
+      title: event.title
+    });
     router.push(`/events/${event.id}`);
   };
   
@@ -196,10 +204,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 30,
+    paddingTop: 10,
   },
   searchContainer: {
     marginHorizontal: 16,
-    marginVertical: 8,
+    marginVertical: 16,
   },
 }); 

@@ -16,7 +16,9 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@eventhub/domain/*": ["../eventhub-domain/*"]
+      "@eventhub/domain/*": [
+        "../eventhub-domain/*"
+      ]
     },
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -33,6 +35,12 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ],
+  "extends": "expo/tsconfig.base"
 }

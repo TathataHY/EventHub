@@ -92,6 +92,11 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
   
   // Manejar selección de evento
   const handleEventPress = (event: Event) => {
+    console.log('RecommendedEventsSection - handleEventPress called with event:', {
+      id: event.id,
+      title: event.title
+    });
+    
     // Registrar interacción de vista
     if (user) {
       // Obtener la ubicación del evento para pasarla como parámetro
@@ -111,8 +116,10 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
     
     // Usar el handler proporcionado o navegar directamente
     if (onEventPress) {
+      console.log('RecommendedEventsSection - Calling provided onEventPress handler');
       onEventPress(event);
     } else {
+      console.log('RecommendedEventsSection - Navigating directly to /events/' + event.id);
       router.push(`/events/${event.id}`);
     }
   };
@@ -157,8 +164,12 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
             <TouchableOpacity 
               style={styles.eventCardContainer}
               onPress={() => handleEventPress(item)}
+              activeOpacity={0.7}
             >
-              <EventCard event={item} />
+              <EventCard 
+                event={item} 
+                onPress={() => handleEventPress(item)}
+              />
               
               {/* @ts-ignore: Ignorar errores de tipo en recommendationScore */}
               {item.recommendationScore && (
@@ -188,39 +199,41 @@ const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginBottom: 30,
+    marginTop: 10,
   },
   headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
     paddingHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   subtitle: {
     fontSize: 14,
-    marginBottom: 12,
+    marginBottom: 16,
     paddingHorizontal: 16,
   },
   refreshIcon: {
-    padding: 4,
+    padding: 6,
   },
   loadingContainer: {
-    height: 220,
+    height: 250,
     justifyContent: 'center',
     alignItems: 'center',
   },
   eventsList: {
     paddingLeft: 16,
     paddingRight: 8,
+    paddingBottom: 10,
   },
   eventCardContainer: {
-    width: width * 0.7,
-    marginRight: 12,
+    width: width * 0.75,
+    marginRight: 16,
     position: 'relative',
   },
   matchBadge: {

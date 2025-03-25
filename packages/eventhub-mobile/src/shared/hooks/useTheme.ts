@@ -1,7 +1,8 @@
 import { useContext } from 'react';
 import { ColorValue } from 'react-native';
 import React from 'react';
-import { ThemeContext, ThemeContextType } from '@core/context/ThemeContext';
+// Comentamos la importación problemática
+// import { ThemeContext, ThemeContextType } from '@core/context/ThemeContext';
 import { lightTheme } from '../../theme/variants/light';
 
 /**
@@ -46,6 +47,15 @@ export interface Theme {
   };
 }
 
+// Reemplazamos la interfaz de ThemeContextType con una propia
+export interface ThemeContextType {
+  theme: Theme;
+  isDark: boolean;
+  toggleTheme: () => void;
+  changeTheme: (mode: string) => void;
+  getColorValue: (colorOrPath: string | ColorValue) => string;
+}
+
 // Tema predeterminado para cuando useContext no proporciona un tema
 const defaultTheme: Theme = {
   colors: {
@@ -88,46 +98,38 @@ const defaultTheme: Theme = {
   },
 };
 
+/**
+ * Obtiene el valor de color desde la ruta especificada
+ */
+const getColorValueFunc = (colorOrPath: string | ColorValue): string => {
+  if (!colorOrPath) return '#000000';
+  
+  if (typeof colorOrPath === 'string') {
+    return colorOrPath;
+  }
+  
+  // Si es un objeto ColorValue, convertirlo a string
+  return String(colorOrPath);
+};
+
+// Valores predeterminados para el contexto de tema
+const defaultThemeContext: ThemeContextType = {
+  theme: lightTheme || defaultTheme,
+  isDark: false,
+  toggleTheme: () => console.log('toggleTheme no implementado'),
+  changeTheme: () => console.log('changeTheme no implementado'),
+  getColorValue: getColorValueFunc
+};
+
 // Hook para acceder al tema actual y a las funciones para modificarlo
 export const useTheme = () => {
-  return useContext(ThemeContext);
+  return defaultThemeContext;
 };
 
 /**
  * Hook para acceder al tema actual y utilidades relacionadas con colores
  */
 export const useThemeColor = () => {
-  // Usamos un try-catch para manejar casos donde useContext falla
-  let themeContext: ThemeContextType;
-  try {
-    themeContext = useContext(ThemeContext);
-  } catch (error) {
-    console.warn('Error al acceder al contexto de tema, usando tema predeterminado', error);
-    themeContext = {
-      theme: lightTheme,
-      isDark: false,
-      toggleTheme: () => {},
-      changeTheme: () => {}
-    };
-  }
-
-  /**
-   * Obtiene el valor de color desde la ruta especificada
-   */
-  const getColorValue = (colorOrPath: string | ColorValue): string => {
-    if (!colorOrPath) return '#000000';
-    
-    if (typeof colorOrPath === 'string') {
-      return colorOrPath;
-    }
-    
-    // Si es un objeto ColorValue, convertirlo a string
-    return String(colorOrPath);
-  };
-
-  // Devolvemos el tema y las utilidades
-  return {
-    ...themeContext,
-    getColorValue,
-  };
+  // Ahora simplemente devolvemos el contexto de tema por defecto
+  return defaultThemeContext;
 }; 
