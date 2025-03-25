@@ -23,9 +23,6 @@
         "UIBackgroundModes": [
           "location"
         ]
-      },
-      "config": {
-        "googleMapsApiKey": "TU_API_KEY_AQUI"
       }
     },
     "android": {
@@ -36,13 +33,10 @@
       "package": "com.eventhub.app",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_FINE_LOCATION"
-      ],
-      "config": {
-        "googleMaps": {
-          "apiKey": "TU_API_KEY_AQUI"
-        }
-      }
+        "ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -64,6 +58,11 @@
     "scheme": "eventhub",
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "3e8eb967-1e21-44ca-b836-c1e21d0c8ddb"
+      }
     }
   }
 }

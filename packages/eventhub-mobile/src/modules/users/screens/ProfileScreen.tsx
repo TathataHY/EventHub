@@ -12,6 +12,7 @@ import {
   Alert
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Card, TabView, Button } from '../../../shared/components';
 import { useUser } from '../hooks/useUser';
@@ -101,9 +102,8 @@ export function ProfileScreen() {
           text: "Cerrar sesión", 
           onPress: async () => {
             try {
-              // Usar la función logout ya obtenida en el componente
               await logout();
-              navigation.navigate('Login' as never);
+              router.replace('/auth/login');
             } catch (error) {
               console.error('Error al cerrar sesión:', error);
               Alert.alert('Error', 'No se pudo cerrar la sesión. Inténtalo de nuevo.');
@@ -271,6 +271,15 @@ export function ProfileScreen() {
           </View>
         </Card>
         
+        {/* Botón de cerrar sesión */}
+        <TouchableOpacity 
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
+          <Ionicons name="log-out-outline" size={20} color={getColorValue(colors.white)} style={styles.logoutIcon} />
+          <Text style={styles.logoutText}>Cerrar sesión</Text>
+        </TouchableOpacity>
+        
         {/* Pestañas para ver eventos */}
         <Card style={styles.tabsCard}>
           <TabView
@@ -329,17 +338,6 @@ export function ProfileScreen() {
             )}
           </View>
         </Card>
-        
-        {/* Botón de cerrar sesión */}
-        <View style={styles.logoutSection}>
-          <TouchableOpacity 
-            style={styles.logoutButton}
-            onPress={handleLogout}
-          >
-            <Ionicons name="log-out-outline" size={20} color="#FFFFFF" style={styles.logoutIcon} />
-            <Text style={styles.logoutButtonText}>Cerrar sesión</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </View>
   );
@@ -528,28 +526,34 @@ const styles = StyleSheet.create({
     top: 16,
     right: 16,
     zIndex: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 20,
+    backgroundColor: getColorValue(colors.background.paper),
     padding: 8,
-  },
-  logoutSection: {
-    marginTop: 32,
-    paddingHorizontal: 16,
-    marginBottom: 24,
+    borderRadius: 20,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
   },
   logoutButton: {
-    backgroundColor: getColorValue(colors.error.main),
-    borderRadius: 8,
-    padding: 12,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 16,
+    padding: 14,
+    borderRadius: 12,
+    backgroundColor: getColorValue(colors.error),
   },
   logoutIcon: {
     marginRight: 8,
   },
-  logoutButtonText: {
-    color: '#FFFFFF',
+  logoutText: {
+    color: getColorValue(colors.white),
     fontSize: 16,
     fontWeight: '600',
   },

@@ -152,7 +152,7 @@ export const EventCard: React.FC<EventCardProps> = ({
       onPress={handlePress}
       activeOpacity={0.8}
     >
-      <View style={compact ? styles.compactContentLayout : styles.imageContainer}>
+      <View style={compact ? styles.compactImageContainer : styles.imageContainer}>
         <Image 
           source={getEventImage()} 
           style={compact ? styles.compactImage : styles.image}
@@ -301,6 +301,11 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
+  },
+  compactImageContainer: {
+    position: 'relative',
+    width: 100,
+    height: 100,
   },
   image: {
     width: '100%',
