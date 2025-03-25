@@ -18,6 +18,13 @@ export interface ToastProps {
   onPress?: () => void;
 }
 
+// Tipo para los parámetros de los toast
+interface ToastContentProps {
+  text1?: string;
+  text2?: string;
+  [key: string]: any;
+}
+
 // Componente ToastProvider que configura los estilos de Toast
 export const ToastProvider = () => {
   const { theme } = useTheme();
@@ -25,19 +32,19 @@ export const ToastProvider = () => {
   // Devuelve el componente ToastMessage configurado
   return <ToastMessage config={{
     // Configuración básica de ToastMessage
-    success: ({ text1, text2, ...rest }) => (
+    success: ({ text1, text2, ...rest }: ToastContentProps) => (
       <View style={[styles.container, styles.successContainer]}>
         <Text style={styles.titleText}>{text1}</Text>
         {text2 && <Text style={styles.messageText}>{text2}</Text>}
       </View>
     ),
-    error: ({ text1, text2, ...rest }) => (
+    error: ({ text1, text2, ...rest }: ToastContentProps) => (
       <View style={[styles.container, styles.errorContainer]}>
         <Text style={styles.titleText}>{text1}</Text>
         {text2 && <Text style={styles.messageText}>{text2}</Text>}
       </View>
     ),
-    info: ({ text1, text2, ...rest }) => (
+    info: ({ text1, text2, ...rest }: ToastContentProps) => (
       <View style={[styles.container, styles.infoContainer]}>
         <Text style={styles.titleText}>{text1}</Text>
         {text2 && <Text style={styles.messageText}>{text2}</Text>}
