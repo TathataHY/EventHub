@@ -63,7 +63,11 @@ export const EventCard: React.FC<EventCardProps> = ({
   // Handler para el evento de press con conversión de ID a string
   const handlePress = () => {
     if (onPress && event.id) {
+      console.log('EventCard - handlePress - eventId:', String(event.id));
       onPress(String(event.id));
+    } else {
+      console.log('EventCard - handlePress - ERROR - no onPress handler or no eventId:', 
+        { hasHandler: !!onPress, eventId: event.id });
     }
   };
   
@@ -80,12 +84,12 @@ export const EventCard: React.FC<EventCardProps> = ({
   };
   
   // Obtener imagen del evento
-  const getImage = () => {
-    const imageSource = event.imageUrl || event.image;
-    if (!imageSource) {
-      return require('../../../shared/assets/images/event-placeholder.png');
+  const getEventImage = () => {
+    const imageUrl = event.imageUrl || event.image;
+    if (!imageUrl) {
+      return require('@assets/images/placeholders/event.png');
     }
-    return { uri: imageSource };
+    return { uri: imageUrl };
   };
   
   // Obtener ubicación del evento
@@ -150,7 +154,7 @@ export const EventCard: React.FC<EventCardProps> = ({
     >
       <View style={compact ? styles.compactContentLayout : styles.imageContainer}>
         <Image 
-          source={getImage()} 
+          source={getEventImage()} 
           style={compact ? styles.compactImage : styles.image}
           resizeMode="cover"
         />
@@ -280,34 +284,45 @@ export const EventCard: React.FC<EventCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    width: width - 32,
+    marginBottom: 16,
+    overflow: 'hidden',
   },
   compactContainer: {
-    width: width * 0.7,
-    marginRight: 12,
-  },
-  image: {
-    height: 150,
-    width: '100%',
-  },
-  compactImage: {
-    height: 120,
+    flexDirection: 'row',
+    height: 100,
+    marginBottom: 16,
   },
   imageContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    position: 'relative',
   },
-  compactContentLayout: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  image: {
+    width: '100%',
+    height: 160,
+  },
+  compactImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+  },
+  infoContainer: {
+    padding: 16,
+  },
+  compactInfoContainer: {
+    flex: 1,
+    padding: 12,
+    paddingLeft: 16,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
   },
   categoryLabel: {
     position: 'absolute',
@@ -335,18 +350,6 @@ const styles = StyleSheet.create({
   distanceText: {
     fontSize: 12,
     fontWeight: '500',
-  },
-  infoContainer: {
-    flex: 1,
-    padding: 12,
-  },
-  compactInfoContainer: {
-    padding: 12,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
   },
   subtitle: {
     fontSize: 12,

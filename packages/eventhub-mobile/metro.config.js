@@ -5,6 +5,9 @@ const path = require('path');
 const projectRoot = __dirname;
 const monorepoRoot = path.resolve(projectRoot, '../..');
 
+// Force the router root to be ./app
+process.env.EXPO_ROUTER_APP_ROOT = './app';
+
 const defaultConfig = getDefaultConfig(projectRoot);
 
 // 1. Observar todos los archivos dentro del monorepo

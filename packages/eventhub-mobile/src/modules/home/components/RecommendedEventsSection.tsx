@@ -15,6 +15,8 @@ import { useTheme } from '../../../shared/hooks/useTheme';
 import { EventCard } from '@modules/events/components/EventCard';
 import { recommendationService } from '@modules/events/services/recommendation.service';
 import { authService } from '@modules/auth/services/auth.service';
+import { eventService } from '@modules/events/services/event.service';
+import { bookmarkService } from '@modules/events/services/bookmark.service';
 import { Event } from '@modules/events/types';
 import { UserProfile } from '@modules/auth/services/auth.service';
 
@@ -56,20 +58,29 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
       
+      // Obtener todos los eventos para pasarlos al servicio
+      const allEvents = await eventService.getAllEvents();
+      
+      // Obtener eventos guardados si hay usuario
+      let bookmarkedEventIds: string[] = [];
       if (currentUser) {
-        // Cargar recomendaciones para el usuario
+        bookmarkedEventIds = await bookmarkService.getUserBookmarks(currentUser.id);
+      }
+      
+      if (currentUser) {
+        // Cargar recomendaciones para el usuario con el nuevo método
         const recommendations = await recommendationService.getRecommendedEvents(
           currentUser.id,
-          maxEvents
+          allEvents,
+          maxEvents,
+          bookmarkedEventIds
         );
-        setRecommendedEvents(recommendations);
+        setRecommendedEvents(recommendations as Event[]);
       } else {
-        // Si no hay usuario autenticado, cargar eventos populares
-        // La función está marcada como privada pero la usamos de todos modos
-        // En una implementación real, debería ser pública o usar otra función
-        // @ts-ignore: ignoramos la advertencia de que el método es privado
-        const popularEvents = await recommendationService.getPopularEvents(maxEvents);
-        setRecommendedEvents(popularEvents);
+        // Si no hay usuario autenticado, usar el método getPopularEvents con los eventos
+        // Ahora getPopularEvents no es asíncrono y acepta eventos como parámetro
+        const popularEvents = recommendationService.getPopularEvents(allEvents, maxEvents);
+        setRecommendedEvents(popularEvents as Event[]);
       }
     } catch (error) {
       console.error('Error al cargar recomendaciones:', error);
@@ -81,21 +92,34 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
   
   // Manejar selección de evento
   const handleEventPress = (event: Event) => {
+    console.log('RecommendedEventsSection - handleEventPress called with event:', {
+      id: event.id,
+      title: event.title
+    });
+    
     // Registrar interacción de vista
     if (user) {
+      // Obtener la ubicación del evento para pasarla como parámetro
+      const eventLocation = event.location && typeof event.location === 'object' 
+        ? event.location 
+        : undefined;
+        
       recommendationService.recordInteraction(
         user.id,
         event.id,
         // Usamos un valor por defecto si category es undefined
         event.category || 'general',
-        'view'
+        'view',
+        eventLocation
       ).catch(error => console.error('Error al registrar interacción:', error));
     }
     
     // Usar el handler proporcionado o navegar directamente
     if (onEventPress) {
+      console.log('RecommendedEventsSection - Calling provided onEventPress handler');
       onEventPress(event);
     } else {
+      console.log('RecommendedEventsSection - Navigating directly to /events/' + event.id);
       router.push(`/events/${event.id}`);
     }
   };
@@ -140,8 +164,12 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
             <TouchableOpacity 
               style={styles.eventCardContainer}
               onPress={() => handleEventPress(item)}
+              activeOpacity={0.7}
             >
-              <EventCard event={item} />
+              <EventCard 
+                event={item} 
+                onPress={() => handleEventPress(item)}
+              />
               
               {/* @ts-ignore: Ignorar errores de tipo en recommendationScore */}
               {item.recommendationScore && (
@@ -171,39 +199,41 @@ const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginBottom: 30,
+    marginTop: 10,
   },
   headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
     paddingHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   subtitle: {
     fontSize: 14,
-    marginBottom: 12,
+    marginBottom: 16,
     paddingHorizontal: 16,
   },
   refreshIcon: {
-    padding: 4,
+    padding: 6,
   },
   loadingContainer: {
-    height: 220,
+    height: 250,
     justifyContent: 'center',
     alignItems: 'center',
   },
   eventsList: {
     paddingLeft: 16,
     paddingRight: 8,
+    paddingBottom: 10,
   },
   eventCardContainer: {
-    width: width * 0.7,
-    marginRight: 12,
+    width: width * 0.75,
+    marginRight: 16,
     position: 'relative',
   },
   matchBadge: {

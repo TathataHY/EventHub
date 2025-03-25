@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { eventService } from './event.service';
-import { bookmarkService } from './bookmark.service';
+// Evitamos la importación circular eliminando la importación directa
+// import { eventService } from './event.service';
+// Eliminamos esta importación que crea un ciclo
+// import { bookmarkService } from './bookmark.service';
 
 // Interfaz para el historial de interacción
 interface EventInteraction {
@@ -17,6 +19,17 @@ interface UserRecommendationPreferences {
   lastUpdate: number;
 }
 
+// Interfaz para evento
+interface EventData {
+  id: string | number;
+  category?: string | any;
+  categories?: Array<any>;
+  location?: string | { city?: string; [key: string]: any };
+  startDate?: string | Date;
+  attendees?: number;
+  [key: string]: any;
+}
+
 // Clase para el servicio de recomendaciones
 class RecommendationService {
   private INTERACTIONS_KEY = 'event_interactions';
@@ -27,7 +40,8 @@ class RecommendationService {
     userId: string,
     eventId: string,
     eventCategory: string,
-    interactionType: 'view' | 'bookmark' | 'attend' | 'share'
+    interactionType: 'view' | 'bookmark' | 'attend' | 'share',
+    eventLocation?: { city?: string; [key: string]: any }
   ): Promise<void> {
     try {
       // Carga interacciones existentes
@@ -54,14 +68,18 @@ class RecommendationService {
       );
       
       // Actualiza preferencias basadas en esta interacción
-      await this.updatePreferences(userId, newInteraction);
+      await this.updatePreferences(userId, newInteraction, eventLocation);
     } catch (error) {
       console.error('Error al registrar interacción:', error);
     }
   }
   
   // Actualizar el perfil de preferencias del usuario
-  private async updatePreferences(userId: string, interaction: EventInteraction): Promise<void> {
+  private async updatePreferences(
+    userId: string, 
+    interaction: EventInteraction,
+    eventLocation?: { city?: string; [key: string]: any }
+  ): Promise<void> {
     try {
       // Cargar preferencias existentes
       const preferencesJson = await AsyncStorage.getItem(`${this.PREFERENCES_KEY}_${userId}`);
@@ -94,20 +112,15 @@ class RecommendationService {
       preferences.categories[interaction.eventCategory] += points;
       preferences.lastUpdate = Date.now();
       
-      // Intentar obtener información de ubicación del evento para actualizar preferencias de ubicación
-      try {
-        const event: any = await eventService.getEventById(interaction.eventId);
-        if (event && event.location && typeof event.location === 'object' && event.location.city) {
-          const locationKey = event.location.city.toLowerCase();
-          
-          if (!preferences.locations[locationKey]) {
-            preferences.locations[locationKey] = 0;
-          }
-          
-          preferences.locations[locationKey] += points;
+      // Si tenemos información de ubicación, actualizar preferencias de ubicación
+      if (eventLocation && eventLocation.city) {
+        const locationKey = eventLocation.city.toLowerCase();
+        
+        if (!preferences.locations[locationKey]) {
+          preferences.locations[locationKey] = 0;
         }
-      } catch (eventError) {
-        console.error('Error al obtener detalles del evento:', eventError);
+        
+        preferences.locations[locationKey] += points;
       }
       
       // Guardar preferencias actualizadas
@@ -121,20 +134,22 @@ class RecommendationService {
   }
   
   // Obtener eventos recomendados para el usuario
-  async getRecommendedEvents(userId: string, limit: number = 10): Promise<any[]> {
+  async getRecommendedEvents(
+    userId: string, 
+    allEvents: EventData[],
+    limit: number = 10,
+    bookmarkedEventIds: string[] = [] // Añadimos parámetro para IDs de eventos guardados
+  ): Promise<EventData[]> {
     try {
       // Obtener preferencias del usuario
       const preferencesJson = await AsyncStorage.getItem(`${this.PREFERENCES_KEY}_${userId}`);
       
       if (!preferencesJson) {
         // Si no hay preferencias, devolver eventos populares
-        return this.getPopularEvents(limit);
+        return this.getPopularEvents(allEvents, limit);
       }
       
       const preferences: UserRecommendationPreferences = JSON.parse(preferencesJson);
-      
-      // Obtener todos los eventos
-      const allEvents: any[] = await eventService.getAllEvents();
       
       // Si no hay eventos, devolver array vacío
       if (!allEvents || allEvents.length === 0) {
@@ -142,7 +157,7 @@ class RecommendationService {
       }
       
       // Calcular puntuación para cada evento basado en las preferencias
-      const scoredEvents = allEvents.map((event: any) => {
+      const scoredEvents = allEvents.map((event: EventData) => {
         let score = 1; // Puntuación base
         
         // Obtener el ID de categoría de manera segura, sin importar la estructura del evento
@@ -188,15 +203,8 @@ class RecommendationService {
         return { ...event, recommendationScore: score };
       });
       
-      // Verificar si el evento está guardado en favoritos
-      const bookmarkedEvents: any[] = await bookmarkService.getUserBookmarks(userId);
-      const bookmarkedIds = bookmarkedEvents.map((event: any) => {
-        if (typeof event === 'string') return event;
-        if (event && typeof event === 'object' && (typeof event.id === 'string' || typeof event.id === 'number')) {
-          return String(event.id);
-        }
-        return '';
-      }).filter(id => id !== '');
+      // En lugar de usar bookmarkService, usamos el parámetro bookmarkedEventIds
+      const bookmarkedIds = bookmarkedEventIds.map(id => String(id));
       
       // Eliminar eventos guardados y pasados de las recomendaciones
       const filteredEvents = scoredEvents.filter((event: any) => {
@@ -231,115 +239,70 @@ class RecommendationService {
   }
   
   // Obtener eventos populares como fallback
-  private async getPopularEvents(limit: number = 10): Promise<any[]> {
+  getPopularEvents(events: EventData[], limit: number = 10): EventData[] {
     try {
-      const allEvents: any[] = await eventService.getAllEvents();
-      
       // Si no hay eventos, devolver array vacío
-      if (!allEvents || allEvents.length === 0) {
+      if (!events || events.length === 0) {
         return [];
       }
       
       // Ordenar por número de asistentes (de mayor a menor)
-      const sortedEvents = [...allEvents].sort((a, b) => {
+      const sortedEvents = [...events].sort((a, b) => {
         const attendeesA = a.attendees || 0;
         const attendeesB = b.attendees || 0;
         return attendeesB - attendeesA;
       });
       
       // Filtrar eventos pasados
-      const now = new Date();
-      const upcomingEvents = sortedEvents.filter((event: any) => {
-        if (!event.startDate) return true; // Si no hay fecha, asumimos que es válido
-        const eventDate = typeof event.startDate === 'string' ? new Date(event.startDate) : event.startDate;
-        return eventDate >= now;
-      });
+      const filteredEvents = this.filterPastEvents(sortedEvents);
       
-      return upcomingEvents.slice(0, limit);
+      // Devolver los más populares
+      return filteredEvents.slice(0, limit);
     } catch (error) {
       console.error('Error al obtener eventos populares:', error);
       return [];
     }
   }
   
-  // Obtener eventos "Te podría interesar" basados en el evento actual
-  async getSimilarEvents(userId: string, currentEventId: string, limit: number = 4): Promise<any[]> {
+  // Obtener eventos similares al evento actual
+  async getSimilarEvents(
+    userId: string, 
+    currentEvent: EventData,
+    allEvents: EventData[],
+    limit: number = 4
+  ): Promise<EventData[]> {
     try {
-      const currentEvent: any = await eventService.getEventById(currentEventId);
-      
+      // Si no hay datos del evento actual, devolver array vacío
       if (!currentEvent) {
         return [];
       }
       
-      const allEvents: any[] = await eventService.getAllEvents();
+      // Filtrar el evento actual y eventos pasados
+      const eventsFiltered = allEvents.filter(event => 
+        event.id !== currentEvent.id && 
+        this.isPastEvent(event) === false
+      );
       
-      // Filtrar el evento actual
-      const otherEvents = allEvents.filter((event: any) => String(event.id) !== String(currentEventId));
-      
-      // Calcular similitud para cada evento
-      const scoredEvents = otherEvents.map((event: any) => {
-        // Comparar eventos para calcular puntuación de similaridad
-        let similarityScore = 0;
-        
-        // Similitudes en categoría - Manejo seguro de diferentes estructuras
-        const eventCategory = event.category?.id ? event.category.id : event.category;
-        const currentEventCategory = currentEvent.category?.id ? currentEvent.category.id : currentEvent.category;
-        
-        if (eventCategory && currentEventCategory && eventCategory === currentEventCategory) {
-          similarityScore += 20;
-        }
-        
-        // Calcular similaridad por organizador
-        if (event.organizerId && currentEvent.organizerId && 
-            String(event.organizerId) === String(currentEvent.organizerId)) {
-          similarityScore += 10;
-        }
-        
-        // Ubicación cercana
-        if (event.location && currentEvent.location &&
-            typeof event.location === 'object' && typeof currentEvent.location === 'object' &&
-            event.location.city && currentEvent.location.city &&
-            event.location.city.toLowerCase() === currentEvent.location.city.toLowerCase()) {
-          similarityScore += 2;
-        }
-        
-        // Calcular similaridad por fecha cercana
-        if (event.startDate && currentEvent.startDate) {
-          const eventDate = typeof event.startDate === 'string' ? new Date(event.startDate) : event.startDate;
-          const currentEventDate = typeof currentEvent.startDate === 'string' ? new Date(currentEvent.startDate) : currentEvent.startDate;
-          const daysDifference = Math.abs(
-            Math.ceil((eventDate.getTime() - currentEventDate.getTime()) / (1000 * 60 * 60 * 24))
-          );
-          
-          if (daysDifference <= 7) {
-            similarityScore += (7 - daysDifference);
-          }
-        }
-        
+      // Calcular similitud con el evento actual para cada evento
+      const scoredEvents = eventsFiltered.map(event => {
+        const similarityScore = this.calculateSimilarity(event, currentEvent);
         return { ...event, similarityScore };
       });
       
-      // Ordenar por puntuación de similitud
+      // Ordenar por similitud (mayor a menor)
       const sortedEvents = scoredEvents.sort((a, b) => 
         (b.similarityScore || 0) - (a.similarityScore || 0)
       );
       
-      // Filtrar eventos pasados
-      const now = new Date();
-      const upcomingEvents = sortedEvents.filter((event: any) => {
-        if (!event.startDate) return true;
-        const eventDate = typeof event.startDate === 'string' ? new Date(event.startDate) : event.startDate;
-        return eventDate >= now;
-      });
-      
-      return upcomingEvents.slice(0, limit);
+      // Devolver el número solicitado de eventos similares
+      return sortedEvents.slice(0, limit);
     } catch (error) {
       console.error('Error al obtener eventos similares:', error);
       return [];
     }
   }
   
-  // Limpiar todas las preferencias e interacciones (para testing/reset)
+  // Resetear datos de recomendaciones de un usuario
   async resetUserData(userId: string): Promise<void> {
     try {
       await AsyncStorage.removeItem(`${this.INTERACTIONS_KEY}_${userId}`);
@@ -348,97 +311,75 @@ class RecommendationService {
       console.error('Error al resetear datos de usuario:', error);
     }
   }
-
-  // Adaptar evento a la estructura esperada
-  private adaptEvent(event: any, recommendationScore: number = 0) {
-    // Asignar puntuación de recomendación
-    return {
-      ...event,
-      recommendationScore
-    };
-  }
-
-  // Ordenar eventos por fecha (de más próximo a más lejano)
-  private sortEventsByDate(events: any[]): any[] {
-    return [...events].sort((a, b) => {
-      const dateA = new Date(a.startDate).getTime();
-      const dateB = new Date(b.startDate).getTime();
-      return dateA - dateB;
-    });
-  }
-
-  // Método para filtrar eventos pasados
-  private filterPastEvents(events: any[]): any[] {
+  
+  // Filtrar eventos pasados
+  private filterPastEvents(events: EventData[]): EventData[] {
     const now = new Date();
-    return events.filter((event: any) => {
-      if (!event.startDate) return true; // Si no hay fecha, asumimos que es válido
+    return events.filter(event => {
+      if (!event.startDate) return true;
       const eventDate = typeof event.startDate === 'string' ? new Date(event.startDate) : event.startDate;
       return eventDate >= now;
     });
   }
-
-  /**
-   * Compara una categoría con las categorías del evento actual
-   * @param category La categoría a comparar
-   * @param currentEventCategories Las categorías del evento actual
-   * @returns true si la categoría está en las categorías del evento actual
-   */
+  
+  // Verificar si un evento ya pasó
+  private isPastEvent(event: EventData): boolean {
+    if (!event.startDate) return false;
+    const eventDate = typeof event.startDate === 'string' ? new Date(event.startDate) : event.startDate;
+    return eventDate < new Date();
+  }
+  
+  // Calcular similitud entre dos eventos
+  private calculateSimilarity(event: EventData, currentEvent: EventData): number {
+    let score = 0;
+    
+    // Similitud por categoría (peso alto)
+    if (this.matchCategory(event.category, [currentEvent.category])) {
+      score += 5;
+    }
+    
+    // Similitud por ubicación (peso medio)
+    const eventCity = this.getEventCity(event);
+    const currentEventCity = this.getEventCity(currentEvent);
+    
+    if (eventCity && currentEventCity && eventCity.toLowerCase() === currentEventCity.toLowerCase()) {
+      score += 3;
+    }
+    
+    return score;
+  }
+  
+  // Extraer ciudad del evento independientemente de su estructura
+  private getEventCity(event: EventData): string | null {
+    if (typeof event.location === 'string') {
+      return event.location;
+    } else if (event.location && typeof event.location === 'object' && event.location.city) {
+      return event.location.city;
+    }
+    return null;
+  }
+  
+  // Verificar si una categoría coincide con alguna de las categorías actuales
   private matchCategory(category: any, currentEventCategories: any[]): boolean {
-    if (!category || !category.id || !currentEventCategories || !Array.isArray(currentEventCategories)) {
+    if (!category || !currentEventCategories || currentEventCategories.length === 0) {
       return false;
     }
     
-    return currentEventCategories.some((currentCategory: any) => 
-      currentCategory && currentCategory.id === category.id
-    );
-  }
-
-  /**
-   * Calcula la similitud entre un evento y el evento actual basado en varios factores
-   * @param event El evento a comparar
-   * @param currentEvent El evento actual
-   * @returns Puntuación de similitud
-   */
-  private calculateSimilarity(event: any, currentEvent: any): number {
-    let similarityScore = 0;
+    // Normalizar la categoría a string para comparar
+    const categoryStr = typeof category === 'object' && category?.id 
+      ? String(category.id) 
+      : String(category);
     
-    // Mismo organizador (+10 puntos)
-    if (event.organizerId && currentEvent.organizerId && 
-        String(event.organizerId) === String(currentEvent.organizerId)) {
-      similarityScore += 10;
-    }
+    // Normalizar categorías actuales a strings
+    const currentCategoryStrs = currentEventCategories.map(cat => {
+      if (!cat) return '';
+      return typeof cat === 'object' && cat?.id 
+        ? String(cat.id) 
+        : String(cat);
+    });
     
-    // Categorías similares (+20 puntos por cada categoría coincidente)
-    if (event.categories && Array.isArray(event.categories) && 
-        currentEvent.categories && Array.isArray(currentEvent.categories)) {
-      event.categories.forEach((category: any) => {
-        if (this.matchCategory(category, currentEvent.categories)) {
-          similarityScore += 20;
-        }
-      });
-    }
-    
-    // Ubicación similar (+15 puntos por la misma ciudad/área)
-    if (event.location && currentEvent.location && 
-        typeof event.location === 'object' && typeof currentEvent.location === 'object') {
-      if (event.location.city && currentEvent.location.city && 
-          event.location.city.toLowerCase() === currentEvent.location.city.toLowerCase()) {
-        similarityScore += 15;
-      }
-    }
-    
-    // Eventos con fechas cercanas (+10 puntos)
-    if (event.startDate && currentEvent.startDate) {
-      const eventDate = typeof event.startDate === 'string' ? new Date(event.startDate) : event.startDate;
-      const currentEventDate = typeof currentEvent.startDate === 'string' ? new Date(currentEvent.startDate) : currentEvent.startDate;
-      const diffDays = Math.abs(Math.floor((eventDate.getTime() - currentEventDate.getTime()) / (1000 * 60 * 60 * 24)));
-      
-      if (diffDays < 14) { // Dentro de dos semanas
-        similarityScore += 10;
-      }
-    }
-    
-    return similarityScore;
+    // Verificar si hay coincidencia
+    return currentCategoryStrs.includes(categoryStr);
   }
 }
 

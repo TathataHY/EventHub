@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle, TouchableOpacity } from 'react-native';
 import { useTheme } from '../../../shared/hooks/useTheme';
 import { Icon } from './Icon';
 
@@ -8,6 +8,8 @@ export interface EmptyStateProps {
   title: string;
   message?: string;
   containerStyle?: ViewStyle;
+  actionText?: string;
+  onAction?: () => void;
 }
 
 /**
@@ -17,7 +19,9 @@ export const EmptyState = ({
   icon, 
   title, 
   message, 
-  containerStyle 
+  containerStyle,
+  actionText,
+  onAction
 }: EmptyStateProps) => {
   const { theme } = useTheme();
 
@@ -42,6 +46,23 @@ export const EmptyState = ({
           {message}
         </Text>
       )}
+      
+      {actionText && onAction && (
+        <TouchableOpacity 
+          style={[
+            styles.actionButton, 
+            { backgroundColor: theme.colors.primary.main }
+          ]} 
+          onPress={onAction}
+        >
+          <Text style={[
+            styles.actionText, 
+            { color: theme.colors.primary.contrastText }
+          ]}>
+            {actionText}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -63,5 +84,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     paddingHorizontal: 32,
+  },
+  actionButton: {
+    marginTop: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+  },
+  actionText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 }); 

@@ -245,17 +245,17 @@ export const NearbyEventsSection: React.FC<NearbyEventsSectionProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 16,
+    marginVertical: 24,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-    marginHorizontal: 16,
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   viewAll: {
@@ -263,40 +263,42 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   list: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingLeft: 16,
+    paddingRight: 8,
+    paddingBottom: 10,
   },
   card: {
-    width: 280,
+    width: Dimensions.get('window').width * 0.75,
     marginRight: 16,
   },
   loadingContainer: {
-    minHeight: 200,
+    height: 250,
     justifyContent: 'center',
     alignItems: 'center',
+    marginVertical: 16,
   },
   emptyContainer: {
-    minHeight: 100,
+    height: 100,
     justifyContent: 'center',
     alignItems: 'center',
-    margin: 16,
+    marginVertical: 24,
   },
   emptyText: {
     fontSize: 14,
-    fontStyle: 'italic',
     textAlign: 'center',
   },
   warningContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 204, 0, 0.1)',
-    borderRadius: 8,
-    padding: 12,
     marginHorizontal: 16,
     marginBottom: 16,
+    padding: 12,
+    backgroundColor: '#FFF8E1',
+    borderRadius: 8,
   },
   warningText: {
-    fontSize: 14,
+    fontSize: 12,
     marginLeft: 8,
+    flex: 1,
   },
 }); 

@@ -3,7 +3,7 @@ module.exports = function(api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      // 'expo-router/babel', // Obsoleto en SDK 50
+      'expo-router/babel', // Necesario para Expo Router en SDK 50
       'react-native-reanimated/plugin',
       [
         'module-resolver',

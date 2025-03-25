@@ -16,6 +16,7 @@ import { EventCard } from './EventCard';
 import { Event } from '@modules/events/types';
 import { recommendationService } from '@modules/events/services/recommendation.service';
 import { authService } from '@modules/auth/services/auth.service';
+import { eventService } from '@modules/events/services/event.service';
 
 interface SimilarEventsProps {
   currentEventId: string;
@@ -50,15 +51,26 @@ export const SimilarEvents: React.FC<SimilarEventsProps> = ({
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
       
-      // Cargar eventos similares
+      // Obtener el evento actual
+      const currentEvent = await eventService.getEventById(currentEventId);
+      if (!currentEvent) {
+        setSimilarEvents([]);
+        return;
+      }
+      
+      // Obtener todos los eventos para pasarlos al servicio
+      const allEvents = await eventService.getAllEvents();
+      
+      // Cargar eventos similares con el nuevo método
       const userId = currentUser ? currentUser.id : 'guest';
       const events = await recommendationService.getSimilarEvents(
         userId,
-        currentEventId,
+        currentEvent,
+        allEvents,
         maxEvents
       );
       
-      setSimilarEvents(events);
+      setSimilarEvents(events as SimilarEvent[]);
     } catch (error) {
       console.error('Error al cargar eventos similares:', error);
       setSimilarEvents([]);
@@ -84,11 +96,17 @@ export const SimilarEvents: React.FC<SimilarEventsProps> = ({
           categoryValue = categoryObject.name || '';
         }
 
+        // Obtener la ubicación del evento para pasarla como parámetro
+        const eventLocation = event.location && typeof event.location === 'object' 
+          ? event.location 
+          : undefined;
+
         recommendationService.recordInteraction(
           user.id,
           eventId,
           categoryValue,
-          'view'
+          'view',
+          eventLocation
         ).catch(error => console.error('Error al registrar interacción:', error));
       }
     }

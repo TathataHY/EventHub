@@ -357,12 +357,18 @@ export const EventDetailsScreen = () => {
 
   return (
     <>
-      <ScrollView style={[styles.container, { backgroundColor: getColorValue(theme.colors.background) }]}>
-        <Image 
-          source={{ uri: evento.imageUrl || evento.image }} 
-          style={styles.image} 
-          resizeMode="cover"
-        />
+      <ScrollView 
+        style={[styles.container, { backgroundColor: getColorValue(theme.colors.background) }]}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.imageContainer}>
+          <Image 
+            source={{ uri: evento.imageUrl || evento.image }} 
+            style={styles.image} 
+            resizeMode="cover"
+          />
+        </View>
         
         <View style={styles.contentContainer}>
           <View style={styles.headerContainer}>
@@ -558,9 +564,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: 16,
+  },
+  imageContainer: {
+    width: '100%',
+    height: 250,
+  },
   image: {
     width: '100%',
-    height: 200,
+    height: '100%',
   },
   contentContainer: {
     padding: 16,

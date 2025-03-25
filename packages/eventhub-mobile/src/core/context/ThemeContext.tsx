@@ -13,7 +13,7 @@ export interface ThemeContextType {
   isDark: boolean;
   toggleTheme: () => void;
   changeTheme: (mode: ThemeMode) => void;
-  getColorValue?: (colorOrPath: string | ColorValue) => string;
+  getColorValue: (colorOrPath: string | ColorValue) => string;
 }
 
 // Crear contexto
@@ -22,6 +22,7 @@ export const ThemeContext = createContext<ThemeContextType>({
   isDark: false,
   toggleTheme: () => {},
   changeTheme: () => {},
+  getColorValue: () => '#000000'
 });
 
 // Clave para almacenamiento de preferencia de tema

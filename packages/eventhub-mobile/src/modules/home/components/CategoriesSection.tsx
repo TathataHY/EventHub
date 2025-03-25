@@ -69,30 +69,30 @@ export function CategoriesSection({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 16,
+    marginVertical: 24,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 12,
+    marginBottom: 16,
     paddingHorizontal: 16,
   },
   categoriesContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingBottom: 12,
   },
   categoryCard: {
-    width: 100,
-    height: 100,
-    borderRadius: 12,
-    marginRight: 12,
-    padding: 12,
+    width: 110,
+    height: 110,
+    borderRadius: 16,
+    marginRight: 16,
+    padding: 14,
     justifyContent: 'space-between',
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',

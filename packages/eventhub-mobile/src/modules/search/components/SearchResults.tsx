@@ -39,7 +39,7 @@ export function SearchResults({
           <Image 
             source={{ uri: item.imageUrl }} 
             style={styles.resultImage}
-            defaultSource={require('../../../../assets/placeholder.png')}
+            defaultSource={require('@assets/images/placeholders/event.png')}
           />
         ) : (
           <View style={[styles.iconContainer, { backgroundColor: `${theme.colors.primary.main}10` }]}>

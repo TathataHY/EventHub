@@ -14,6 +14,13 @@ export const WelcomeScreen = () => {
   const router = useRouter();
   const { theme } = useTheme();
 
+  // Obtener el logo según el tema
+  const getLogo = () => {
+    return theme.dark 
+      ? require('@assets/images/logo/logo-dark.png')
+      : require('@assets/images/logo/logo-light.png');
+  };
+
   // Navegar a la pantalla de login
   const handleLogin = () => {
     router.push('/auth/login');
@@ -35,7 +42,7 @@ export const WelcomeScreen = () => {
       
       <View style={styles.header}>
         <Image
-          source={require('@assets/icon.png')}
+          source={getLogo()}
           style={styles.logo}
           resizeMode="contain"
         />
