@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Stack } from 'expo-router';
-import { AppProvider } from '../../../app';
+
+interface RootLayoutProps {
+  children?: ReactNode;
+}
 
 /**
  * Componente que define la estructura de navegación principal
  * Versión modular del antiguo _layout.tsx
  */
-export const RootLayout = () => {
+export const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
   return (
-    <AppProvider>
+    <>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -43,6 +46,7 @@ export const RootLayout = () => {
         {/* Búsqueda */}
         <Stack.Screen name="search" options={{ headerShown: false }} />
       </Stack>
-    </AppProvider>
+      {children}
+    </>
   );
 }; 

@@ -7,18 +7,34 @@
       "eventhub-shared/*": [
         "../eventhub-shared/src/*"
       ],
-      "@modules/*": ["src/modules/*"],
-      "@core/*": ["src/core/*"],
-      "@shared/*": ["src/shared/*"],
-      "@assets/*": ["assets/*"],
-      "@theme/*": ["src/theme/*"],
-      "@app/*": ["app/*"]
+      "@modules/*": [
+        "src/modules/*"
+      ],
+      "@core/*": [
+        "src/core/*"
+      ],
+      "@shared/*": [
+        "src/shared/*"
+      ],
+      "@assets/*": [
+        "assets/*"
+      ],
+      "@theme/*": [
+        "src/theme/*"
+      ],
+      "@app/*": [
+        "app/*"
+      ]
     },
     "outDir": "./dist",
-    "noEmit": true
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx"
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
   ]
 }

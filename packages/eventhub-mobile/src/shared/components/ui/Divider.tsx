@@ -7,7 +7,7 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
-import theme from '../../theme';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 interface DividerProps {
   text?: string;
@@ -24,26 +24,32 @@ export const Divider: React.FC<DividerProps> = ({
   text,
   orientation = 'horizontal',
   thickness = 1,
-  color = theme.colors.border.main,
+  color,
   style,
   textStyle,
-  spacing = theme.spacing.md,
+  spacing,
   dashed = false,
 }) => {
+  const { theme } = useTheme();
+  
+  // Usar el color proporcionado o el color divider del tema
+  const dividerColor = color || theme.colors.grey[300];
+  const dividerSpacing = spacing || 16;
+  
   // Estilos condicionales basados en la orientación
   const getOrientationStyles = (): ViewStyle => {
     if (orientation === 'vertical') {
       return {
         width: thickness,
         height: '100%' as any,
-        marginHorizontal: spacing,
+        marginHorizontal: dividerSpacing,
       };
     }
     
     return {
       height: thickness,
       width: '100%' as any,
-      marginVertical: spacing,
+      marginVertical: dividerSpacing,
     };
   };
 
@@ -56,7 +62,7 @@ export const Divider: React.FC<DividerProps> = ({
             styles.divider,
             getOrientationStyles(),
             {
-              backgroundColor: color,
+              backgroundColor: dividerColor,
               borderStyle: dashed ? 'dashed' : 'solid',
             },
           ]}
@@ -65,8 +71,9 @@ export const Divider: React.FC<DividerProps> = ({
           style={[
             styles.text,
             { 
-              marginHorizontal: theme.spacing.md,
+              marginHorizontal: 16,
               color: theme.colors.text.secondary,
+              fontSize: 14
             },
             textStyle,
           ]}
@@ -78,7 +85,7 @@ export const Divider: React.FC<DividerProps> = ({
             styles.divider,
             getOrientationStyles(),
             {
-              backgroundColor: color,
+              backgroundColor: dividerColor,
               borderStyle: dashed ? 'dashed' : 'solid',
             },
           ]}
@@ -94,7 +101,7 @@ export const Divider: React.FC<DividerProps> = ({
         styles.divider,
         getOrientationStyles(),
         {
-          backgroundColor: color,
+          backgroundColor: dividerColor,
           borderStyle: dashed ? 'dashed' : 'solid',
         },
         style,
@@ -113,9 +120,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
   },
-  text: {
-    fontSize: theme.typography.fontSize.sm,
-  },
+  text: {},
 });
 
 export default Divider; 

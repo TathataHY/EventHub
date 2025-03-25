@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text, Platform, Alert } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
-import theme from '../../theme';
+import { useTheme } from '@core/context/ThemeContext';
 
 interface EventMapProps {
   latitude: number;
@@ -17,6 +17,7 @@ export const EventMap: React.FC<EventMapProps> = ({
   name,
   showUserLocation = false,
 }) => {
+  const { theme } = useTheme();
   const [isLoading, setIsLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -48,17 +49,17 @@ export const EventMap: React.FC<EventMapProps> = ({
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background.paper }]}>
         <ActivityIndicator size="large" color={theme.colors.primary.main} />
-        <Text style={styles.loadingText}>Cargando mapa...</Text>
+        <Text style={[styles.loadingText, { color: theme.colors.text.secondary }]}>Cargando mapa...</Text>
       </View>
     );
   }
 
   if (errorMsg) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>{errorMsg}</Text>
+      <View style={[styles.errorContainer, { backgroundColor: theme.colors.background.paper }]}>
+        <Text style={[styles.errorText, { color: theme.colors.error.main }]}>{errorMsg}</Text>
       </View>
     );
   }
@@ -71,7 +72,7 @@ export const EventMap: React.FC<EventMapProps> = ({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { borderRadius: 8 }]}>
       <MapView
         style={styles.map}
         initialRegion={initialRegion}
@@ -104,7 +105,6 @@ const styles = StyleSheet.create({
     height: 250,
     width: '100%',
     overflow: 'hidden',
-    borderRadius: theme.borderRadius.md,
   },
   map: {
     width: '100%',
@@ -115,24 +115,18 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.background.paper,
-    borderRadius: theme.borderRadius.md,
   },
   loadingText: {
-    marginTop: theme.spacing.sm,
-    color: theme.colors.text.secondary,
+    marginTop: 8,
   },
   errorContainer: {
     height: 250,
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.background.paper,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
+    padding: 16,
   },
   errorText: {
-    color: theme.colors.error.main,
     textAlign: 'center',
   },
 }); 

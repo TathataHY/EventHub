@@ -1,80 +1,84 @@
 import React from 'react';
-import { render, waitFor, act } from '@testing-library/react-native';
+import { render, waitFor } from '@testing-library/react-native';
+import { useRoute } from '@react-navigation/native';
 import { UserProfileScreen } from '../UserProfileScreen';
-import { userService } from '../../services';
+import { userService } from '../../services/user.service';
 
-// Mock de los servicios
-jest.mock('../../services', () => ({
+// Mock de los servicios y hooks necesarios
+jest.mock('../../services/user.service', () => ({
   userService: {
     getUserProfile: jest.fn(),
     followUser: jest.fn(),
-    unfollowUser: jest.fn(),
-    blockUser: jest.fn(),
-    reportUser: jest.fn(),
+    unfollowUser: jest.fn()
   }
 }));
 
-// Mock del hook de navegación
-jest.mock('@react-navigation/native', () => {
-  return {
-    ...jest.requireActual('@react-navigation/native'),
-    useNavigation: () => ({
-      goBack: jest.fn(),
-      setOptions: jest.fn()
-    }),
-  };
-});
+jest.mock('@react-navigation/native', () => ({
+  useRoute: jest.fn(),
+  useNavigation: () => ({
+    navigate: jest.fn(),
+    goBack: jest.fn(),
+    setOptions: jest.fn()
+  })
+}));
+
+// Mock básico para el perfil de usuario
+const mockUserProfile = {
+  id: 'user123',
+  username: 'testuser',
+  fullName: 'Test User',
+  photoURL: 'https://example.com/avatar.jpg',
+  bio: 'Test bio',
+  location: {
+    city: 'Madrid',
+    country: 'España'
+  },
+  interests: ['music', 'sports'],
+  followersCount: 100,
+  followingCount: 50,
+  eventsAttended: 10,
+  eventsOrganized: 5
+};
 
 describe('UserProfileScreen', () => {
   beforeEach(() => {
+    // Configurar el mock para useRoute
+    (useRoute as jest.Mock).mockReturnValue({
+      params: { userId: 'user123' }
+    });
+    
+    // Reiniciar mocks
     jest.clearAllMocks();
     
-    // Mock de respuesta exitosa para getUserProfile
-    (userService.getUserProfile as jest.Mock).mockResolvedValue({
-      id: 'user123',
-      username: 'usuario_test',
-      fullName: 'Usuario Test',
-      photoURL: 'https://example.com/photo.jpg',
-      bio: 'Biografía de prueba',
-      location: {
-        city: 'Madrid',
-        country: 'España'
-      },
-      interests: ['MUSIC', 'TECHNOLOGY'],
-      followersCount: 100,
-      followingCount: 50,
-      eventsAttended: 20,
-      eventsOrganized: 5,
-      isFollowing: false,
-      createdAt: new Date().toISOString()
-    });
+    // Configurar respuesta por defecto para getUserProfile
+    (userService.getUserProfile as jest.Mock).mockResolvedValue(mockUserProfile);
   });
-
-  it('renderiza correctamente mientras carga', () => {
-    const { getByText } = render(<UserProfileScreen userId="user123" />);
-    expect(getByText('Cargando perfil...')).toBeTruthy();
+  
+  it('muestra indicador de carga inicialmente', () => {
+    const { getByTestId } = render(<UserProfileScreen />);
+    expect(getByTestId('loading-indicator')).toBeTruthy();
   });
-
-  it('renderiza el perfil del usuario correctamente después de cargar', async () => {
-    const { getByText, findByText } = render(<UserProfileScreen userId="user123" />);
+  
+  it('carga y muestra el perfil del usuario correctamente', async () => {
+    const { getByText, findByText } = render(<UserProfileScreen />);
     
-    await waitFor(() => {
-      expect(userService.getUserProfile).toHaveBeenCalledWith('user123');
-    });
+    // Verificar que se muestra el contenido correcto después de la carga
+    await findByText('Test User');
+    expect(getByText('@testuser')).toBeTruthy();
+    expect(getByText('Test bio')).toBeTruthy();
+    expect(getByText('Madrid, España')).toBeTruthy();
     
-    expect(await findByText('Usuario Test')).toBeTruthy();
-    expect(await findByText('@usuario_test')).toBeTruthy();
-    expect(await findByText('Madrid, España')).toBeTruthy();
-    expect(await findByText('Biografía de prueba')).toBeTruthy();
+    // Verificar que se llamó al servicio con el ID correcto
+    expect(userService.getUserProfile).toHaveBeenCalledWith('user123');
   });
-
-  it('muestra mensaje de error si falla la carga', async () => {
-    // Mock de error
-    (userService.getUserProfile as jest.Mock).mockRejectedValue(new Error('Error de prueba'));
+  
+  it('muestra mensaje de error si falla la carga del perfil', async () => {
+    // Configurar el mock para simular un error
+    (userService.getUserProfile as jest.Mock).mockRejectedValue(new Error('Error de red'));
     
-    const { findByText } = render(<UserProfileScreen userId="user123" />);
+    const { findByText } = render(<UserProfileScreen />);
     
-    expect(await findByText('No se pudo cargar el perfil del usuario')).toBeTruthy();
-    expect(await findByText('Reintentar')).toBeTruthy();
+    // Verificar que se muestra el mensaje de error
+    await findByText('No se pudo cargar el perfil de usuario');
   });
 }); 

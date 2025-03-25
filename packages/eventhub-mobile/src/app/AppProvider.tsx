@@ -5,6 +5,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ThemeProvider } from '../core/context';
 
 /**
+ * @deprecated Este componente está obsoleto y será eliminado en versiones futuras.
+ * Usar RootLayoutProvider de src/core/providers en su lugar.
+ * 
  * Componente que encapsula todos los proveedores de la aplicación
  * Se utiliza en el layout principal para proporcionar contexto global
  */

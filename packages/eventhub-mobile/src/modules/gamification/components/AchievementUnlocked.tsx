@@ -1,202 +1,210 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Animated,
-  TouchableOpacity,
-  Dimensions
+  Easing,
+  Modal,
+  TouchableOpacity
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+// Comentado temporalmente hasta que podamos instalar la dependencia
+// import LottieView from 'lottie-react-native';
 
-import { useTheme } from '../../context/ThemeContext';
-import { Achievement } from '../../services/achievement.service';
+import { useTheme } from '../../../shared/hooks/useTheme';
+import { Achievement } from '@modules/gamification/types';
+import { AchievementBadge } from './AchievementBadge';
 
 interface AchievementUnlockedProps {
   achievement: Achievement;
+  visible: boolean;
   onClose: () => void;
-  autoDismiss?: boolean;
-  dismissTime?: number;
 }
 
+/**
+ * Componente modal para mostrar cuando un usuario desbloquea un logro
+ */
 export const AchievementUnlocked: React.FC<AchievementUnlockedProps> = ({
   achievement,
-  onClose,
-  autoDismiss = true,
-  dismissTime = 5000
+  visible,
+  onClose
 }) => {
   const { theme } = useTheme();
-  const [animation] = useState(new Animated.Value(0));
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
   
   useEffect(() => {
-    // Animación de entrada
-    Animated.spring(animation, {
-      toValue: 1,
-      tension: 80,
-      friction: 10,
-      useNativeDriver: true
-    }).start();
-    
-    // Autocierre si está habilitado
-    if (autoDismiss) {
-      const timer = setTimeout(() => {
-        handleClose();
-      }, dismissTime);
+    if (visible) {
+      // Resetear animaciones
+      fadeAnim.setValue(0);
+      scaleAnim.setValue(0.8);
       
-      return () => clearTimeout(timer);
+      // Iniciar secuencia de animación
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.ease)
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+          easing: Easing.out(Easing.back(1.5))
+        })
+      ]).start();
     }
-  }, []);
+  }, [visible, fadeAnim, scaleAnim]);
   
-  // Manejar cierre con animación
-  const handleClose = () => {
-    Animated.timing(animation, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true
-    }).start(() => {
-      onClose();
-    });
-  };
-  
-  // Obtener color según tipo de logro
-  const getColorByType = (type: string) => {
-    switch (type) {
-      case 'attendance':
-        return theme.colors.success;
-      case 'creation':
-        return theme.colors.primary;
-      case 'social':
-        return theme.colors.info;
-      case 'exploration':
-        return theme.colors.warning;
-      default:
-        return theme.colors.primary;
-    }
-  };
-  
-  const badgeColor = getColorByType(achievement.type);
-  
-  // Transformaciones para la animación
-  const translateY = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-150, 0]
-  });
-  
-  const scale = animation.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0.8, 1.1, 1]
-  });
+  if (!achievement) return null;
   
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        { 
-          backgroundColor: theme.colors.card,
-          transform: [{ translateY }, { scale }]
-        }
-      ]}
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      onRequestClose={onClose}
     >
-      <View style={[styles.iconContainer, { backgroundColor: badgeColor + '20' }]}>
-        <Ionicons
-          name={achievement.iconName.replace('-outline', '')}
-          size={32}
-          color={badgeColor}
-        />
-      </View>
-      
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>
-          ¡Logro desbloqueado!
-        </Text>
-        
-        <Text style={[styles.achievementName, { color: badgeColor }]}>
-          {achievement.title}
-        </Text>
-        
-        <Text style={[styles.description, { color: theme.colors.secondaryText }]}>
-          {achievement.description}
-        </Text>
-        
-        <View style={styles.pointsContainer}>
-          <Ionicons name="star" size={16} color={theme.colors.warning} />
-          <Text style={[styles.points, { color: theme.colors.text }]}>
-            +{achievement.points} puntos
+      <View style={styles.modalOverlay}>
+        <Animated.View 
+          style={[
+            styles.modalContent,
+            { 
+              backgroundColor: theme.colors.background.default,
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }]
+            }
+          ]}
+        >
+          {/* Animación de celebración */}
+          <View style={styles.confettiContainer}>
+            {/* Reemplazado temporalmente con un View vacío */}
+            <View style={styles.confetti} />
+          </View>
+          
+          {/* Título */}
+          <Text style={[styles.title, { color: theme.colors.text.primary }]}>
+            ¡Logro Desbloqueado!
           </Text>
-        </View>
+          
+          {/* Badge del logro */}
+          <View style={styles.badgeContainer}>
+            <AchievementBadge 
+              achievement={achievement}
+              size="large"
+              showProgress={false}
+            />
+          </View>
+          
+          {/* Detalles del logro */}
+          <Text style={[styles.achievementName, { color: theme.colors.primary.main }]}>
+            {achievement.name}
+          </Text>
+          
+          <Text style={[styles.description, { color: theme.colors.text.secondary }]}>
+            {achievement.description}
+          </Text>
+          
+          {/* Puntos obtenidos */}
+          <View style={[styles.pointsContainer, { backgroundColor: `${theme.colors.primary.light}30` }]}>
+            <Ionicons 
+              name="star" 
+              size={20} 
+              color={theme.colors.warning.main} 
+            />
+            <Text style={[styles.pointsText, { color: theme.colors.text.primary }]}>
+              +{achievement.points} puntos
+            </Text>
+          </View>
+          
+          {/* Botón cerrar */}
+          <TouchableOpacity 
+            style={[
+              styles.closeButton,
+              { backgroundColor: theme.colors.primary.main }
+            ]}
+            onPress={onClose}
+          >
+            <Text style={styles.closeButtonText}>Continuar</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </View>
-      
-      <TouchableOpacity
-        style={styles.closeButton}
-        onPress={handleClose}
-      >
-        <Ionicons name="close" size={20} color={theme.colors.secondaryText} />
-      </TouchableOpacity>
-    </Animated.View>
+    </Modal>
   );
 };
 
-const { width } = Dimensions.get('window');
-
 const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 5,
-    maxWidth: width - 40,
-    alignSelf: 'center',
-    zIndex: 1000,
-  },
-  iconContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    padding: 24,
   },
-  content: {
-    flex: 1,
+  modalContent: {
+    borderRadius: 16,
+    padding: 24,
+    width: '90%',
+    maxWidth: 340,
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  confettiContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
+  },
+  confetti: {
+    width: '100%',
+    height: '100%',
   },
   title: {
-    fontSize: 14,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 2,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  badgeContainer: {
+    marginBottom: 16,
   },
   achievementName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 6,
+    marginBottom: 8,
+    textAlign: 'center',
   },
   description: {
-    fontSize: 12,
-    marginBottom: 6,
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 24,
   },
   pointsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 24,
   },
-  points: {
-    fontSize: 12,
+  pointsText: {
+    fontSize: 16,
     fontWeight: 'bold',
-    marginLeft: 4,
+    marginLeft: 8,
   },
   closeButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    width: '100%',
     alignItems: 'center',
   },
+  closeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  }
 }); 

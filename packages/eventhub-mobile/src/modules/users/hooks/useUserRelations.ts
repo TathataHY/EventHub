@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { userService } from '../services';
-import { PublicUserProfile } from '../types';
+import { PublicUserProfile, UserRelationsResponse } from '../types';
 
 export const useUserRelations = (userId: string) => {
   const [followers, setFollowers] = useState<PublicUserProfile[]>([]);
@@ -15,11 +15,13 @@ export const useUserRelations = (userId: string) => {
     setFollowError(null);
     
     try {
-      const userFollowers = await userService.getFollowers(userId);
-      setFollowers(userFollowers);
+      const userFollowers = await userService.getUserFollowers(userId);
+      setFollowers(userFollowers.users as unknown as PublicUserProfile[]);
+      return userFollowers;
     } catch (err) {
       setFollowError('Error al cargar seguidores');
-      console.error('Error en loadFollowers:', err);
+      console.error('Error fetching followers:', err);
+      return { users: [], total: 0 };
     } finally {
       setLoadingFollowers(false);
     }
@@ -31,11 +33,13 @@ export const useUserRelations = (userId: string) => {
     setFollowError(null);
     
     try {
-      const userFollowing = await userService.getFollowing(userId);
-      setFollowing(userFollowing);
+      const userFollowing = await userService.getUserFollowing(userId);
+      setFollowing(userFollowing.users as unknown as PublicUserProfile[]);
+      return userFollowing;
     } catch (err) {
       setFollowError('Error al cargar usuarios seguidos');
-      console.error('Error en loadFollowing:', err);
+      console.error('Error fetching following:', err);
+      return { users: [], total: 0 };
     } finally {
       setLoadingFollowing(false);
     }
@@ -46,42 +50,28 @@ export const useUserRelations = (userId: string) => {
     setFollowError(null);
     
     try {
-      const success = await userService.followUser(targetUserId);
-      
-      if (success) {
-        // Actualizar la lista de seguidos si estamos gestionando al usuario actual
-        await loadFollowing();
-        return { success: true };
-      } else {
-        return { success: false, error: 'No se pudo seguir al usuario' };
-      }
+      const result = await userService.followUser(targetUserId);
+      return result;
     } catch (err) {
       setFollowError('Error al seguir al usuario');
-      console.error('Error en followUser:', err);
-      return { success: false, error: 'Error al seguir al usuario' };
+      console.error('Error following user:', err);
+      throw err;
     }
-  }, [loadFollowing]);
+  }, []);
 
   // Dejar de seguir a un usuario
   const unfollowUser = useCallback(async (targetUserId: string) => {
     setFollowError(null);
     
     try {
-      const success = await userService.unfollowUser(targetUserId);
-      
-      if (success) {
-        // Actualizar la lista de seguidos si estamos gestionando al usuario actual
-        await loadFollowing();
-        return { success: true };
-      } else {
-        return { success: false, error: 'No se pudo dejar de seguir al usuario' };
-      }
+      const result = await userService.unfollowUser(targetUserId);
+      return result;
     } catch (err) {
       setFollowError('Error al dejar de seguir al usuario');
-      console.error('Error en unfollowUser:', err);
-      return { success: false, error: 'Error al dejar de seguir al usuario' };
+      console.error('Error unfollowing user:', err);
+      throw err;
     }
-  }, [loadFollowing]);
+  }, []);
 
   // Bloquear a un usuario
   const blockUser = useCallback(async (targetUserId: string) => {

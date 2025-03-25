@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { SearchScreen } from '../src/modules/search/screens';
+import { SearchScreen } from '@modules/search/screens';
 
 /**
  * Pantalla de búsqueda utilizando la estructura modular

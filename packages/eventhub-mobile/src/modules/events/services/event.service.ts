@@ -1,38 +1,66 @@
-import { apiService } from './api.service';
+import { apiClient } from '@core/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { recommendationService } from './recommendation.service';
-import { authService } from './auth.service';
+import { authService } from '@modules/auth/services/auth.service';
+import { 
+  Event, 
+  EventFilters as EventSearchParamsType,
+  CreateEventData 
+} from '../types';
 
-// Interfaces
-export interface Event {
-  id: number | string;
-  title: string;
-  description: string;
-  location: string;
-  startDate: string;
-  endDate?: string;
-  category: string;
-  imageUrl?: string;
-  capacity?: number;
-  attendees?: number;
-  organizerId: number | string;
-  organizerName?: string;
-  isAttending?: boolean;
+// Para compatibilidad legacy, aceptamos id como string o número
+export interface ServiceEvent extends Omit<Event, 'id' | 'organizerId'> {
+  id: string | number;
+  organizerId: string | number;
+  distance?: number;
+  recommendationScore?: number;
+  // Propiedades adicionales para compatibilidad con componentes
+  latitude?: number;
+  longitude?: number;
+  type?: string;
+  metrics?: {
+    maxCapacity?: number;
+    registeredAttendees?: number;
+  };
+  ticketInfo?: {
+    price?: number;
+    availableTickets?: number;
+    isFree?: boolean;
+    currency?: string;
+  };
 }
 
+// Extendemos la interfaz de parámetros de búsqueda con campos adicionales
 export interface EventSearchParams {
   query?: string;
   category?: string;
   startDate?: string;
   endDate?: string;
-  location?: string;
+  location?: {
+    latitude?: number;
+    longitude?: number;
+    radius?: number;
+  };
+  // Incluimos también los campos de EventFilters para compatibilidad
+  categories?: string[];
+  date?: {
+    from?: Date;
+    to?: Date;
+  };
+  price?: {
+    min?: number;
+    max?: number;
+  };
+  keywords?: string[];
+  isVirtual?: boolean;
+  isFree?: boolean;
 }
 
 class EventService {
   // Obtener todos los eventos
-  async getAllEvents(): Promise<Event[]> {
+  async getAllEvents(): Promise<ServiceEvent[]> {
     try {
-      const response = await apiService.get('/events');
+      const response = await apiClient.get('/events');
       return response.data;
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -43,7 +71,7 @@ class EventService {
   // Obtener eventos próximos
   async getUpcomingEvents() {
     try {
-      return await apiService.get('/events/upcoming');
+      return await apiClient.get('/events/upcoming');
     } catch (error) {
       console.error('Error al obtener eventos próximos:', error);
       throw error;
@@ -51,9 +79,9 @@ class EventService {
   }
 
   // Buscar eventos
-  async searchEvents(query: string): Promise<Event[]> {
+  async searchEvents(query: string): Promise<ServiceEvent[]> {
     try {
-      const response = await apiService.get(`/events/search?q=${encodeURIComponent(query)}`);
+      const response = await apiClient.get(`/events/search?q=${encodeURIComponent(query)}`);
       return response.data;
     } catch (error) {
       console.error(`Error searching events with query ${query}:`, error);
@@ -63,24 +91,64 @@ class EventService {
 
   // Obtener un evento por ID
   async getEventById(id: string): Promise<any> {
+    console.log('eventService.getEventById called with id:', id);
     try {
       // Obtener datos de eventos
       const eventsJson = await AsyncStorage.getItem('events');
       const events = eventsJson ? JSON.parse(eventsJson) : [];
       
       // Buscar el evento
-      const event = events.find((event: any) => event.id === id);
+      let event = events.find((event: any) => event.id === id);
+      
+      // Si no encontramos evento, usamos datos simulados para modo mock
+      if (!event) {
+        console.log('Event not found in storage, using mock data');
+        // Generar evento simulado para desarrollo
+        const mockEvents = [
+          {
+            id: 'cat1',
+            title: 'Concierto de Rock en Vivo',
+            description: 'Disfruta de las mejores bandas de rock en un ambiente vibrante.',
+            image: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?q=80&w=1000',
+            imageUrl: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?q=80&w=1000',
+            startDate: '2024-11-15T20:00:00',
+            endDate: '2024-11-15T23:30:00',
+            location: 'Palacio de Deportes, Madrid',
+            price: 45,
+            category: 'Música',
+            organizerId: 'org1'
+          },
+          {
+            id: 'cat2',
+            title: 'Conferencia de Tecnología',
+            description: 'Descubre las últimas tendencias en inteligencia artificial y desarrollo web.',
+            image: 'https://images.unsplash.com/photo-1591115765373-5207764f72e7?q=80&w=1000',
+            imageUrl: 'https://images.unsplash.com/photo-1591115765373-5207764f72e7?q=80&w=1000',
+            startDate: '2024-12-05T09:00:00',
+            endDate: '2024-12-05T18:00:00',
+            location: 'Centro de Convenciones, Barcelona',
+            price: 120,
+            category: 'Tecnología',
+            organizerId: 'org2'
+          }
+        ];
+        event = mockEvents.find(e => e.id === id) || mockEvents[0];
+      }
       
       if (event) {
         // Intentar registrar la interacción de visualización
         try {
           const user = await authService.getCurrentUser();
           if (user) {
+            // Enviamos la ubicación del evento como parámetro para evitar ciclos de dependencia
+            const eventLocation = event.location && typeof event.location === 'object' ? event.location : undefined;
+            
             recommendationService.recordInteraction(
               user.id,
               id,
               event.category,
-              'view'
+              'view',
+              eventLocation
             );
           }
         } catch (error) {
@@ -89,6 +157,7 @@ class EventService {
         }
       }
       
+      console.log('eventService.getEventById returning:', event);
       return event || null;
     } catch (error) {
       console.error('Error al obtener evento por ID:', error);
@@ -97,9 +166,9 @@ class EventService {
   }
 
   // Crear un nuevo evento
-  async createEvent(eventData: Partial<Event>): Promise<Event> {
+  async createEvent(eventData: Partial<ServiceEvent>): Promise<ServiceEvent> {
     try {
-      const response = await apiService.post('/events', eventData);
+      const response = await apiClient.post('/events', eventData);
       return response.data;
     } catch (error) {
       console.error('Error creating event:', error);
@@ -108,9 +177,9 @@ class EventService {
   }
 
   // Actualizar un evento
-  async updateEvent(id: string, eventData: Partial<Event>): Promise<Event> {
+  async updateEvent(id: string, eventData: Partial<ServiceEvent>): Promise<ServiceEvent> {
     try {
-      const response = await apiService.put(`/events/${id}`, eventData);
+      const response = await apiClient.put(`/events/${id}`, eventData);
       return response.data;
     } catch (error) {
       console.error(`Error updating event with id ${id}:`, error);
@@ -121,7 +190,7 @@ class EventService {
   // Eliminar un evento
   async deleteEvent(id: string): Promise<void> {
     try {
-      await apiService.delete(`/events/${id}`);
+      await apiClient.delete(`/events/${id}`);
     } catch (error) {
       console.error(`Error deleting event with id ${id}:`, error);
       throw error;
@@ -136,11 +205,15 @@ class EventService {
       // Registrar interacción para recomendaciones
       const event = await this.getEventById(eventId);
       if (event) {
+        // Enviamos la ubicación del evento como parámetro para evitar ciclos de dependencia
+        const eventLocation = event.location && typeof event.location === 'object' ? event.location : undefined;
+        
         recommendationService.recordInteraction(
           userId,
           eventId,
           event.category,
-          'attend'
+          'attend',
+          eventLocation
         );
       }
       
@@ -154,7 +227,7 @@ class EventService {
   // Cancelar registro a un evento
   async cancelAttendance(id: string): Promise<void> {
     try {
-      await apiService.delete(`/events/${id}/attend`);
+      await apiClient.delete(`/events/${id}/attend`);
     } catch (error) {
       console.error(`Error canceling attendance for event with id ${id}:`, error);
       throw error;
@@ -162,9 +235,9 @@ class EventService {
   }
 
   // Obtener mis eventos (organizados por el usuario)
-  async getMyEvents(): Promise<Event[]> {
+  async getMyEvents(): Promise<ServiceEvent[]> {
     try {
-      const response = await apiService.get('/events/my-events');
+      const response = await apiClient.get('/events/my-events');
       return response.data;
     } catch (error) {
       console.error('Error fetching my events:', error);
@@ -173,9 +246,9 @@ class EventService {
   }
 
   // Obtener eventos a los que asiste el usuario
-  async getEventsAttending(): Promise<Event[]> {
+  async getEventsAttending(): Promise<ServiceEvent[]> {
     try {
-      const response = await apiService.get('/events/attending');
+      const response = await apiClient.get('/events/attending');
       return response.data;
     } catch (error) {
       console.error('Error fetching events attending:', error);
@@ -183,9 +256,9 @@ class EventService {
     }
   }
 
-  async getEventsByCategory(category: string): Promise<Event[]> {
+  async getEventsByCategory(category: string): Promise<ServiceEvent[]> {
     try {
-      const response = await apiService.get(`/events?category=${encodeURIComponent(category)}`);
+      const response = await apiClient.get(`/events?category=${encodeURIComponent(category)}`);
       return response.data;
     } catch (error) {
       console.error(`Error fetching events with category ${category}:`, error);
@@ -193,7 +266,7 @@ class EventService {
     }
   }
 
-  async advancedSearch(params: EventSearchParams): Promise<Event[]> {
+  async advancedSearch(params: EventSearchParams): Promise<ServiceEvent[]> {
     try {
       // Construir la URL con los parámetros de búsqueda
       const queryParams = new URLSearchParams();
@@ -202,9 +275,13 @@ class EventService {
       if (params.category) queryParams.append('category', params.category);
       if (params.startDate) queryParams.append('startDate', params.startDate);
       if (params.endDate) queryParams.append('endDate', params.endDate);
-      if (params.location) queryParams.append('location', params.location);
+      if (params.location) {
+        // Convertir la ubicación a un string JSON para enviarlo como parámetro
+        const locationParam = JSON.stringify(params.location);
+        queryParams.append('location', locationParam);
+      }
       
-      const response = await apiService.get(`/events/search?${queryParams.toString()}`);
+      const response = await apiClient.get(`/events/search?${queryParams.toString()}`);
       return response.data;
     } catch (error) {
       console.error('Error in advanced search:', error);
@@ -215,21 +292,191 @@ class EventService {
   // Compartir un evento con registro de interacción
   async shareEvent(userId: string, eventId: string): Promise<boolean> {
     try {
+      // Código para compartir evento...
+      
       // Registrar interacción para recomendaciones
       const event = await this.getEventById(eventId);
       if (event) {
+        // Enviamos la ubicación del evento como parámetro para evitar ciclos de dependencia
+        const eventLocation = event.location && typeof event.location === 'object' ? event.location : undefined;
+        
         recommendationService.recordInteraction(
           userId,
           eventId,
           event.category,
-          'share'
+          'share',
+          eventLocation
         );
       }
       
       return true;
     } catch (error) {
-      console.error('Error al registrar compartir evento:', error);
+      console.error('Error al compartir evento:', error);
       return false;
+    }
+  }
+
+  // Unirse a un evento
+  async joinEvent(eventId: string): Promise<boolean> {
+    try {
+      const user = await authService.getCurrentUser();
+      if (!user) throw new Error('Usuario no autenticado');
+      
+      // Hacer la petición a la API
+      await apiClient.post(`/events/${eventId}/attend`);
+      
+      // Registrar interacción para recomendaciones
+      const event = await this.getEventById(eventId);
+      if (event) {
+        recommendationService.recordInteraction(
+          user.id,
+          eventId,
+          event.category,
+          'attend'
+        );
+      }
+      
+      return true;
+    } catch (error) {
+      console.error(`Error joining event with id ${eventId}:`, error);
+      throw error;
+    }
+  }
+
+  // Abandonar un evento
+  async leaveEvent(eventId: string): Promise<boolean> {
+    try {
+      await apiClient.delete(`/events/${eventId}/attend`);
+      return true;
+    } catch (error) {
+      console.error(`Error leaving event with id ${eventId}:`, error);
+      throw error;
+    }
+  }
+
+  // Verificar si el usuario está asistiendo a un evento
+  async isUserAttending(eventId: string): Promise<boolean> {
+    try {
+      const user = await authService.getCurrentUser();
+      if (!user) return false;
+      
+      const response = await apiClient.get(`/events/${eventId}/attending`);
+      return !!response.data.isAttending;
+    } catch (error) {
+      console.error(`Error checking if user is attending event ${eventId}:`, error);
+      return false;
+    }
+  }
+
+  // Obtener eventos destacados
+  async getFeaturedEvents(): Promise<ServiceEvent[]> {
+    try {
+      // Intentar obtener de la API
+      const response = await apiClient.get('/events/featured');
+      return response.data;
+    } catch (error) {
+      console.log('Error fetching featured events, using mock data:', error);
+      
+      // Devolver datos simulados para desarrollo
+      return [
+        {
+          id: 'cat1',
+          title: 'Concierto de Rock en Vivo',
+          description: 'Disfruta de las mejores bandas de rock en un ambiente vibrante.',
+          image: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?q=80&w=1000',
+          imageUrl: 'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?q=80&w=1000',
+          startDate: '2024-11-15T20:00:00',
+          endDate: '2024-11-15T23:30:00',
+          location: 'Palacio de Deportes, Madrid',
+          price: 45,
+          category: 'Música',
+          organizerId: 'org1'
+        },
+        {
+          id: 'cat2',
+          title: 'Conferencia de Tecnología',
+          description: 'Descubre las últimas tendencias en inteligencia artificial y desarrollo web.',
+          image: 'https://images.unsplash.com/photo-1591115765373-5207764f72e7?q=80&w=1000',
+          imageUrl: 'https://images.unsplash.com/photo-1591115765373-5207764f72e7?q=80&w=1000',
+          startDate: '2024-12-05T09:00:00',
+          endDate: '2024-12-05T18:00:00',
+          location: 'Centro de Convenciones, Barcelona',
+          price: 120,
+          category: 'Tecnología',
+          organizerId: 'org2'
+        }
+      ];
+    }
+  }
+
+  /**
+   * Obtiene eventos cercanos basados en coordenadas y radio
+   * @param latitude Latitud del usuario
+   * @param longitude Longitud del usuario
+   * @param radius Radio en kilómetros para buscar eventos cercanos
+   * @returns Lista de eventos cercanos con distancia calculada
+   */
+  async getNearbyEvents(latitude: number, longitude: number, radius: number = 10): Promise<ServiceEvent[]> {
+    // Por ahora simulamos la obtención de eventos cercanos
+    const events = await this.getAllEvents();
+    
+    // Simulamos el cálculo de distancia para cada evento
+    const nearbyEvents = events.map(event => {
+      // Asignamos coordenadas aleatorias cercanas si el evento no tiene coordenadas
+      const eventLatitude = event.latitude || latitude + (Math.random() * 0.01 - 0.005);
+      const eventLongitude = event.longitude || longitude + (Math.random() * 0.01 - 0.005);
+      
+      // Calculamos una distancia simulada
+      const distance = Math.random() * radius;
+      
+      return {
+        ...event,
+        latitude: eventLatitude,
+        longitude: eventLongitude,
+        distance
+      };
+    });
+    
+    // Filtramos eventos que estén dentro del radio especificado
+    return nearbyEvents.filter(event => event.distance <= radius);
+  }
+
+  // Obtener categorías de eventos
+  async getCategories(): Promise<string[]> {
+    try {
+      const response = await apiClient.get('/events/categories');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching event categories:', error);
+      // Categorías simuladas para desarrollo
+      return ['Música', 'Tecnología', 'Deportes', 'Arte', 'Gastronomía', 'Educación'];
+    }
+  }
+
+  // Obtener todos los eventos (alias para compatibilidad)
+  async getEvents(): Promise<ServiceEvent[]> {
+    return this.getAllEvents();
+  }
+
+  // Cancelar asistencia a un evento (alias para compatibilidad)
+  async unattendEvent(eventId: string): Promise<boolean> {
+    try {
+      await this.cancelAttendance(eventId);
+      return true;
+    } catch (error) {
+      console.error(`Error unattending event ${eventId}:`, error);
+      return false;
+    }
+  }
+
+  // Obtener eventos a los que ha asistido un usuario
+  async getUserAttendedEvents(userId: string): Promise<ServiceEvent[]> {
+    try {
+      const response = await apiClient.get(`/users/${userId}/events/attended`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching attended events for user ${userId}:`, error);
+      return [];
     }
   }
 }

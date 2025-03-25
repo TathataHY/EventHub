@@ -10,237 +10,157 @@ import {
   ImageSourcePropType,
   TouchableOpacity,
 } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import theme from '../../theme';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../hooks/useTheme';
+import { Icon } from './Icon';
+import { getColorValue } from '@theme/theme.types';
 
 type AvatarSize = 'tiny' | 'small' | 'medium' | 'large' | 'xlarge' | number;
 type AvatarShape = 'circle' | 'square' | 'rounded';
 type AvatarStatus = 'online' | 'offline' | 'away' | 'busy' | 'none';
+type FontWeightType = "normal" | "bold" | "100" | "200" | "300" | "400" | "500" | "600" | "700" | "800" | "900";
 
 interface AvatarProps {
-  source?: ImageSourcePropType;
+  source?: string | null;
+  imageUrl?: string | null; // Alias para compatibilidad
+  uri?: string | null; // Otro alias para compatibilidad
   name?: string;
-  initials?: string;
-  size?: AvatarSize;
-  shape?: AvatarShape;
-  status?: AvatarStatus;
-  icon?: string;
-  backgroundColor?: string;
-  style?: StyleProp<ViewStyle>;
-  textStyle?: StyleProp<TextStyle>;
-  onPress?: () => void;
-  statusPosition?: 'top-right' | 'bottom-right';
-  statusSize?: number;
-  variant?: 'circle' | 'rounded' | 'square';
+  size?: number;
+  style?: ViewStyle;
+  showStatus?: boolean;
+  isOnline?: boolean;
 }
 
-export const Avatar: React.FC<AvatarProps> = ({
+/**
+ * Componente Avatar para mostrar imagen de perfil o iniciales
+ */
+export const Avatar = ({
   source,
-  name,
-  initials,
-  size = 'medium',
-  shape = 'circle',
-  status = 'none',
-  icon,
-  backgroundColor,
+  imageUrl,
+  uri,
+  name = '',
+  size = 40,
   style,
-  textStyle,
-  onPress,
-  statusPosition = 'bottom-right',
-  statusSize,
-  variant = 'circle',
-}) => {
-  // Determine size based on preset or custom number
-  const getSize = () => {
-    if (typeof size === 'number') {
-      return size;
-    }
-    
-    switch (size) {
-      case 'tiny':
-        return 24;
-      case 'small':
-        return 32;
-      case 'large':
-        return 64;
-      case 'xlarge':
-        return 96;
-      default:
-        return 48;
-    }
-  };
+  showStatus = false,
+  isOnline = false,
+}: AvatarProps) => {
+  const { theme } = useTheme();
   
-  // Determine border radius based on variant
-  const getBorderRadius = () => {
-    const actualSize = getSize();
-    
-    switch (variant) {
-      case 'circle':
-        return actualSize / 2;
-      case 'rounded':
-        return 8;
-      case 'square':
-        return 0;
-      default:
-        return actualSize / 2;
-    }
-  };
+  // Usar cualquiera de las propiedades disponibles para la URL de la imagen
+  const imageSource = source || imageUrl || uri;
   
-  // Get initials from name
+  // Obtener iniciales del nombre
   const getInitials = () => {
-    if (initials) return initials;
-    if (name) {
-      const nameParts = name.split(' ');
-      if (nameParts.length >= 2) {
-        return `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase();
-      }
-      return name.substring(0, 2).toUpperCase();
+    if (!name) return '';
+    
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) {
+      return parts[0].charAt(0).toUpperCase();
     }
-    return '';
+    
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
   };
   
-  const avatarSize = getSize();
-  const borderRadius = getBorderRadius();
-  const displayedInitials = getInitials();
-
-  // Determinar el color según el estado
-  const getStatusColor = () => {
-    switch (status) {
-      case 'online':
-        return theme.colors.success.main;
-      case 'offline':
-        return theme.colors.text.disabled;
-      case 'away':
-        return theme.colors.warning.main;
-      case 'busy':
-        return theme.colors.error.main;
-      default:
-        return 'transparent';
-    }
+  // Estilos dinámicos basados en props
+  const containerStyle = {
+    width: size,
+    height: size,
+    borderRadius: size / 2,
   };
-
-  const statusDotSize = statusSize || Math.max(avatarSize / 6, 8);
-  const statusPadding = statusSize ? 0 : 2;
-
-  // Estilos del contenedor
-  const containerStyles = [
-    styles.container,
-    {
-      width: avatarSize,
-      height: avatarSize,
-      borderRadius,
-      backgroundColor: backgroundColor || theme.colors.primary.light,
-    },
-    style,
-  ];
-
-  // Estilo para la posición del indicador de estado
-  const statusPositionStyle = {
-    top: statusPosition === 'top-right' ? -statusDotSize / 4 : undefined,
-    bottom: statusPosition === 'bottom-right' ? -statusDotSize / 4 : undefined,
-    right: -statusDotSize / 4,
+  
+  const textStyle = {
+    fontSize: size * 0.4,
   };
+  
+  const statusStyle = {
+    width: size * 0.3,
+    height: size * 0.3,
+    borderRadius: size * 0.15,
+    bottom: 0,
+    right: 0,
+    backgroundColor: isOnline 
+      ? getColorValue(theme.colors.success.main) 
+      : getColorValue(theme.colors.grey[400]),
+  };
+  
+  // Determinar el color del borde en función del estado
+  const borderColor = isOnline !== undefined 
+    ? isOnline 
+      ? getColorValue(theme.colors.success.main)
+      : getColorValue(theme.colors.grey[400])
+    : 'transparent';
 
-  // Renderizar el contenido del avatar
-  const renderContent = () => {
-    if (source) {
+  // Resolver la imagen a mostrar
+  const resolveImage = () => {
+    if (uri) {
       return (
         <Image
-          source={source}
+          source={{ uri }}
           style={[
             styles.image,
-            { borderRadius },
-          ]}
-        />
-      );
-    }
-
-    if (icon) {
-      return (
-        <FontAwesome
-          name={icon}
-          size={avatarSize * 0.5}
-          color={theme.colors.text.onPrimary}
-        />
-      );
-    }
-
-    if (displayedInitials) {
-      return (
-        <Text
-          style={[
-            styles.text,
+            containerStyle,
             {
-              fontSize: avatarSize * 0.4,
-            },
-            textStyle,
+              width: size,
+              height: size,
+              borderRadius: size / 2,
+              borderColor: borderColor,
+              borderWidth: 1
+            }
           ]}
-        >
-          {displayedInitials}
-        </Text>
+          resizeMode="cover"
+        />
       );
     }
-
-    // Fallback a un ícono de usuario
+    
+    // Si no hay imagen, mostrar iniciales
     return (
-      <FontAwesome
-        name="user"
-        size={avatarSize * 0.5}
-        color={theme.colors.text.onPrimary}
-      />
+      <View style={[
+        styles.placeholder,
+        containerStyle,
+        {
+          backgroundColor: getColorValue(theme.colors.primary.light)
+        }
+      ]}>
+        <Text style={[
+          styles.initials,
+          textStyle,
+          { color: getColorValue(theme.colors.primary.main) }
+        ]}>
+          {getInitials()}
+        </Text>
+      </View>
     );
   };
-
-  const avatarContent = (
-    <View style={containerStyles}>
-      {renderContent()}
-      {status !== 'none' && (
-        <View
-          style={[
-            styles.statusIndicator,
-            statusPositionStyle,
-            {
-              width: statusDotSize,
-              height: statusDotSize,
-              backgroundColor: getStatusColor(),
-              borderRadius: statusDotSize / 2,
-              borderWidth: statusPadding,
-            },
-          ]}
-        />
+  
+  return (
+    <View style={[styles.container, style]}>
+      {resolveImage()}
+      
+      {showStatus && (
+        <View style={[styles.statusIndicator, statusStyle]} />
       )}
     </View>
   );
-
-  // Si hay onPress, envolver en TouchableOpacity
-  if (onPress) {
-    return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-        {avatarContent}
-      </TouchableOpacity>
-    );
-  }
-
-  return avatarContent;
 };
 
 const styles = StyleSheet.create({
   container: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
+    position: 'relative',
   },
   image: {
-    width: '100%',
-    height: '100%',
+    backgroundColor: '#E1E1E1',
   },
-  text: {
-    color: theme.colors.text.onPrimary,
+  placeholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  initials: {
     fontWeight: 'bold',
   },
   statusIndicator: {
     position: 'absolute',
-    borderColor: theme.colors.background.default,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
 });
 

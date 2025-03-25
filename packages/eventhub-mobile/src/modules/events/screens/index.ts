@@ -13,4 +13,8 @@ export { EventFormScreen } from './EventFormScreen';
 
 // Otras pantallas relacionadas con eventos
 export { EventCommentsScreen } from './EventCommentsScreen';
-export { EventLocationScreen } from './EventLocationScreen'; 
+export { EventLocationScreen } from './EventLocationScreen';
+export { EventAttendeesScreen } from './EventAttendeesScreen';
+
+// Exportaciones de la carpeta de pantallas del módulo events
+export { SavedEventsScreen } from './SavedEventsScreen'; 

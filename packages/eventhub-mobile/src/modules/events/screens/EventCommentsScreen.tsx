@@ -7,11 +7,13 @@ import {
   TextInput, 
   TouchableOpacity,
   ActivityIndicator,
-  Alert
+  Alert,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
-import { useTheme } from '../../../core/theme';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@core/context/ThemeContext';
 import { commentService } from '../services';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -20,12 +22,13 @@ import { es } from 'date-fns/locale';
  * Pantalla de comentarios de un evento
  */
 export const EventCommentsScreen = () => {
-  const { colors } = useTheme();
+  const { theme } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const { user } = useLocalSearchParams<{ user: any }>();
   
   // Cargar comentarios
   useEffect(() => {
@@ -47,18 +50,29 @@ export const EventCommentsScreen = () => {
   
   // Enviar un nuevo comentario
   const handleSendComment = async () => {
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || isSending) return;
     
+    setIsSending(true);
     try {
-      setIsSending(true);
       const commentData = {
         eventId: id?.toString() || '',
+        userId: user?.id || 'anonymous',
+        userName: user?.name || 'Usuario anónimo',
+        userAvatar: user?.avatar || '',
         text: newComment.trim(),
-        userId: 'currentUser', // En una implementación real, obtener del contexto de autenticación
         date: new Date().toISOString()
       };
       
-      const addedComment = await commentService.addComment(commentData);
+      const addedComment = await commentService.addComment(
+        commentData.eventId,
+        commentData.text,
+        0, // rating (opcional o valor predeterminado)
+        {
+          userId: commentData.userId,
+          userName: commentData.userName,
+          userAvatar: commentData.userAvatar
+        }
+      );
       setComments(prevComments => [addedComment, ...prevComments]);
       setNewComment('');
     } catch (error) {
@@ -81,28 +95,28 @@ export const EventCommentsScreen = () => {
   
   // Renderizar un comentario
   const renderComment = ({ item }: { item: any }) => (
-    <View style={[styles.commentContainer, { backgroundColor: colors.card }]}>
+    <View style={[styles.commentContainer, { backgroundColor: theme.colors.background.paper }]}>
       <View style={styles.commentHeader}>
-        <Text style={[styles.userName, { color: colors.text }]}>
+        <Text style={[styles.userName, { color: theme.colors.text.primary }]}>
           {item.userName || 'Usuario'}
         </Text>
-        <Text style={[styles.commentDate, { color: colors.secondaryText }]}>
+        <Text style={[styles.commentDate, { color: theme.colors.text.primary }]}>
           {formatDate(item.date)}
         </Text>
       </View>
       
-      <Text style={[styles.commentText, { color: colors.text }]}>
+      <Text style={[styles.commentText, { color: theme.colors.text.primary }]}>
         {item.text}
       </Text>
     </View>
   );
   
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background.default }]}>
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.text }]}>
+          <ActivityIndicator size="large" color={theme.colors.primary.main} />
+          <Text style={[styles.loadingText, { color: theme.colors.text.primary }]}>
             Cargando comentarios...
           </Text>
         </View>
@@ -115,22 +129,22 @@ export const EventCommentsScreen = () => {
             contentContainerStyle={styles.listContainer}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Ionicons name="chatbubble-outline" size={60} color={colors.secondaryText} />
-                <Text style={[styles.emptyText, { color: colors.text }]}>
+                <Ionicons name="chatbubble-outline" size={60} color={theme.colors.text.secondary} />
+                <Text style={[styles.emptyText, { color: theme.colors.text.primary }]}>
                   No hay comentarios
                 </Text>
-                <Text style={[styles.emptySubtext, { color: colors.secondaryText }]}>
+                <Text style={[styles.emptySubtext, { color: theme.colors.text.secondary }]}>
                   ¡Sé el primero en comentar!
                 </Text>
               </View>
             }
           />
           
-          <View style={[styles.inputContainer, { backgroundColor: colors.card }]}>
+          <View style={[styles.inputContainer, { backgroundColor: theme.colors.background.paper }]}>
             <TextInput
-              style={[styles.input, { color: colors.text }]}
+              style={[styles.input, { color: theme.colors.text.primary }]}
               placeholder="Escribe un comentario..."
-              placeholderTextColor={colors.secondaryText}
+              placeholderTextColor={theme.colors.text.secondary}
               value={newComment}
               onChangeText={setNewComment}
               multiline

@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { eventService } from './event.service';
-import { authService } from './auth.service';
+import { eventService } from '@modules/events/services/event.service';
+import { authService } from '@modules/auth/services/auth.service';
+import { MOCK_ACHIEVEMENTS } from '../../../core/mocks/achievements.mock';
 
 // Interfaces para la gestión de logros
 export interface Achievement {
@@ -376,4 +377,5 @@ class AchievementService {
   }
 }
 
+// Exportamos una única instancia del servicio
 export const achievementService = new AchievementService(); 

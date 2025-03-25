@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Image, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@theme';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 interface UserAvatarProps {
   photoURL?: string | null;
@@ -18,6 +18,8 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   showEditButton = false,
   onEditPress
 }) => {
+  const { theme } = useTheme();
+  
   // Determinar tamaños dinámicos basados en el prop size
   const borderRadius = size / 2;
   const defaultIconSize = size * 0.6;
@@ -38,7 +40,12 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
         <View
           style={[
             styles.placeholderAvatar,
-            { width: size, height: size, borderRadius }
+            { 
+              width: size, 
+              height: size, 
+              borderRadius,
+              backgroundColor: theme.colors.grey[400]
+            }
           ]}
         >
           <Ionicons
@@ -56,7 +63,8 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
             { 
               width: editButtonSize * 2, 
               height: editButtonSize * 2,
-              borderRadius: editButtonSize 
+              borderRadius: editButtonSize,
+              backgroundColor: theme.colors.primary.main
             }
           ]}
           onPress={onEditPress}
@@ -81,7 +89,6 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
   },
   placeholderAvatar: {
-    backgroundColor: colors.gray,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
@@ -91,7 +98,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     bottom: 0,
-    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,

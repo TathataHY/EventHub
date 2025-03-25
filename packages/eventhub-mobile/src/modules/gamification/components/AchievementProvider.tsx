@@ -1,102 +1,273 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { View } from 'react-native';
-import { achievementService } from '../../services/achievement.service';
+import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Achievement } from '@modules/gamification/types';
 import { AchievementUnlocked } from './AchievementUnlocked';
 
-// Definición del contexto
+// Definir la estructura del contexto
 interface AchievementContextType {
-  showAchievementNotification: (achievementId: string) => void;
-  checkAndTriggerAchievement: (type: string, data?: any) => Promise<void>;
+  achievements: Achievement[];
+  unlockedAchievements: Achievement[];
+  progressMap: Record<string, number>;
+  loading: boolean;
+  unlockAchievement: (achievementId: string) => Promise<boolean>;
+  updateProgress: (achievementId: string, progress: number) => Promise<Achievement | null>;
+  resetProgress: () => Promise<void>;
 }
 
-const AchievementContext = createContext<AchievementContextType | null>(null);
+// Crear el contexto
+const AchievementContext = createContext<AchievementContextType | undefined>(undefined);
 
-// Custom hook para usar el contexto de logros
-export const useAchievements = () => {
-  const context = useContext(AchievementContext);
-  if (!context) {
-    throw new Error('useAchievements debe ser utilizado dentro de un AchievementProvider');
-  }
-  return context;
-};
+// Clave para storage
+const ACHIEVEMENTS_STORAGE_KEY = 'achievements_data';
+const PROGRESS_STORAGE_KEY = 'achievements_progress';
 
-// Provider del contexto de logros
-export const AchievementProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentAchievement, setCurrentAchievement] = useState<any>(null);
-  const [notificationQueue, setNotificationQueue] = useState<string[]>([]);
-  const [isShowingNotification, setIsShowingNotification] = useState(false);
+// Props para el proveedor
+interface AchievementProviderProps {
+  children: ReactNode;
+  // Logros disponibles en la aplicación
+  availableAchievements?: Achievement[];
+}
 
-  // Procesar la cola de notificaciones
+export const AchievementProvider: React.FC<AchievementProviderProps> = ({
+  children,
+  availableAchievements = []
+}) => {
+  // Estado para logros y progreso
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [progressMap, setProgressMap] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+  const [unlockedAchievement, setUnlockedAchievement] = useState<Achievement | null>(null);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+
+  // Cargar logros almacenados al inicio
   useEffect(() => {
-    if (notificationQueue.length > 0 && !isShowingNotification) {
-      const processNextNotification = async () => {
-        setIsShowingNotification(true);
-        const nextAchievementId = notificationQueue[0];
+    const loadAchievements = async () => {
+      try {
+        // Combinar logros almacenados con los disponibles
+        const storedAchievementsJson = await AsyncStorage.getItem(ACHIEVEMENTS_STORAGE_KEY);
+        const storedProgressJson = await AsyncStorage.getItem(PROGRESS_STORAGE_KEY);
         
-        try {
-          const achievement = await achievementService.getAchievementById(nextAchievementId);
-          if (achievement) {
-            setCurrentAchievement(achievement);
-          }
-        } catch (error) {
-          console.error('Error al obtener detalles del logro:', error);
+        let storedAchievements: Achievement[] = [];
+        if (storedAchievementsJson) {
+          storedAchievements = JSON.parse(storedAchievementsJson);
         }
-      };
-      
-      processNextNotification();
-    }
-  }, [notificationQueue, isShowingNotification]);
-
-  // Mostrar una notificación de logro
-  const showAchievementNotification = (achievementId: string) => {
-    setNotificationQueue(prev => [...prev, achievementId]);
-  };
-
-  // Cerrar la notificación actual
-  const handleCloseNotification = () => {
-    setCurrentAchievement(null);
-    setIsShowingNotification(false);
-    setNotificationQueue(prev => prev.slice(1));
-  };
-
-  // Comprobar y disparar eventos de logro
-  const checkAndTriggerAchievement = async (type: string, data?: any) => {
-    try {
-      // Simula un ID de usuario (deberá ser reemplazado por el usuario autenticado)
-      const userId = "1"; 
-      
-      // Obtener logros desbloqueados por esta acción
-      const unlockedAchievements = await achievementService.checkAchievementProgress(userId, type, data);
-      
-      // Añadir a la cola de notificaciones cualquier logro desbloqueado
-      if (unlockedAchievements && unlockedAchievements.length > 0) {
-        unlockedAchievements.forEach(achievement => {
-          showAchievementNotification(achievement.id);
+        
+        let progress: Record<string, number> = {};
+        if (storedProgressJson) {
+          progress = JSON.parse(storedProgressJson);
+        }
+        
+        // Fusionar logros almacenados con los disponibles
+        const mergedAchievements = availableAchievements.map(achievement => {
+          const storedAchievement = storedAchievements.find(stored => stored.id === achievement.id);
+          
+          if (storedAchievement) {
+            return {
+              ...achievement,
+              isUnlocked: storedAchievement.isUnlocked,
+              unlockedAt: storedAchievement.unlockedAt,
+              progressValue: progress[achievement.id] || 0
+            };
+          }
+          
+          return {
+            ...achievement,
+            isUnlocked: false,
+            progressValue: progress[achievement.id] || 0
+          };
         });
+        
+        setAchievements(mergedAchievements);
+        setProgressMap(progress);
+      } catch (error) {
+        console.error('Error al cargar logros:', error);
+      } finally {
+        setLoading(false);
       }
+    };
+    
+    loadAchievements();
+  }, [availableAchievements]);
+  
+  // Actualizar storage con los logros actuales
+  const saveAchievements = async (updatedAchievements: Achievement[]) => {
+    try {
+      // Guardar solo datos relevantes y no todo el objeto
+      const achievementsToStore = updatedAchievements.map(achievement => ({
+        id: achievement.id,
+        isUnlocked: achievement.isUnlocked,
+        unlockedAt: achievement.unlockedAt
+      }));
+      
+      await AsyncStorage.setItem(
+        ACHIEVEMENTS_STORAGE_KEY,
+        JSON.stringify(achievementsToStore)
+      );
     } catch (error) {
-      console.error('Error al comprobar progreso de logros:', error);
+      console.error('Error al guardar logros:', error);
     }
   };
-
+  
+  // Guardar progreso en storage
+  const saveProgress = async (updatedProgress: Record<string, number>) => {
+    try {
+      await AsyncStorage.setItem(
+        PROGRESS_STORAGE_KEY,
+        JSON.stringify(updatedProgress)
+      );
+    } catch (error) {
+      console.error('Error al guardar progreso:', error);
+    }
+  };
+  
+  // Desbloquear un logro por ID
+  const unlockAchievement = async (achievementId: string): Promise<boolean> => {
+    const achievement = achievements.find(a => a.id === achievementId);
+    
+    if (!achievement || achievement.isUnlocked) {
+      return false;
+    }
+    
+    const updatedAchievements = achievements.map(a => {
+      if (a.id === achievementId) {
+        const unlockedAchievement = {
+          ...a,
+          isUnlocked: true,
+          unlockedAt: new Date().toISOString(),
+          progressValue: a.threshold
+        };
+        
+        // Mostrar modal de logro desbloqueado
+        setUnlockedAchievement(unlockedAchievement);
+        setShowUnlockModal(true);
+        
+        return unlockedAchievement;
+      }
+      return a;
+    });
+    
+    setAchievements(updatedAchievements);
+    
+    // Actualizar progreso
+    const updatedProgress = { ...progressMap, [achievementId]: achievement.threshold };
+    setProgressMap(updatedProgress);
+    
+    // Guardar cambios
+    await saveAchievements(updatedAchievements);
+    await saveProgress(updatedProgress);
+    
+    return true;
+  };
+  
+  // Actualizar progreso de un logro
+  const updateProgress = async (
+    achievementId: string, 
+    progress: number
+  ): Promise<Achievement | null> => {
+    const achievementIndex = achievements.findIndex(a => a.id === achievementId);
+    
+    if (achievementIndex === -1) {
+      return null;
+    }
+    
+    const achievement = achievements[achievementIndex];
+    
+    // Si ya está desbloqueado, no actualizar progreso
+    if (achievement.isUnlocked) {
+      return achievement;
+    }
+    
+    // Actualizar progreso
+    const currentProgress = progressMap[achievementId] || 0;
+    const newProgress = Math.max(currentProgress, progress);
+    
+    // Verificar si se ha alcanzado o superado el umbral
+    if (newProgress >= achievement.threshold && !achievement.isUnlocked) {
+      // Desbloquear logro
+      return unlockAchievement(achievementId).then(success => {
+        return success ? achievements.find(a => a.id === achievementId) || null : null;
+      });
+    }
+    
+    // Solo actualizar progreso
+    const updatedProgress = { ...progressMap, [achievementId]: newProgress };
+    setProgressMap(updatedProgress);
+    
+    // Actualizar el logro con el nuevo progreso
+    const updatedAchievements = [...achievements];
+    updatedAchievements[achievementIndex] = {
+      ...achievement,
+      progressValue: newProgress
+    };
+    
+    setAchievements(updatedAchievements);
+    
+    // Guardar progreso
+    await saveProgress(updatedProgress);
+    
+    return updatedAchievements[achievementIndex];
+  };
+  
+  // Resetear todo el progreso (para testing)
+  const resetProgress = async () => {
+    const resetAchievements = achievements.map(achievement => ({
+      ...achievement,
+      isUnlocked: false,
+      unlockedAt: undefined,
+      progressValue: 0
+    }));
+    
+    setAchievements(resetAchievements);
+    setProgressMap({});
+    
+    await saveAchievements(resetAchievements);
+    await saveProgress({});
+  };
+  
+  // Cerrar modal de logro desbloqueado
+  const handleCloseUnlockModal = () => {
+    setShowUnlockModal(false);
+    setUnlockedAchievement(null);
+  };
+  
+  // Obtener logros desbloqueados
+  const unlockedAchievements = achievements.filter(a => a.isUnlocked);
+  
+  // Valor del contexto
+  const contextValue: AchievementContextType = {
+    achievements,
+    unlockedAchievements,
+    progressMap,
+    loading,
+    unlockAchievement,
+    updateProgress,
+    resetProgress
+  };
+  
   return (
-    <AchievementContext.Provider 
-      value={{ 
-        showAchievementNotification, 
-        checkAndTriggerAchievement 
-      }}
-    >
+    <AchievementContext.Provider value={contextValue}>
       {children}
       
-      {/* Componente de notificación de logro */}
-      {currentAchievement && (
-        <AchievementUnlocked 
-          achievement={currentAchievement}
-          onClose={handleCloseNotification}
-          autoDismiss={true}
-          dismissTime={5000}
+      {/* Modal para mostrar logros desbloqueados */}
+      {unlockedAchievement && (
+        <AchievementUnlocked
+          achievement={unlockedAchievement}
+          visible={showUnlockModal}
+          onClose={handleCloseUnlockModal}
         />
       )}
     </AchievementContext.Provider>
   );
+};
+
+// Hook personalizado para usar el contexto
+export const useAchievements = (): AchievementContextType => {
+  const context = useContext(AchievementContext);
+  
+  if (context === undefined) {
+    throw new Error('useAchievements debe usarse dentro de un AchievementProvider');
+  }
+  
+  return context;
 }; 

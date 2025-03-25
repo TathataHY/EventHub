@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, ColorValue } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { lightTheme } from '../../theme/variants/light';
 import { darkTheme } from '../../theme/variants/dark';
@@ -8,19 +8,21 @@ import { darkTheme } from '../../theme/variants/dark';
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 // Definir tipo de contexto de tema
-interface ThemeContextType {
+export interface ThemeContextType {
   theme: typeof lightTheme | typeof darkTheme;
   isDark: boolean;
   toggleTheme: () => void;
   changeTheme: (mode: ThemeMode) => void;
+  getColorValue: (colorOrPath: string | ColorValue) => string;
 }
 
 // Crear contexto
-const ThemeContext = createContext<ThemeContextType>({
+export const ThemeContext = createContext<ThemeContextType>({
   theme: lightTheme,
   isDark: false,
   toggleTheme: () => {},
   changeTheme: () => {},
+  getColorValue: () => '#000000'
 });
 
 // Clave para almacenamiento de preferencia de tema
@@ -29,6 +31,18 @@ const THEME_PREFERENCE_KEY = 'theme_preference';
 interface ThemeProviderProps {
   children: ReactNode;
 }
+
+// Utilidad para obtener valores de color
+const getColorValue = (colorOrPath: string | ColorValue): string => {
+  if (!colorOrPath) return '#000000';
+  
+  if (typeof colorOrPath === 'string') {
+    return colorOrPath;
+  }
+  
+  // Si es un objeto ColorValue, convertirlo a string
+  return String(colorOrPath);
+};
 
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const systemColorScheme = useColorScheme();
@@ -93,7 +107,13 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, isDark, toggleTheme, changeTheme }}>
+    <ThemeContext.Provider value={{ 
+      theme, 
+      isDark, 
+      toggleTheme, 
+      changeTheme,
+      getColorValue
+    }}>
       {children}
     </ThemeContext.Provider>
   );

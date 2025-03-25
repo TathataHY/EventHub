@@ -8,9 +8,9 @@ import {
   RefreshControl,
   ListRenderItemInfo
 } from 'react-native';
-import { Event } from '../types';
+import { Event } from '@modules/events/types';
 import { EventCard } from './EventCard';
-import { colors } from '@theme';
+import { useTheme } from '../../../shared/hooks/useTheme';
 
 interface EventsListProps {
   events: Event[];
@@ -19,7 +19,6 @@ interface EventsListProps {
   onRefresh?: () => void;
   onEventPress?: (event: Event) => void;
   emptyText?: string;
-  compact?: boolean;
 }
 
 export const EventsList: React.FC<EventsListProps> = ({
@@ -28,15 +27,15 @@ export const EventsList: React.FC<EventsListProps> = ({
   isRefreshing = false,
   onRefresh,
   onEventPress,
-  emptyText = "No hay eventos disponibles",
-  compact = false
+  emptyText = "No hay eventos disponibles"
 }) => {
+  const { theme } = useTheme();
+  
   // Renderizar cada ítem de la lista
   const renderItem = ({ item }: ListRenderItemInfo<Event>) => (
     <EventCard
       event={item}
-      onPress={() => onEventPress?.(item)}
-      compact={compact}
+      onPress={onEventPress ? () => onEventPress(item) : undefined}
     />
   );
 
@@ -46,7 +45,9 @@ export const EventsList: React.FC<EventsListProps> = ({
 
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>{emptyText}</Text>
+        <Text style={[styles.emptyText, { color: theme.colors.text.secondary }]}>
+          {emptyText}
+        </Text>
       </View>
     );
   };
@@ -57,14 +58,16 @@ export const EventsList: React.FC<EventsListProps> = ({
 
     return (
       <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loaderText}>Cargando eventos...</Text>
+        <ActivityIndicator size="large" color={theme.colors.primary.main} />
+        <Text style={[styles.loaderText, { color: theme.colors.text.primary }]}>
+          Cargando eventos...
+        </Text>
       </View>
     );
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background.default }]}>
       {/* Mostrar loader si está cargando inicialmente */}
       {isLoading && events.length === 0 ? (
         renderLoader()
@@ -75,12 +78,13 @@ export const EventsList: React.FC<EventsListProps> = ({
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={renderEmptyComponent}
+          numColumns={2}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={onRefresh}
-              colors={[colors.primary]}
-              tintColor={colors.primary}
+              colors={[theme.colors.primary.main]}
+              tintColor={theme.colors.primary.main}
             />
           }
         />
@@ -92,35 +96,32 @@ export const EventsList: React.FC<EventsListProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   listContent: {
-    padding: 16,
-    paddingBottom: 24,
+    padding: 12,
+    paddingBottom: 32,
     flexGrow: 1,
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
-    minHeight: 200,
+    padding: 40,
+    minHeight: 250,
   },
   emptyText: {
     fontSize: 16,
-    color: colors.textLight,
     textAlign: 'center',
   },
   loaderContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 32,
-    minHeight: 200,
+    padding: 40,
+    minHeight: 250,
   },
   loaderText: {
-    marginTop: 12,
+    marginTop: 16,
     fontSize: 16,
-    color: colors.textDark,
   },
 }); 

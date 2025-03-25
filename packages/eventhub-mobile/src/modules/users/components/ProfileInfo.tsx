@@ -5,14 +5,18 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   TextInput,
-  ScrollView
+  ScrollView,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { User, UpdateProfileParams } from '../types';
-import { colors } from '@core/theme';
+import { Card, Divider } from '@shared/components/ui';
+import { theme } from '@theme/index';
+import { UpdateProfileParams, UserProfile } from '@modules/users/types/user.types';
+import { colors } from '@theme/base/colors';
+import { getColorValue } from '@theme/index';
 
 interface ProfileInfoProps {
-  user: User;
+  user: UserProfile;
   isEditable?: boolean;
   onSave?: (profileData: UpdateProfileParams) => Promise<{ success: boolean, error?: string }>;
 }
@@ -23,8 +27,8 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({
   onSave
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [fullName, setFullName] = useState(user.fullName);
-  const [username, setUsername] = useState(user.username);
+  const [fullName, setFullName] = useState(user.fullName || user.name || '');
+  const [username, setUsername] = useState(user.username || '');
   const [bio, setBio] = useState(user.bio || '');
   const [phoneNumber, setPhoneNumber] = useState(user.phoneNumber || '');
   const [city, setCity] = useState(user.location?.city || '');
@@ -41,8 +45,8 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({
   // Manejar cancelación de edición
   const handleCancel = () => {
     setIsEditing(false);
-    setFullName(user.fullName);
-    setUsername(user.username);
+    setFullName(user.fullName || user.name || '');
+    setUsername(user.username || '');
     setBio(user.bio || '');
     setPhoneNumber(user.phoneNumber || '');
     setCity(user.location?.city || '');
@@ -119,7 +123,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({
         <Text style={styles.title}>Información de Perfil</Text>
         {isEditable && !isEditing && (
           <TouchableOpacity onPress={handleEdit}>
-            <Ionicons name="create-outline" size={24} color={colors.primary} />
+            <Ionicons name="create-outline" size={24} color={getColorValue(colors.primary)} />
           </TouchableOpacity>
         )}
       </View>
@@ -165,17 +169,17 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({
         ) : (
           // Modo de visualización
           <>
-            {renderField('Nombre Completo', user.fullName)}
-            {renderField('Nombre de Usuario', user.username)}
-            {renderField('Email', user.email)}
-            {renderField('Biografía', user.bio)}
-            {renderField('Teléfono', user.phoneNumber)}
+            {renderField('Nombre Completo', user.fullName || user.name || '')}
+            {renderField('Nombre de Usuario', user.username || '')}
+            {renderField('Email', user.email || '')}
+            {renderField('Biografía', user.bio || '')}
+            {renderField('Teléfono', user.phoneNumber || '')}
             {renderField('Ubicación', [
               user.location?.city, 
               user.location?.state, 
               user.location?.country
             ].filter(Boolean).join(', '))}
-            {renderField('Miembro desde', new Date(user.createdAt).toLocaleDateString('es-ES', {
+            {user.createdAt && renderField('Miembro desde', new Date(user.createdAt).toLocaleDateString('es-ES', {
               year: 'numeric',
               month: 'long',
               day: 'numeric'
@@ -210,35 +214,35 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: colors.textDark,
+    color: colors.text,
   },
   fieldContainer: {
     marginBottom: 16,
   },
   fieldLabel: {
     fontSize: 14,
-    color: colors.textLight,
+    color: colors.text,
     marginBottom: 4,
   },
   fieldValue: {
     fontSize: 16,
-    color: colors.textDark,
+    color: colors.text,
   },
   input: {
     borderWidth: 1,
-    borderColor: colors.lightGray,
+    borderColor: colors.grey[200],
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 16,
-    color: colors.textDark,
+    color: colors.text,
   },
   textArea: {
     minHeight: 100,
     textAlignVertical: 'top',
   },
   errorText: {
-    color: colors.danger,
+    color: colors.error.main,
     marginBottom: 16,
   },
   actionContainer: {
@@ -253,10 +257,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   cancelButton: {
-    backgroundColor: colors.lightGray,
+    backgroundColor: colors.grey[200],
   },
   saveButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: getColorValue(colors.primary),
   },
   buttonText: {
     color: 'white',

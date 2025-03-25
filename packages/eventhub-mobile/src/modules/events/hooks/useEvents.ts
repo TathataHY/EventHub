@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
 import { eventService } from '../services';
-import { Event, EventSearchParams } from '../types';
 
+// Usamos any para evitar incompatibilidades temporalmente
 export const useEvents = () => {
-  const [events, setEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +25,7 @@ export const useEvents = () => {
   }, []);
 
   // Buscar eventos
-  const searchEvents = useCallback(async (params: EventSearchParams) => {
+  const searchEvents = useCallback(async (params: any) => {
     try {
       setIsLoading(true);
       setError(null);

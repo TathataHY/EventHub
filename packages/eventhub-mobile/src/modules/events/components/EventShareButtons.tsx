@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import { sharingService } from '../../services/sharing.service';
-import theme from '../../theme';
+import { sharingService } from '@modules/social/services/sharing.service';
+import { useTheme } from '@core/context/ThemeContext';
 
 interface EventShareButtonsProps {
   eventId: string;
@@ -17,6 +17,7 @@ export const EventShareButtons: React.FC<EventShareButtonsProps> = ({
   eventDate,
   eventLocation,
 }) => {
+  const { theme } = useTheme();
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteMessage, setInviteMessage] = useState('');
   
@@ -46,23 +47,23 @@ export const EventShareButtons: React.FC<EventShareButtonsProps> = ({
   
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Compartir evento</Text>
+      <Text style={[styles.title, { color: theme.colors.text.primary }]}>Compartir evento</Text>
       
       <View style={styles.buttonsRow}>
         <TouchableOpacity 
-          style={styles.shareButton} 
+          style={[styles.shareButton, { backgroundColor: theme.colors.primary.main }]} 
           onPress={handleShare}
         >
           <FontAwesome name="share-alt" size={20} color={theme.colors.common.white} />
-          <Text style={styles.buttonText}>Compartir</Text>
+          <Text style={[styles.buttonText, { color: theme.colors.common.white }]}>Compartir</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={styles.inviteButton} 
+          style={[styles.inviteButton, { backgroundColor: theme.colors.secondary.main }]} 
           onPress={handleInvite}
         >
           <FontAwesome name="envelope-o" size={18} color={theme.colors.common.white} />
-          <Text style={styles.buttonText}>Invitar</Text>
+          <Text style={[styles.buttonText, { color: theme.colors.common.white }]}>Invitar</Text>
         </TouchableOpacity>
       </View>
       
@@ -73,12 +74,19 @@ export const EventShareButtons: React.FC<EventShareButtonsProps> = ({
         onRequestClose={() => setShowInviteModal(false)}
       >
         <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text style={styles.modalTitle}>Invitar a {eventName}</Text>
+          <View style={[styles.modalView, { backgroundColor: theme.colors.background.paper }]}>
+            <Text style={[styles.modalTitle, { color: theme.colors.text.primary }]}>Invitar a {eventName}</Text>
             
-            <Text style={styles.modalSubtitle}>Mensaje personalizado (opcional):</Text>
+            <Text style={[styles.modalSubtitle, { color: theme.colors.text.secondary }]}>Mensaje personalizado (opcional):</Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input, 
+                { 
+                  borderColor: theme.colors.border.main, 
+                  color: theme.colors.text.primary,
+                  backgroundColor: theme.colors.background.default 
+                }
+              ]}
               multiline
               numberOfLines={4}
               value={inviteMessage}
@@ -89,20 +97,28 @@ export const EventShareButtons: React.FC<EventShareButtonsProps> = ({
             
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonCancel]}
+                style={[
+                  styles.modalButton, 
+                  styles.modalButtonCancel,
+                  { backgroundColor: theme.colors.background.default }
+                ]}
                 onPress={() => {
                   setShowInviteModal(false);
                   setInviteMessage('');
                 }}
               >
-                <Text style={styles.modalButtonCancelText}>Cancelar</Text>
+                <Text style={[styles.modalButtonCancelText, { color: theme.colors.text.primary }]}>Cancelar</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={[styles.modalButton, styles.modalButtonSend]}
+                style={[
+                  styles.modalButton, 
+                  styles.modalButtonSend,
+                  { backgroundColor: theme.colors.primary.main }
+                ]}
                 onPress={sendInvitation}
               >
-                <Text style={styles.modalButtonSendText}>Enviar</Text>
+                <Text style={[styles.modalButtonSendText, { color: theme.colors.common.white }]}>Enviar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -114,42 +130,38 @@ export const EventShareButtons: React.FC<EventShareButtonsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: theme.spacing.md,
+    marginVertical: 16,
   },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.sm,
+    marginBottom: 8,
   },
   buttonsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
   shareButton: {
-    backgroundColor: theme.colors.primary.main,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: 8,
     flex: 1,
     marginRight: 8,
   },
   inviteButton: {
-    backgroundColor: theme.colors.secondary.main,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: 8,
     flex: 1,
     marginLeft: 8,
   },
   buttonText: {
-    color: theme.colors.common.white,
     fontWeight: 'bold',
     marginLeft: 8,
   },
@@ -161,10 +173,9 @@ const styles = StyleSheet.create({
   },
   modalView: {
     width: '85%',
-    backgroundColor: theme.colors.background.paper,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
-    shadowColor: theme.colors.common.black,
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
     shadowOffset: {
       width: 0,
       height: 2,
@@ -176,51 +187,42 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.md,
+    marginBottom: 16,
     textAlign: 'center',
   },
   modalSubtitle: {
     fontSize: 16,
-    color: theme.colors.text.secondary,
-    marginBottom: theme.spacing.sm,
+    marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: theme.colors.divider,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
-    color: theme.colors.text.primary,
-    backgroundColor: theme.colors.background.default,
-    marginBottom: theme.spacing.md,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
     minHeight: 100,
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: theme.spacing.sm,
+    marginTop: 8,
   },
   modalButton: {
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: 8,
     flex: 1,
     alignItems: 'center',
   },
   modalButtonCancel: {
-    backgroundColor: theme.colors.background.default,
     marginRight: 8,
   },
   modalButtonCancelText: {
-    color: theme.colors.text.primary,
     fontWeight: 'bold',
   },
   modalButtonSend: {
-    backgroundColor: theme.colors.primary.main,
     marginLeft: 8,
   },
   modalButtonSendText: {
-    color: theme.colors.common.white,
     fontWeight: 'bold',
   },
 }); 

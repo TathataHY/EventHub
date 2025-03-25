@@ -9,6 +9,26 @@ import {
 } from '../mocks/data';
 
 class MockService {
+  private mockStore: Record<string, any> = {};
+  
+  // Método para obtener datos del almacenamiento mock
+  getMockData(key: string, defaultValue?: any): any {
+    if (this.mockStore[key]) {
+      return this.mockStore[key];
+    }
+    // Si hay un valor por defecto, lo guardamos y devolvemos
+    if (defaultValue !== undefined) {
+      this.mockStore[key] = defaultValue;
+      return defaultValue;
+    }
+    return null;
+  }
+  
+  // Método para guardar datos en el almacenamiento mock
+  setMockData(key: string, data: any): void {
+    this.mockStore[key] = data;
+  }
+
   // Métodos para eventos
   async getEvents() {
     return [...mockEvents];
@@ -168,6 +188,19 @@ class MockService {
     return mockEvents.filter(event => 
       mockCurrentUser.eventsOrganized.includes(event.id)
     );
+  }
+
+  /**
+   * Obtiene los asistentes de un evento
+   * @param eventId ID del evento
+   * @returns Lista de usuarios asistentes
+   */
+  async getEventAttendees(eventId: string) {
+    // Simular retardo de red
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    // Devolver usuarios aleatorios como asistentes (en un caso real se filtrarían por el evento)
+    return mockUsers.slice(0, 10);
   }
 }
 

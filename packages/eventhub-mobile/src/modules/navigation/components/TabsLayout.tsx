@@ -1,48 +1,55 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { TouchableOpacity, View } from 'react-native';
-import { useTheme } from '../../../core/context';
+import { TouchableOpacity, View, Image, StyleSheet } from 'react-native';
+import { useTheme } from '../../../shared/hooks/useTheme';
 import { useRouter } from 'expo-router';
 
 /**
  * Componente de navegación por pestañas
  * Versión modular del antiguo TabsLayout
+ * Usa imágenes estáticas en lugar de iconos para evitar problemas con Ionicons
  */
 export const TabsLayout = () => {
-  const { theme, isDark } = useTheme();
+  const { theme } = useTheme();
   const router = useRouter();
+
+  // Colores para las opciones de la pantalla
+  const primaryColor = theme.colors.primary.main;
+  const greyColor = theme.colors.grey[500];
+  const backgroundColor = '#FFFFFF';
+  const borderColor = theme.colors.grey[300];
+  const textColor = theme.colors.text.primary;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.secondaryText,
+        tabBarActiveTintColor: primaryColor,
+        tabBarInactiveTintColor: greyColor,
         tabBarStyle: {
-          backgroundColor: theme.colors.card,
-          borderTopColor: theme.colors.border,
+          backgroundColor: backgroundColor,
+          borderTopColor: borderColor,
         },
         tabBarLabelStyle: {
           fontSize: 12,
         },
         headerStyle: {
-          backgroundColor: theme.colors.card,
+          backgroundColor: backgroundColor,
         },
         headerShadowVisible: false,
-        headerTintColor: theme.colors.text,
+        headerTintColor: textColor,
         headerRight: () => (
           <View style={{ flexDirection: 'row' }}>
             <TouchableOpacity
               onPress={() => router.push('/map')}
               style={{ marginRight: 15 }}
             >
-              <Ionicons name="map-outline" size={24} color={theme.colors.text} />
+              <View style={[styles.iconPlaceholder, {backgroundColor: textColor}]} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push('/search')}
               style={{ marginRight: 15 }}
             >
-              <Ionicons name="search" size={24} color={theme.colors.text} />
+              <View style={[styles.iconPlaceholder, {backgroundColor: textColor}]} />
             </TouchableOpacity>
           </View>
         ),
@@ -52,12 +59,8 @@ export const TabsLayout = () => {
         name="index"
         options={{
           title: "Inicio",
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "home" : "home-outline"}
-              size={size}
-              color={color}
-            />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.iconPlaceholder, {backgroundColor: color}]} />
           ),
         }}
       />
@@ -66,12 +69,8 @@ export const TabsLayout = () => {
         name="events"
         options={{
           title: "Eventos",
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "calendar" : "calendar-outline"}
-              size={size}
-              color={color}
-            />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.iconPlaceholder, {backgroundColor: color}]} />
           ),
         }}
       />
@@ -80,8 +79,8 @@ export const TabsLayout = () => {
         name="scan"
         options={{
           title: 'Validar',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="qr-code-outline" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <View style={[styles.iconPlaceholder, {backgroundColor: color}]} />
           ),
           tabBarButton: (props) => (
             <TouchableOpacity
@@ -101,12 +100,8 @@ export const TabsLayout = () => {
         name="notifications"
         options={{
           title: "Notificaciones",
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "notifications" : "notifications-outline"}
-              size={size}
-              color={color}
-            />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.iconPlaceholder, {backgroundColor: color}]} />
           ),
         }}
       />
@@ -115,15 +110,20 @@ export const TabsLayout = () => {
         name="profile"
         options={{
           title: "Perfil",
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "person" : "person-outline"}
-              size={size}
-              color={color}
-            />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.iconPlaceholder, {backgroundColor: color}]} />
           ),
         }}
       />
     </Tabs>
   );
-}; 
+};
+
+const styles = StyleSheet.create({
+  iconPlaceholder: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    opacity: 0.7
+  }
+}); 
