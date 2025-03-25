@@ -22,10 +22,28 @@ export interface ToastProps {
 export const ToastProvider = () => {
   const { theme } = useTheme();
   
-  // No renderizamos nada aquí, solo un contenedor vacío
-  // En la versión actual de react-native-toast-message, no podemos usar
-  // este componente directamente para renderizar el Toast
-  return null;
+  // Devuelve el componente ToastMessage configurado
+  return <ToastMessage config={{
+    // Configuración básica de ToastMessage
+    success: ({ text1, text2, ...rest }) => (
+      <View style={[styles.container, styles.successContainer]}>
+        <Text style={styles.titleText}>{text1}</Text>
+        {text2 && <Text style={styles.messageText}>{text2}</Text>}
+      </View>
+    ),
+    error: ({ text1, text2, ...rest }) => (
+      <View style={[styles.container, styles.errorContainer]}>
+        <Text style={styles.titleText}>{text1}</Text>
+        {text2 && <Text style={styles.messageText}>{text2}</Text>}
+      </View>
+    ),
+    info: ({ text1, text2, ...rest }) => (
+      <View style={[styles.container, styles.infoContainer]}>
+        <Text style={styles.titleText}>{text1}</Text>
+        {text2 && <Text style={styles.messageText}>{text2}</Text>}
+      </View>
+    ),
+  }} />;
 };
 
 // Exportamos Toast para usarlo en toda la aplicación
@@ -34,7 +52,7 @@ export const ToastProvider = () => {
 const Toast = ToastMessage;
 export default Toast;
 
-// Estilos para los toast personalizados (se pueden usar en proyectos futuros)
+// Estilos para los toast personalizados
 const styles = StyleSheet.create({
   container: {
     width: '90%',

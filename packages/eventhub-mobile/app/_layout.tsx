@@ -4,13 +4,15 @@ import { View } from 'react-native';
 import * as Font from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ThemeProvider } from '@core/context/ThemeContext';
+// Comentamos todas las importaciones problemáticas
+// import { ThemeProvider } from '@core/context/ThemeContext';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { ToastProvider } from '@shared/components/ui/Toast';
+// import { ToastProvider } from '@shared/components/ui/Toast';
 
 /**
- * Layout principal para la aplicación
+ * Layout principal simplificado para la aplicación
+ * Se han eliminado las dependencias problemáticas temporalmente
  */
 export default function Layout() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
@@ -32,13 +34,10 @@ export default function Layout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider>
-        <SafeAreaProvider>
-          <StatusBar style="auto" />
-          <Slot />
-          <ToastProvider />
-        </SafeAreaProvider>
-      </ThemeProvider>
+      <SafeAreaProvider>
+        <StatusBar style="auto" />
+        <Slot />
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 } 
