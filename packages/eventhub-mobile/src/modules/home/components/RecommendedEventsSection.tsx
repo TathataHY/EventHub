@@ -15,6 +15,8 @@ import { useTheme } from '../../../shared/hooks/useTheme';
 import { EventCard } from '@modules/events/components/EventCard';
 import { recommendationService } from '@modules/events/services/recommendation.service';
 import { authService } from '@modules/auth/services/auth.service';
+import { eventService } from '@modules/events/services/event.service';
+import { bookmarkService } from '@modules/events/services/bookmark.service';
 import { Event } from '@modules/events/types';
 import { UserProfile } from '@modules/auth/services/auth.service';
 
@@ -56,20 +58,29 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
       
+      // Obtener todos los eventos para pasarlos al servicio
+      const allEvents = await eventService.getAllEvents();
+      
+      // Obtener eventos guardados si hay usuario
+      let bookmarkedEventIds: string[] = [];
       if (currentUser) {
-        // Cargar recomendaciones para el usuario
+        bookmarkedEventIds = await bookmarkService.getUserBookmarks(currentUser.id);
+      }
+      
+      if (currentUser) {
+        // Cargar recomendaciones para el usuario con el nuevo método
         const recommendations = await recommendationService.getRecommendedEvents(
           currentUser.id,
-          maxEvents
+          allEvents,
+          maxEvents,
+          bookmarkedEventIds
         );
-        setRecommendedEvents(recommendations);
+        setRecommendedEvents(recommendations as Event[]);
       } else {
-        // Si no hay usuario autenticado, cargar eventos populares
-        // La función está marcada como privada pero la usamos de todos modos
-        // En una implementación real, debería ser pública o usar otra función
-        // @ts-ignore: ignoramos la advertencia de que el método es privado
-        const popularEvents = await recommendationService.getPopularEvents(maxEvents);
-        setRecommendedEvents(popularEvents);
+        // Si no hay usuario autenticado, usar el método getPopularEvents con los eventos
+        // Ahora getPopularEvents no es asíncrono y acepta eventos como parámetro
+        const popularEvents = recommendationService.getPopularEvents(allEvents, maxEvents);
+        setRecommendedEvents(popularEvents as Event[]);
       }
     } catch (error) {
       console.error('Error al cargar recomendaciones:', error);
@@ -83,12 +94,18 @@ export const RecommendedEventsSection: React.FC<RecommendedEventsSectionProps> =
   const handleEventPress = (event: Event) => {
     // Registrar interacción de vista
     if (user) {
+      // Obtener la ubicación del evento para pasarla como parámetro
+      const eventLocation = event.location && typeof event.location === 'object' 
+        ? event.location 
+        : undefined;
+        
       recommendationService.recordInteraction(
         user.id,
         event.id,
         // Usamos un valor por defecto si category es undefined
         event.category || 'general',
-        'view'
+        'view',
+        eventLocation
       ).catch(error => console.error('Error al registrar interacción:', error));
     }
     

@@ -80,12 +80,12 @@ export const EventCard: React.FC<EventCardProps> = ({
   };
   
   // Obtener imagen del evento
-  const getImage = () => {
-    const imageSource = event.imageUrl || event.image;
-    if (!imageSource) {
-      return require('../../../shared/assets/images/event-placeholder.png');
+  const getEventImage = () => {
+    const imageUrl = event.imageUrl || event.image;
+    if (!imageUrl) {
+      return require('@assets/images/placeholders/event.png');
     }
-    return { uri: imageSource };
+    return { uri: imageUrl };
   };
   
   // Obtener ubicación del evento
@@ -150,7 +150,7 @@ export const EventCard: React.FC<EventCardProps> = ({
     >
       <View style={compact ? styles.compactContentLayout : styles.imageContainer}>
         <Image 
-          source={getImage()} 
+          source={getEventImage()} 
           style={compact ? styles.compactImage : styles.image}
           resizeMode="cover"
         />

@@ -8,12 +8,10 @@ import {
   Platform,
   ActivityIndicator
 } from 'react-native';
-// @ts-ignore
-import { CameraView } from 'expo-camera/next';
-import { BarCodeScannerResult } from 'expo-barcode-scanner';
+import { Camera } from 'expo-camera';
+import { BarCodeScanner, BarCodeScannerResult } from 'expo-barcode-scanner';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Camera } from 'expo-camera';
 import { useTheme } from '@core/context/ThemeContext';
 
 import { getColorValue } from '@shared/utils/color.utils';
@@ -57,7 +55,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   // Solicitar permisos de cámara al montar el componente
   useEffect(() => {
     (async () => {
-      const { status } = await CameraView.requestCameraPermissionsAsync();
+      const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
     })();
   }, []);
@@ -108,13 +106,11 @@ export const QRScanner: React.FC<QRScannerProps> = ({
   return (
     <SafeAreaView style={styles.container}>
       {/* Cámara */}
-      <CameraView
+      <BarCodeScanner
         style={styles.camera}
-        facing="back"
-        barcodeScannerSettings={{
-          barcodeTypes: ["qr"],
-        }}
-        onBarcodeScanned={handleBarCodeScanned}
+        type={BarCodeScanner.Constants.Type.back}
+        barCodeTypes={[BarCodeScanner.Constants.BarCodeType.qr]}
+        onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
       >
         {/* Overlay */}
         <View style={styles.overlay}>
@@ -146,7 +142,7 @@ export const QRScanner: React.FC<QRScannerProps> = ({
             </TouchableOpacity>
           </View>
         </View>
-      </CameraView>
+      </BarCodeScanner>
     </SafeAreaView>
   );
 };

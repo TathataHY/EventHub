@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import ToastMessage from 'react-native-toast-message';
-import { useTheme } from '@shared/hooks/useTheme';
+import { useTheme } from '@core/context/ThemeContext';
 
 // Definición de tipos para ToastProps
 export interface ToastProps {

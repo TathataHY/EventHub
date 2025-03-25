@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { recommendationService } from './recommendation.service';
-import { eventService } from './event.service';
+// Eliminamos la importación circular
+// import { recommendationService } from './recommendation.service';
+// Eliminamos la importación circular
+// import { eventService } from './event.service';
 
 // Clave para almacenar los favoritos en AsyncStorage
 const BOOKMARKS_STORAGE_KEY = 'userBookmarkedEvents';
@@ -12,7 +14,31 @@ interface BookmarkItem {
   savedAt: string;
 }
 
+// Interfaz para evento
+interface EventData {
+  id: string | number;
+  category?: string | any;
+  location?: string | { city?: string; [key: string]: any };
+  [key: string]: any;
+}
+
+// Interfaz para el callback de recomendación
+type RecordInteractionCallback = (
+  userId: string,
+  eventId: string,
+  category: string, 
+  interactionType: 'view' | 'bookmark' | 'attend' | 'share',
+  eventLocation?: { city?: string; [key: string]: any }
+) => void;
+
 class BookmarkService {
+  private recordInteractionCallback: RecordInteractionCallback | null = null;
+
+  // Método para registrar el callback
+  registerInteractionCallback(callback: RecordInteractionCallback) {
+    this.recordInteractionCallback = callback;
+  }
+
   /**
    * Obtiene todos los eventos guardados por un usuario
    * @param userId ID del usuario
@@ -121,9 +147,14 @@ class BookmarkService {
    * Alterna el estado de favorito de un evento
    * @param userId ID del usuario
    * @param eventId ID del evento
+   * @param eventData Datos del evento (opcional, para evitar ciclo de dependencia)
    * @returns El nuevo estado (true si se añadió, false si se eliminó)
    */
-  async toggleBookmark(userId: string, eventId: string): Promise<boolean> {
+  async toggleBookmark(
+    userId: string, 
+    eventId: string, 
+    eventData?: EventData
+  ): Promise<boolean> {
     try {
       const key = `bookmarks_${userId}`;
       const bookmarksData = await AsyncStorage.getItem(key);
@@ -142,20 +173,23 @@ class BookmarkService {
         bookmarks.push(eventId);
         await AsyncStorage.setItem(key, JSON.stringify(bookmarks));
         
-        // Registrar interacción para el sistema de recomendaciones
-        try {
-          const event = await eventService.getEventById(eventId);
-          if (event) {
-            recommendationService.recordInteraction(
-              userId,
-              eventId,
-              event.category,
-              'bookmark'
-            );
-          }
-        } catch (error) {
-          console.error('Error al registrar interacción de favorito:', error);
-          // No interrumpir el flujo si falla el registro de interacción
+        // Registrar interacción para el sistema de recomendaciones usando el callback
+        if (eventData && this.recordInteractionCallback) {
+          const category = typeof eventData.category === 'object' && eventData.category?.id 
+            ? eventData.category.id 
+            : eventData.category;
+          
+          const eventLocation = eventData.location && typeof eventData.location === 'object' 
+            ? eventData.location 
+            : undefined;
+            
+          this.recordInteractionCallback(
+            userId,
+            eventId,
+            category,
+            'bookmark',
+            eventLocation
+          );
         }
         
         return true;

@@ -104,11 +104,15 @@ class EventService {
         try {
           const user = await authService.getCurrentUser();
           if (user) {
+            // Enviamos la ubicación del evento como parámetro para evitar ciclos de dependencia
+            const eventLocation = event.location && typeof event.location === 'object' ? event.location : undefined;
+            
             recommendationService.recordInteraction(
               user.id,
               id,
               event.category,
-              'view'
+              'view',
+              eventLocation
             );
           }
         } catch (error) {
@@ -164,11 +168,15 @@ class EventService {
       // Registrar interacción para recomendaciones
       const event = await this.getEventById(eventId);
       if (event) {
+        // Enviamos la ubicación del evento como parámetro para evitar ciclos de dependencia
+        const eventLocation = event.location && typeof event.location === 'object' ? event.location : undefined;
+        
         recommendationService.recordInteraction(
           userId,
           eventId,
           event.category,
-          'attend'
+          'attend',
+          eventLocation
         );
       }
       
@@ -247,20 +255,26 @@ class EventService {
   // Compartir un evento con registro de interacción
   async shareEvent(userId: string, eventId: string): Promise<boolean> {
     try {
+      // Código para compartir evento...
+      
       // Registrar interacción para recomendaciones
       const event = await this.getEventById(eventId);
       if (event) {
+        // Enviamos la ubicación del evento como parámetro para evitar ciclos de dependencia
+        const eventLocation = event.location && typeof event.location === 'object' ? event.location : undefined;
+        
         recommendationService.recordInteraction(
           userId,
           eventId,
           event.category,
-          'share'
+          'share',
+          eventLocation
         );
       }
       
       return true;
     } catch (error) {
-      console.error('Error al registrar compartir evento:', error);
+      console.error('Error al compartir evento:', error);
       return false;
     }
   }
