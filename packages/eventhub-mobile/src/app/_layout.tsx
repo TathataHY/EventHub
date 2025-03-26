@@ -1,4 +1,4 @@
-import { Slot } from 'expo-router';
+import { Stack } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import * as Font from 'expo-font';
@@ -12,7 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 
 // Importamos QueryClient y QueryClientProvider de react-query
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Creamos una instancia de QueryClient
 const queryClient = new QueryClient();
@@ -24,30 +24,19 @@ SplashScreen.preventAutoHideAsync();
  * Layout principal simplificado para la aplicación
  * Se han eliminado las dependencias problemáticas temporalmente
  */
-export default function Layout() {
+export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {
     async function prepare() {
       try {
-        // Pre-cargar fuentes - asegurándose que todas las variantes de "ionicons" están cargadas
         await Font.loadAsync({
           ...Ionicons.font,
-          'Ionicons': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf'),
-          'ionicons': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf'),
-          // Cargar también en minúsculas para casos especiales
-          'ionicon': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf'),
-          'ion': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf'),
           ...MaterialIcons.font,
-          'MaterialIcons': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialIcons.ttf'),
           ...FontAwesome.font,
-          'FontAwesome': require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/FontAwesome.ttf'),
         });
         
-        // Aumentamos el tiempo de espera para garantizar que las fuentes se carguen completamente
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        console.log('Fuentes cargadas correctamente');
+        await new Promise(resolve => setTimeout(resolve, 1000));
       } catch (e) {
         console.warn('Error al cargar recursos:', e);
       } finally {
@@ -60,7 +49,6 @@ export default function Layout() {
 
   const onLayoutRootView = useCallback(async () => {
     if (appIsReady) {
-      // Esto oculta la pantalla de splash una vez que la aplicación está lista
       await SplashScreen.hideAsync();
     }
   }, [appIsReady]);
@@ -78,7 +66,9 @@ export default function Layout() {
       <GestureHandlerRootView style={{ flex: 1 }} onLayout={onLayoutRootView}>
         <SafeAreaProvider>
           <StatusBar style="auto" />
-          <Slot />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+          </Stack>
         </SafeAreaProvider>
       </GestureHandlerRootView>
     </QueryClientProvider>

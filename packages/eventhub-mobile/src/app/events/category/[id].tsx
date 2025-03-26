@@ -2,7 +2,7 @@ import React from 'react';
 import { View, SafeAreaView, StatusBar } from 'react-native';
 import { Stack } from 'expo-router';
 import { useLocalSearchParams } from 'expo-router';
-import { EventsByCategory } from '../../../src/modules/events/screens/EventsByCategory';
+import { EventsByCategory } from '@modules/events/screens/EventsByCategory';
 
 /**
  * Página para mostrar eventos por categoría

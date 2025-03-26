@@ -5,6 +5,8 @@ module.exports = function(api) {
     plugins: [
       'expo-router/babel', // Necesario para Expo Router en SDK 50
       'react-native-reanimated/plugin',
+      '@babel/plugin-transform-private-methods',
+      '@babel/plugin-transform-class-properties',
       [
         'module-resolver',
         {

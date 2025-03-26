@@ -1,9 +1,7 @@
 import { useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-// Importamos desde react-query ya que está instalada
-import { useQuery, useQueryClient } from 'react-query';
-// Importamos correctamente el servicio de autenticación
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { authService } from '../services/auth.service';
 // Comentamos la importación no existente
 // import { useToast } from '@modules/ui/hooks/useToast';
@@ -18,7 +16,6 @@ export interface LoginParams {
 export interface AuthResponse {
   user: any;
   accessToken: string;
-  token?: string;
 }
 
 // Interfaz propia para representar un usuario autenticado, sin modificar User original
@@ -47,7 +44,7 @@ export const useAuth = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Consulta para obtener el usuario autenticado
-  const { data: currentUser, isLoading: isLoadingUser } = useQuery<AuthenticatedUser | null>(
+  const { data: currentUser, isLoading: isLoadingUser } = useQuery(
     ['currentUser'],
     async () => {
       try {
@@ -68,25 +65,19 @@ export const useAuth = () => {
     setIsLoading(true);
     try {
       const params: LoginParams = { email, password };
-      const response: any = await authService.login(params);
-      // Usar accessToken o token según lo que esté disponible
-      const token = response.accessToken || response.token || '';
+      const response: AuthResponse = await authService.login(params);
       
-      // Guardar token en AsyncStorage
-      await AsyncStorage.setItem('token', token);
+      await AsyncStorage.setItem('token', response.accessToken);
       
-      // Actualizar datos de usuario en caché
       queryClient.setQueryData(['currentUser'], response.user);
       
-      // Mostrar mensaje de éxito
       const user = response.user || {};
       toast.show({
         message: `¡Bienvenido, ${user.name || user.firstName || user.username || 'Usuario'}!`,
         type: 'success',
       });
       
-      // Navegar a la pantalla principal
-      router.replace('/(tabs)');
+      router.replace('/(tabs)' as any);
       
       return { success: true };
     } catch (error: any) {
@@ -101,35 +92,28 @@ export const useAuth = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [queryClient, toast]);
+  }, [queryClient]);
 
   // Función para registrar un usuario
   const register = useCallback(async (userData: any) => {
     setIsLoading(true);
     try {
-      const response: any = await authService.register(userData);
-      // Usar accessToken o token según lo que esté disponible
-      const token = response.accessToken || response.token || '';
+      const response: AuthResponse = await authService.register(userData);
       
-      // Guardar token en AsyncStorage
-      await AsyncStorage.setItem('token', token);
+      await AsyncStorage.setItem('token', response.accessToken);
       
-      // Actualizar datos de usuario en caché
       queryClient.setQueryData(['currentUser'], response.user);
       
-      // Mostrar mensaje de éxito
-      const user = response.user || {};
       toast.show({
-        message: `¡Bienvenido, ${user.name || user.firstName || user.username || 'Usuario'}!`,
+        message: 'Registro exitoso',
         type: 'success',
       });
       
-      // Navegar a la pantalla principal
-      router.replace('/(tabs)');
+      router.replace('/auth/login' as any);
       
       return { success: true };
     } catch (error: any) {
-      console.error('Registration error:', error);
+      console.error('Register error:', error);
       
       toast.show({
         message: error.message || 'Error al registrar usuario',
@@ -140,21 +124,26 @@ export const useAuth = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [queryClient, toast]);
+  }, [queryClient]);
 
   // Función para cerrar sesión
   const logout = useCallback(async () => {
     try {
-      // Eliminar token de AsyncStorage
       await AsyncStorage.removeItem('token');
-      
-      // Eliminar datos de usuario en caché
       queryClient.setQueryData(['currentUser'], null);
       
-      // Navegar a la pantalla de login
-      router.replace('/auth/login');
+      toast.show({
+        message: 'Sesión cerrada correctamente',
+        type: 'success',
+      });
+      
+      router.replace('/(tabs)' as any);
     } catch (error) {
       console.error('Logout error:', error);
+      toast.show({
+        message: 'Error al cerrar sesión',
+        type: 'error',
+      });
     }
   }, [queryClient]);
 
@@ -199,8 +188,8 @@ export const useAuth = () => {
     isLoading: isLoading || isLoadingUser,
     error,
     login,
-    register,
     logout,
+    register,
     requestPasswordReset,
     resetPassword,
   };
